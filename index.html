@@ -1291,6 +1291,43 @@ body[data-side="fallen"] .roster-prog-summary {
 }
 .modal-backdrop.show { display: flex; }
 
+/* SPEC-rediseno-ui Sub-C — Sub-tabs dentro de BANDA. */
+.banda-subtabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem 0;
+  border-bottom: 2px solid rgba(127,107,67,0.4);
+  background: rgba(20, 12, 8, 0.6);
+}
+.banda-subtab {
+  padding: 0.5rem 1.1rem;
+  background: transparent;
+  border: 1px solid rgba(127,107,67,0.35);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  color: var(--parchment);
+  font-family: var(--font-display, serif);
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.banda-subtab:hover {
+  background: rgba(127,107,67,0.15);
+  color: var(--gold);
+}
+.banda-subtab.active {
+  background: rgba(95, 25, 25, 0.6);
+  color: var(--gold);
+  border-color: var(--gold);
+  font-weight: bold;
+}
+.panel-fullwidth {
+  grid-column: 1 / -1;
+  background: rgba(20, 12, 8, 0.4);
+  padding: 1rem;
+  min-height: 60vh;
+}
+
 /* Fase 14-A PIVOT v2 — Badges fuente de banda. */
 .wb-source-badge {
   display: inline-block;
@@ -4040,8 +4077,15 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <div id="unit-catalogue"></div>
   </section>
 
+  <!-- SUB-TABS dentro de BANDA (SPEC-rediseno-ui Sub-C) -->
+  <nav class="banda-subtabs" id="banda-subtabs" role="tablist" aria-label="Vistas de la banda">
+    <button class="banda-subtab active" data-subtab="roster" role="tab" aria-selected="true">Roster</button>
+    <button class="banda-subtab" data-subtab="variantes" role="tab" aria-selected="false">🧪 Variantes</button>
+    <button class="banda-subtab" data-subtab="shopping" role="tab" aria-selected="false">🛒 Lista de compra</button>
+  </nav>
+
   <!-- CENTER: Warband Roster -->
-  <section class="panel panel-center" id="panel-roster">
+  <section class="panel panel-center" id="panel-roster" data-subtab-panel="roster">
     <div class="roster-header">
       <div style="flex:1;">
         <input type="text" class="warband-name-input" id="warband-name" placeholder="Nombra a tu banda…" />
@@ -4088,7 +4132,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
   </section>
 
   <!-- RIGHT: Unit Detail / Battlekit -->
-  <aside class="panel panel-right" id="panel-detail">
+  <aside class="panel panel-right" id="panel-detail" data-subtab-panel="roster">
     <h2 class="panel-title">Detalle</h2>
     <p class="panel-subtitle">Selecciona un modelo</p>
     <div id="detail-content">
@@ -4097,6 +4141,29 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
       </div>
     </div>
   </aside>
+
+  <!-- SUB-TAB: Variantes (placeholder hasta Fase 12 funcional) -->
+  <section class="panel panel-fullwidth" id="panel-variantes" data-subtab-panel="variantes" style="display:none;">
+    <h2 class="panel-title">🧪 Variantes experimentales</h2>
+    <p class="panel-subtitle">Bifurca tu banda para probar loadouts experimentales sin perder la configuración original.</p>
+    <div style="padding:1.5rem;text-align:center;color:var(--parchment);">
+      <p style="margin-bottom:1rem;">Próximamente: editor visual de variantes integrado en esta vista.</p>
+      <p style="margin-bottom:1rem;font-size:0.85rem;opacity:0.75;">Por ahora, accede al modal completo desde el botón <strong style="color:var(--gold);">🧪 Variantes</strong> del header.</p>
+      <button class="btn btn-primary" id="btn-subtab-open-sandbox">Abrir modal de variantes</button>
+    </div>
+  </section>
+
+  <!-- SUB-TAB: Lista de compra (vista agrupada) -->
+  <section class="panel panel-fullwidth" id="panel-shopping" data-subtab-panel="shopping" style="display:none;">
+    <h2 class="panel-title">🛒 Lista de la compra</h2>
+    <p class="panel-subtitle">Wishlist por banda — agrupada por scope (pool / por modelo).</p>
+    <div id="shopping-subtab-content" style="padding:0.5rem;"></div>
+    <div style="display:flex;gap:0.5rem;padding:0.5rem;border-top:1px solid rgba(127,107,67,0.3);">
+      <button class="btn btn-primary" id="btn-shopping-subtab-add">+ Añadir item</button>
+      <button class="btn" id="btn-shopping-subtab-pdf">🖨 PDF Lista</button>
+      <button class="btn" id="btn-shopping-subtab-clear">🗑 Limpiar tachados</button>
+    </div>
+  </section>
 
   <!-- LAB: Battle simulator (visible only in mode='lab') -->
   <section class="panel" id="panel-lab" style="display:none;grid-column:1 / -1;padding:1.5rem;">
@@ -14329,6 +14396,19 @@ function migrateWarband(wb) {
   if (!Array.isArray(wb.tempBonuses)) wb.tempBonuses = [];
   // Fase 11 PIVOT v2 backfill — experimentalVariants.
   if (!Array.isArray(wb.experimentalVariants)) wb.experimentalVariants = [];
+  // SPEC-rediseno-ui Sub-H backfill — shoppingList items.scope.
+  // Items legacy sin scope: forModel definido → 'unit', sin forModel → 'pool'.
+  // Idempotente: si ya hay scope válido, no se toca.
+  if (Array.isArray(wb.shoppingList)) {
+    for (const it of wb.shoppingList) {
+      if (it && (it.scope !== 'pool' && it.scope !== 'unit')) {
+        it.scope = it.forModel ? 'unit' : 'pool';
+      }
+      if (it && (typeof it.quantity !== 'number' || it.quantity < 1)) {
+        it.quantity = 1;
+      }
+    }
+  }
   // BACKLOG P1/3 backfill — strongbox. Zeroed baseline; existing
   // freeBattles don't retroactively populate it (would risk
   // double-counting after manual edits). A retro-fill helper can be
@@ -14521,15 +14601,27 @@ function removeVariant(wb, id) {
 function addShoppingItem(wb, partial) {
   if (!wb || typeof wb !== 'object') return null;
   if (!Array.isArray(wb.shoppingList)) wb.shoppingList = [];
+  const p = partial || {};
+  // SPEC-rediseno-ui Sub-H — scope explícito. Si no se pasa, lo
+  // deducimos: forModel definido → 'unit', sino → 'pool'.
+  let scope = p.scope;
+  if (scope !== 'pool' && scope !== 'unit') {
+    scope = p.forModel ? 'unit' : 'pool';
+  }
   const item = {
     id: _idGen('sl'),
-    type: (partial && partial.type) || 'equipment',
-    name: (partial && partial.name) || '',
-    description: (partial && partial.description) || '',
+    type: p.type || 'equipment',
+    name: p.name || '',
+    description: p.description || '',
+    cost: (typeof p.cost === 'number') ? p.cost : null,
+    category: p.category || null,
+    scope: scope,
+    quantity: (typeof p.quantity === 'number' && p.quantity > 0) ? p.quantity : 1,
     createdAt: Date.now(),
-    source: (partial && partial.source) || 'manual',
-    variantId: (partial && partial.variantId) || null,
-    forModel: (partial && partial.forModel) || null,
+    source: p.source || 'manual',
+    variantId: p.variantId || null,
+    forModel: p.forModel || null,
+    notes: p.notes || '',
     checked: false,
   };
   wb.shoppingList.push(item);
@@ -18651,6 +18743,182 @@ document.addEventListener('click', (e) => {
   if (!t) return;
   handleRefreshCompanionClick();
 });
+
+/* SPEC-rediseno-ui Sub-C — Sub-tabs handler. */
+const BANDA_SUBTAB_KEY = 'wf.ui.bandaSubtab';
+
+function setBandaSubtab(name) {
+  if (!['roster','variantes','shopping'].includes(name)) name = 'roster';
+  // Tabs visual.
+  document.querySelectorAll('.banda-subtab').forEach(btn => {
+    const active = btn.getAttribute('data-subtab') === name;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  // Paneles. Roster usa 2 paneles (panel-roster + panel-detail);
+  // Variantes y Shopping cada uno un panel-fullwidth.
+  document.querySelectorAll('[data-subtab-panel]').forEach(p => {
+    const myTab = p.getAttribute('data-subtab-panel');
+    p.style.display = (myTab === name) ? '' : 'none';
+  });
+  try { localStorage.setItem(BANDA_SUBTAB_KEY, name); } catch (e) {}
+  // Render content on-demand.
+  if (name === 'shopping') renderShoppingSubtab();
+}
+
+function getActiveBandaSubtab() {
+  try {
+    const v = localStorage.getItem(BANDA_SUBTAB_KEY);
+    if (['roster','variantes','shopping'].includes(v)) return v;
+  } catch (e) {}
+  return 'roster';
+}
+
+function renderShoppingSubtab() {
+  const wb = STATE.currentWarband;
+  const cont = document.getElementById('shopping-subtab-content');
+  if (!cont) return;
+  cont.innerHTML = '';
+  if (!wb) {
+    cont.innerHTML = '<p style="color:var(--parchment);"><em>Carga una banda primero.</em></p>';
+    return;
+  }
+  const items = Array.isArray(wb.shoppingList) ? wb.shoppingList : [];
+  if (items.length === 0) {
+    cont.innerHTML = '<p style="color:var(--parchment);"><em>Lista vacía. Pulsa "+ Añadir item" para empezar.</em></p>';
+    return;
+  }
+  // Agrupar por scope. Pool primero, luego por modelo.
+  const poolActive = [], poolChecked = [];
+  const byModel = {}; // modelUid → {active:[], checked:[]}
+  for (const it of items) {
+    const isPool = it.scope === 'pool' || !it.forModel;
+    if (isPool) {
+      (it.checked ? poolChecked : poolActive).push(it);
+    } else {
+      if (!byModel[it.forModel]) byModel[it.forModel] = { active: [], checked: [] };
+      (it.checked ? byModel[it.forModel].checked : byModel[it.forModel].active).push(it);
+    }
+  }
+  const variants = Array.isArray(wb.experimentalVariants) ? wb.experimentalVariants : [];
+  const variantName = (vid) => {
+    const v = variants.find(x => x.id === vid);
+    return v ? v.name : 'Variante eliminada';
+  };
+  const modelName = (uid) => {
+    const m = (wb.models || []).find(x => x.uid === uid);
+    return m ? (m.customName || m.name || m.unitId || uid) : uid;
+  };
+
+  function itemRow(it) {
+    const date = new Date(it.createdAt || 0).toLocaleDateString();
+    const sourceLabel = it.source === 'variant'
+      ? '<span style="color:var(--gold);">desde variante: ' + escapeHtml(variantName(it.variantId)) + '</span>'
+      : 'manual';
+    const qty = (it.quantity && it.quantity > 1) ? (it.quantity + '× ') : '';
+    return `
+      <div class="shopping-row" style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0.5rem;border-bottom:1px solid rgba(127,107,67,0.18);${it.checked ? 'opacity:0.55;' : ''}">
+        <input type="checkbox" data-shopping-toggle="${it.id}" ${it.checked ? 'checked' : ''} />
+        <span style="flex:1;${it.checked ? 'text-decoration:line-through;' : ''}">${qty}${escapeHtml(it.name)}</span>
+        <span style="font-size:0.72rem;color:var(--parchment);opacity:0.7;">${sourceLabel} · ${date}</span>
+        <button class="btn btn-sm" data-shopping-remove="${it.id}" title="Eliminar definitivamente">🗑</button>
+      </div>
+    `;
+  }
+
+  function section(title, active, checked) {
+    if (active.length === 0 && checked.length === 0) return '';
+    let html = '<div style="margin-bottom:1rem;">';
+    html += '<div style="font-weight:bold;color:var(--gold);padding:0.4rem 0;border-bottom:2px solid rgba(127,107,67,0.4);">' + escapeHtml(title) + ' (' + (active.length + checked.length) + ')</div>';
+    for (const it of active) html += itemRow(it);
+    if (checked.length > 0) {
+      html += '<details style="margin-top:0.3rem;"><summary style="cursor:pointer;font-size:0.78rem;color:var(--parchment);opacity:0.7;">Histórico (' + checked.length + ' tachado' + (checked.length > 1 ? 's' : '') + ')</summary>';
+      for (const it of checked) html += itemRow(it);
+      html += '</details>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  let html = '';
+  html += section('POOL DE BANDA', poolActive, poolChecked);
+  for (const uid of Object.keys(byModel)) {
+    html += section(modelName(uid).toUpperCase(), byModel[uid].active, byModel[uid].checked);
+  }
+  cont.innerHTML = html;
+}
+
+// Listeners sub-tabs.
+document.querySelectorAll('.banda-subtab').forEach(btn => {
+  btn.addEventListener('click', () => setBandaSubtab(btn.getAttribute('data-subtab')));
+});
+
+// Sub-tab Variantes: botón abre modal sandbox existente.
+const _btnSubtabSandbox = document.getElementById('btn-subtab-open-sandbox');
+if (_btnSubtabSandbox) {
+  _btnSubtabSandbox.addEventListener('click', () => {
+    document.getElementById('btn-open-sandbox').click();
+  });
+}
+
+// Sub-tab Lista compra: delegation toggle/remove + botones acciones.
+const _shoppingSubtabContent = document.getElementById('shopping-subtab-content');
+if (_shoppingSubtabContent) {
+  _shoppingSubtabContent.addEventListener('click', (e) => {
+    const wb = STATE.currentWarband;
+    if (!wb) return;
+    const toggle = e.target.closest('[data-shopping-toggle]');
+    const remove = e.target.closest('[data-shopping-remove]');
+    if (toggle) {
+      toggleShoppingItemChecked(wb, toggle.getAttribute('data-shopping-toggle'));
+      persistWarband(wb);
+      renderShoppingSubtab();
+      return;
+    }
+    if (remove) {
+      if (!confirm('¿Eliminar este item definitivamente?')) return;
+      removeShoppingItem(wb, remove.getAttribute('data-shopping-remove'));
+      persistWarband(wb);
+      renderShoppingSubtab();
+    }
+  });
+}
+const _btnSubtabAdd = document.getElementById('btn-shopping-subtab-add');
+if (_btnSubtabAdd) {
+  _btnSubtabAdd.addEventListener('click', () => {
+    // Por ahora reusa modal del header (Sub-E lo sustituirá por modal nuevo).
+    document.getElementById('btn-open-shopping').click();
+  });
+}
+const _btnSubtabPdf = document.getElementById('btn-shopping-subtab-pdf');
+if (_btnSubtabPdf) {
+  _btnSubtabPdf.addEventListener('click', async () => {
+    const wb = STATE.currentWarband;
+    if (!wb) return;
+    try {
+      const blob = await generateShoppingListPdf(wb);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lista-compra-' + (wb.name || 'banda').replace(/\s+/g, '_').toLowerCase() + '.pdf';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert('Error: ' + e.message); }
+  });
+}
+const _btnSubtabClear = document.getElementById('btn-shopping-subtab-clear');
+if (_btnSubtabClear) {
+  _btnSubtabClear.addEventListener('click', () => {
+    const wb = STATE.currentWarband;
+    if (!wb) return;
+    const n = (wb.shoppingList || []).filter(it => it.checked).length;
+    if (n === 0) { alert('No hay items tachados.'); return; }
+    if (!confirm('¿Borrar ' + n + ' item(s) tachado(s)?')) return;
+    clearCheckedShoppingItems(wb);
+    persistWarband(wb);
+    renderShoppingSubtab();
+  });
+}
 
 /* Fase 15 PIVOT v2 — Onboarding tour de bienvenida. */
 const WELCOME_FLAG_KEY = 'wf-tour-seen';
@@ -33298,6 +33566,8 @@ function boot() {
 
   renderAll();
   syncPanelsToViewport();
+  // SPEC-rediseno-ui Sub-C — restaurar sub-tab persistido.
+  setBandaSubtab(getActiveBandaSubtab());
 }
 
 boot();
