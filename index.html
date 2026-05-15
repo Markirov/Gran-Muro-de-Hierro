@@ -1291,6 +1291,49 @@ body[data-side="fallen"] .roster-prog-summary {
 }
 .modal-backdrop.show { display: flex; }
 
+/* SPEC-rediseno-ui Sub-B — Sidebar facción plegable. */
+.faction-sidebar-toggle {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(127, 107, 67, 0.85);
+  color: var(--gold, #c9a961);
+  border: 1px solid var(--gold, #c9a961);
+  border-left: none;
+  padding: 0.6rem 0.35rem;
+  cursor: pointer;
+  z-index: 50;
+  writing-mode: vertical-rl;
+  font-family: var(--font-display, serif);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  border-radius: 0 4px 4px 0;
+  display: none;       /* Visible solo cuando sidebar oculta. */
+}
+.faction-sidebar-toggle:hover {
+  background: rgba(127, 107, 67, 1);
+  color: white;
+}
+.faction-sidebar-toggle-icon {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+body.faction-sidebar-collapsed .panel-left {
+  display: none;
+}
+body.faction-sidebar-collapsed main {
+  grid-template-columns: 1fr 380px;
+}
+body.faction-sidebar-collapsed .faction-sidebar-toggle {
+  display: block;
+}
+@media (max-width: 1100px) {
+  /* Mobile: el grid ya se apila; el botón flotante igual queda
+   * accesible si está plegado. */
+  body.faction-sidebar-collapsed main { grid-template-columns: 1fr; }
+}
+
 /* SPEC-rediseno-ui Sub-C — Sub-tabs dentro de BANDA. */
 .banda-subtabs {
   display: flex;
@@ -1322,10 +1365,22 @@ body[data-side="fallen"] .roster-prog-summary {
   font-weight: bold;
 }
 .panel-fullwidth {
-  grid-column: 1 / -1;
+  /* SPEC-rediseno-ui Sub-A — fullwidth ocupa center+right (col 2 a último).
+   * Deja sidebar de facción intacta a la izquierda (col 1). */
+  grid-column: 2 / -1;
   background: rgba(20, 12, 8, 0.4);
   padding: 1rem;
   min-height: 60vh;
+  overflow-y: auto;
+}
+@media (max-width: 1100px) {
+  .panel-fullwidth { grid-column: 1 / -1; }
+}
+
+/* SPEC-rediseno-ui Sub-A — body lock cuando hay banda cargada (desktop).
+ * Evita doble scroll y permite que cada panel gestione el suyo. */
+@media (min-width: 1101px) {
+  body.has-warband { overflow: hidden; }
 }
 
 /* Fase 14-A PIVOT v2 — Badges fuente de banda. */
@@ -4076,6 +4131,14 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <p class="panel-subtitle">Tap para reclutar</p>
     <div id="unit-catalogue"></div>
   </section>
+
+  <!-- SPEC-rediseno-ui Sub-B — botón toggle sidebar facción (plegable). -->
+  <button class="faction-sidebar-toggle" id="btn-toggle-faction-sidebar"
+          aria-label="Mostrar/ocultar catálogo de facciones"
+          title="Mostrar/ocultar catálogo de facciones">
+    <span class="faction-sidebar-toggle-icon">▸</span>
+    <span class="faction-sidebar-toggle-label">Facciones</span>
+  </button>
 
   <!-- SUB-TABS dentro de BANDA (SPEC-rediseno-ui Sub-C) -->
   <nav class="banda-subtabs" id="banda-subtabs" role="tablist" aria-label="Vistas de la banda">
@@ -16444,7 +16507,37 @@ function el(tag, cls, html) {
   return e;
 }
 
+/**
+ * SPEC-rediseno-ui Sub-A — Selecciona automáticamente el primer modelo
+ * del roster si no hay selección activa (o la actual ya no existe).
+ * Mantiene la selección actual si sigue siendo válida.
+ */
+function ensureDefaultModelSelection() {
+  const wb = STATE.currentWarband;
+  if (!wb || !Array.isArray(wb.models) || wb.models.length === 0) {
+    STATE.selectedModelUid = null;
+    return;
+  }
+  const stillExists = STATE.selectedModelUid &&
+    wb.models.some(m => m.uid === STATE.selectedModelUid);
+  if (!stillExists) {
+    STATE.selectedModelUid = wb.models[0].uid;
+  }
+}
+
+/**
+ * SPEC-rediseno-ui Sub-A — Toggle body.has-warband para bloqueo scroll desktop.
+ */
+function syncBodyWarbandClass() {
+  if (typeof document === 'undefined' || !document.body) return;
+  const hasWb = !!(STATE.currentWarband && Array.isArray(STATE.currentWarband.models) &&
+                   STATE.currentWarband.models.length > 0);
+  document.body.classList.toggle('has-warband', hasWb);
+}
+
 function renderAll() {
+  ensureDefaultModelSelection();
+  syncBodyWarbandClass();
   renderFactionSelector();
   renderUnitCatalogue();
   renderRoster();
@@ -18742,6 +18835,32 @@ document.addEventListener('click', (e) => {
   const t = e.target && e.target.closest && e.target.closest('#btn-refresh-companion, [data-refresh-companion]');
   if (!t) return;
   handleRefreshCompanionClick();
+});
+
+/* SPEC-rediseno-ui Sub-B — Sidebar facción plegable handlers. */
+const FACTION_SIDEBAR_KEY = 'wf.ui.factionSidebarOpen';
+
+function setFactionSidebarOpen(open) {
+  if (typeof document === 'undefined' || !document.body) return;
+  document.body.classList.toggle('faction-sidebar-collapsed', !open);
+  try { localStorage.setItem(FACTION_SIDEBAR_KEY, open ? '1' : '0'); } catch (e) {}
+}
+
+function isFactionSidebarOpen() {
+  try {
+    const v = localStorage.getItem(FACTION_SIDEBAR_KEY);
+    if (v === '1') return true;
+    if (v === '0') return false;
+  } catch (e) {}
+  return false;  // Default plegada primera vez (SPEC decisión 2).
+}
+
+// Handler toggle via delegation (botón puede insertarse dinámicamente).
+document.addEventListener('click', (e) => {
+  const t = e.target && e.target.closest && e.target.closest('#btn-toggle-faction-sidebar');
+  if (!t) return;
+  e.preventDefault();
+  setFactionSidebarOpen(!isFactionSidebarOpen());
 });
 
 /* SPEC-rediseno-ui Sub-C — Sub-tabs handler. */
@@ -33568,6 +33687,8 @@ function boot() {
   syncPanelsToViewport();
   // SPEC-rediseno-ui Sub-C — restaurar sub-tab persistido.
   setBandaSubtab(getActiveBandaSubtab());
+  // SPEC-rediseno-ui Sub-B — restaurar sidebar facción (plegada default).
+  setFactionSidebarOpen(isFactionSidebarOpen());
 }
 
 boot();
