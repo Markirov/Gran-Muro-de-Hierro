@@ -1,0 +1,44 @@
+# Node
+node_modules/
+package-lock.json
+
+# Caveman compress backups
+*.original.md
+
+# OS metadata
+Thumbs.db
+.DS_Store
+desktop.ini
+**/desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.tmp
+
+# Claude local config
+.claude/
+
+# Carpeta interna — todo lo que no es necesario en GitHub
+# (PDFs canon, guías derivadas, specs/plans internos, samples, legacy)
+herramientas/
+
+# Assets pesados / propios
+STLs/
+assets/wwi-placeholders/
+
+# PDFs canon — bloqueo extra por si alguno escapa
+Trench-Crusade-Digital-Rulebook.pdf
+Warbands-of-Trench-Crusade.pdf
+Warband-Roster-Sheet.pdf
+Rules-Commentaries-1.0.2.pdf
+Changelog-*.pdf
+New-Antioch-*.pdf
+Prussian-Stosstruppen-*.pdf
+The-Great-Hunger.pdf
+The-Red-Brigade.pdf
+turno_referencia_trench_crusade.pdf
+
+# PDFs generados por Forge (samples Marcos para prueba visual)
+tarjetas-*.pdf
+battletrackers-*.pdf

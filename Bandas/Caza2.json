@@ -1,0 +1,508 @@
+{
+  "warband-id": 294322,
+  "warband-url": "https://trench-companion.com/warband/detail/294322",
+  "warband-name": "Protectores del Muro",
+  "ducat-bank": 2,
+  "glory-bank": 0,
+  "ducat-rating": 698,
+  "glory-rating": 0,
+  "models": [
+    {
+      "model-name": "Silahdar",
+      "model-id": "md_yuzbasicaptain_mv_silahdar",
+      "name": "Silahdar",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "+2",
+      "stat-ranged": "+2",
+      "stat-armour": "-3",
+      "cost": {
+        "ducats": 169,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Trench Shield",
+          "equipment-id": "eq_trenchshield",
+          "equipment-type": "shield"
+        },
+        {
+          "equipment-name": "Medi-Kit",
+          "equipment-id": "eq_medikit",
+          "equipment-type": "equipment"
+        },
+        {
+          "equipment-name": "Alchemist Armour",
+          "equipment-id": "eq_alchemistarmour",
+          "equipment-type": "armour"
+        },
+        {
+          "equipment-name": "Greatsword / Greataxe",
+          "equipment-id": "eq_greatswordaxe",
+          "equipment-type": "melee weapon"
+        },
+        {
+          "equipment-name": "Alaybozan",
+          "equipment-id": "eq_alaybozan",
+          "equipment-type": "ranged weapon"
+        },
+        {
+          "equipment-name": "Alchemical Ammunition",
+          "equipment-id": "eq_alchemicalammunition",
+          "equipment-type": "equipment"
+        },
+        {
+          "equipment-name": "Anqa Guard",
+          "equipment-id": "eq_anqaguard",
+          "equipment-type": "equipment"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "NEGATE FEAR",
+          "keyword-id": "kw_negate_kw_fear"
+        },
+        {
+          "keyword-name": "NEGATE GAS",
+          "keyword-id": "kw_negate_kw_gas"
+        },
+        {
+          "keyword-name": "NEGATE FIRE",
+          "keyword-id": "kw_negate_kw_fire"
+        },
+        {
+          "keyword-name": "TOUGH",
+          "keyword-id": "kw_tough"
+        },
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        },
+        {
+          "keyword-name": "STRONG",
+          "keyword-id": "kw_strong"
+        },
+        {
+          "keyword-name": "LEADER",
+          "keyword-id": "kw_leader"
+        },
+        {
+          "keyword-name": "ELITE",
+          "keyword-id": "kw_elite"
+        },
+        {
+          "keyword-name": "NEGATE HEAVY",
+          "keyword-id": "kw_negate_kw_heavy"
+        }
+      ]
+    },
+    {
+      "model-name": "Janissary Officer",
+      "model-id": "md_janissaries_mv_officer",
+      "name": "Janissary Officer",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "+1",
+      "stat-ranged": "+1",
+      "stat-armour": "-3",
+      "cost": {
+        "ducats": 127,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Reinforced Armour",
+          "equipment-id": "eq_reinforcedarmour",
+          "equipment-type": "armour"
+        },
+        {
+          "equipment-name": "Trench Shield",
+          "equipment-id": "eq_trenchshield",
+          "equipment-type": "shield"
+        },
+        {
+          "equipment-name": "Greatsword / Greataxe",
+          "equipment-id": "eq_greatswordaxe",
+          "equipment-type": "melee weapon"
+        },
+        {
+          "equipment-name": "Shotgun",
+          "equipment-id": "eq_shotgun",
+          "equipment-type": "ranged weapon"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Counter-Charge",
+          "ability-id": "ab_countercharge"
+        },
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        },
+        {
+          "keyword-name": "STRONG",
+          "keyword-id": "kw_strong"
+        },
+        {
+          "keyword-name": "ELITE",
+          "keyword-id": "kw_elite"
+        },
+        {
+          "keyword-name": "NEGATE HEAVY",
+          "keyword-id": "kw_negate_kw_heavy"
+        }
+      ]
+    },
+    {
+      "model-name": "Azeb",
+      "model-id": "md_azeb",
+      "name": "Azeb",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "-1",
+      "stat-ranged": "0",
+      "stat-armour": "0",
+      "cost": {
+        "ducats": 32,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Jezzail",
+          "equipment-id": "eq_jezzail",
+          "equipment-type": "ranged weapon"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        }
+      ]
+    },
+    {
+      "model-name": "Azeb",
+      "model-id": "md_azeb",
+      "name": "Azeb",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "-1",
+      "stat-ranged": "0",
+      "stat-armour": "0",
+      "cost": {
+        "ducats": 32,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Jezzail",
+          "equipment-id": "eq_jezzail",
+          "equipment-type": "ranged weapon"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        }
+      ]
+    },
+    {
+      "model-name": "Azeb",
+      "model-id": "md_azeb",
+      "name": "Azeb",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "-1",
+      "stat-ranged": "0",
+      "stat-armour": "0",
+      "cost": {
+        "ducats": 32,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Jezzail",
+          "equipment-id": "eq_jezzail",
+          "equipment-type": "ranged weapon"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        }
+      ]
+    },
+    {
+      "model-name": "Janissary Officer",
+      "model-id": "md_janissaries_mv_officer",
+      "name": "Janissary Officer",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "+1",
+      "stat-ranged": "+1",
+      "stat-armour": "-3",
+      "cost": {
+        "ducats": 127,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Reinforced Armour",
+          "equipment-id": "eq_reinforcedarmour",
+          "equipment-type": "armour"
+        },
+        {
+          "equipment-name": "Shotgun",
+          "equipment-id": "eq_shotgun",
+          "equipment-type": "ranged weapon"
+        },
+        {
+          "equipment-name": "Trench Shield",
+          "equipment-id": "eq_trenchshield",
+          "equipment-type": "shield"
+        },
+        {
+          "equipment-name": "Greatsword / Greataxe",
+          "equipment-id": "eq_greatswordaxe",
+          "equipment-type": "melee weapon"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Counter-Charge",
+          "ability-id": "ab_countercharge"
+        },
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        },
+        {
+          "keyword-name": "STRONG",
+          "keyword-id": "kw_strong"
+        },
+        {
+          "keyword-name": "ELITE",
+          "keyword-id": "kw_elite"
+        },
+        {
+          "keyword-name": "NEGATE HEAVY",
+          "keyword-id": "kw_negate_kw_heavy"
+        }
+      ]
+    },
+    {
+      "model-name": "Azeb",
+      "model-id": "md_azeb",
+      "name": "Azeb",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "-1",
+      "stat-ranged": "0",
+      "stat-armour": "0",
+      "cost": {
+        "ducats": 32,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Jezzail",
+          "equipment-id": "eq_jezzail",
+          "equipment-type": "ranged weapon"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        }
+      ]
+    },
+    {
+      "model-name": "Azeb",
+      "model-id": "md_azeb",
+      "name": "Azeb",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "-1",
+      "stat-ranged": "0",
+      "stat-armour": "0",
+      "cost": {
+        "ducats": 32,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Jezzail",
+          "equipment-id": "eq_jezzail",
+          "equipment-type": "ranged weapon"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        }
+      ]
+    },
+    {
+      "model-name": "Jabirean Alchemist",
+      "model-id": "md_jabireanalchemist",
+      "name": "Jabirean Alchemist",
+      "stat-move": "6\"/Infantry",
+      "stat-melee": "+1",
+      "stat-ranged": "+2",
+      "stat-armour": "-1",
+      "cost": {
+        "ducats": 115,
+        "glory": 0
+      },
+      "equipment": [
+        {
+          "equipment-name": "Sniper Rifle",
+          "equipment-id": "eq_sniperrifle",
+          "equipment-type": "ranged weapon"
+        },
+        {
+          "equipment-name": "Standard Armour",
+          "equipment-id": "eq_standardarmour",
+          "equipment-type": "armour"
+        },
+        {
+          "equipment-name": "Binoculars",
+          "equipment-id": "eq_binoculars",
+          "equipment-type": "equipment"
+        }
+      ],
+      "abilities": [
+        {
+          "ability-name": "Mastery of the Elements",
+          "ability-id": "ab_masteryoftheelements"
+        },
+        {
+          "ability-name": "Elemental Change",
+          "ability-id": "ab_elementalchange"
+        },
+        {
+          "ability-name": "Siege Jezzail Teams",
+          "ability-id": "rl_siegejezzailteams"
+        },
+        {
+          "ability-name": "Marksmanship of the Iron Wall",
+          "ability-id": "rl_marksmanshipoftheironwall"
+        }
+      ],
+      "upgrades": [],
+      "advancements": [],
+      "injuries": [],
+      "keywords": [
+        {
+          "keyword-name": "SULTANATE",
+          "keyword-id": "kw_sultanate"
+        },
+        {
+          "keyword-name": "ELITE",
+          "keyword-id": "kw_elite"
+        }
+      ]
+    }
+  ]
+}
