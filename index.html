@@ -33072,15 +33072,28 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
   ctx.beginPath(); ctx.moveTo(x0 + 30, sy); ctx.lineTo(x0 + w - 30, sy); ctx.stroke();
   sy += 10;
   const abList = data.abilities || [];
-  const abFont = abList.length >= 8 ? '11px serif' : (abList.length >= 6 ? '12px serif' : '13px serif');
-  const abStep = abList.length >= 8 ? 16 : 18;
+  // Dimensiona font según densidad. Con desc, cada item ocupa ~2 líneas.
+  const showDesc = abList.length <= 8;  // Sólo si caben (≤8) mostramos desc.
+  const nameFont = abList.length >= 8 ? 'bold 10px serif'
+                 : abList.length >= 6 ? 'bold 11px serif'
+                                       : 'bold 12px serif';
+  const descFont = abList.length >= 6 ? '9px serif' : '10px serif';
+  const itemStep = showDesc
+    ? (abList.length >= 6 ? 28 : 34)
+    : (abList.length >= 8 ? 14 : 16);
   if (abList.length === 0) {
     drawTextLeft(ctx, '— Sin habilidades especiales —', x0 + 36, sy, 'italic 12px serif', rgbStr(p.MUTED));
-    sy += abStep;
+    sy += itemStep;
   } else {
+    const maxDescChars = 90;
     for (const a of abList.slice(0, 12)) {
-      drawTextLeft(ctx, '▸ ' + (a.name || ''), x0 + 36, sy, abFont, rgbStr(p.TEXT));
-      sy += abStep;
+      drawTextLeft(ctx, '▸ ' + (a.name || ''), x0 + 36, sy, nameFont, rgbStr(p.TEXT));
+      if (showDesc && a.desc && a.desc.trim()) {
+        let d = a.desc.trim();
+        if (d.length > maxDescChars) d = d.slice(0, maxDescChars - 1) + '…';
+        drawTextLeft(ctx, d, x0 + 48, sy + 12, descFont, rgbStr(p.MUTED));
+      }
+      sy += itemStep;
     }
   }
   sy = Math.max(sy + 8, y0 + 780);
