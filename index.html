@@ -7058,9 +7058,11 @@ const ABILITY_LIBRARY = {
     summary: 'Modelos amigos a 6" pueden usar el Morale del Leader para Morale Checks. Bonus de mando.',
   },
   'ELITE': {
-    type: 'keyword',
-    summary: 'Modelo de élite: puede ganar XP, avances y cicatrices entre batallas. Limit: 1 LEADER + hasta 4 ELITE adicionales.',
+    type: 'tier',
+    summary: '',  // sin desc por petición Marcos — ELITE es tier conocido.
   },
+  'TROOPS': { type: 'tier', summary: '' },
+  'MERCENARY': { type: 'tier', summary: '' },
   'ARTIFICIAL': {
     type: 'keyword',
     summary: 'Construcción/criatura artificial: inmune a FEAR, INFECTION MARKERS y efectos psicológicos.',
@@ -32617,16 +32619,45 @@ function buildModelCardData(model, wb) {
     { label:'B', value: '0' /* bloodMarkers tracking visual; valor 0 base */ },
   ];
 
-  // Weapons (de equipment con type weapon).
+  // Weapons (de equipment con type weapon/grenade). Perfil completo:
+  // nombre + manos + rango + keywords. Enriquece desde DATA.armoury si el
+  // import Companion no trajo los detalles.
+  function _findArmouryByName(name) {
+    if (!wb.factionId || !DATA || !DATA.factions || !DATA.factions[wb.factionId]) return null;
+    const f = DATA.factions[wb.factionId];
+    if (!f.armoury) return null;
+    const lc = String(name || '').toLowerCase().trim();
+    for (const cat of Object.values(f.armoury)) {
+      const found = cat.find(x => String(x.name || '').toLowerCase().trim() === lc);
+      if (found) return found;
+    }
+    return null;
+  }
   const weapons = equipment.filter(e =>
     /weapon/i.test(e.type || '') || /grenade/i.test(e.type || '')
-  ).map(w => ({
-    name: w.name,
-    range: w.range || '—',
-    dice:  w.dice  || '—',
-    injury: w.injury || '—',
-    keyword: (w.keywords && w.keywords.join ? w.keywords.join(' ') : '') || '',
-  }));
+  ).map(w => {
+    const enriched = _findArmouryByName(w.name) || {};
+    const t = String(w.type || enriched.type || '');
+    let hand = '';
+    if (/2-?handed/i.test(t)) hand = '2H';
+    else if (/1-?handed/i.test(t)) hand = '1H';
+    else if (/pistol/i.test(t)) hand = 'Pistol';
+    else if (/grenade/i.test(t)) hand = 'Granada';
+    else if (/shield/i.test(t)) hand = 'Shield';
+    const kwArrSrc = (Array.isArray(w.keywords) && w.keywords.length) ? w.keywords
+                   : (Array.isArray(enriched.weaponKeywords) ? enriched.weaponKeywords : []);
+    const kwArr = kwArrSrc.map(k => typeof k === 'string' ? k : (k && k.name) || '').filter(Boolean);
+    return {
+      name: w.name,
+      type: t,
+      hand,
+      range: w.range || enriched.range || '—',
+      dice:  w.dice  || '—',
+      injury: w.injury || '—',
+      keywords: kwArr,
+      keyword: kwArr.join(' · '),
+    };
+  });
 
   // Battlekit (equipment no-weapon).
   const battlekit = equipment.filter(e =>
@@ -33144,25 +33175,41 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
   }
   sy += 80;
 
-  // 6) EQUIPO — armas + battlekit unificados en una sola sección.
+  // 6) EQUIPO — armas (perfil completo: manos/rango/keywords) + battlekit.
   drawTextLeft(ctx, 'EQUIPO', x0 + 30, sy, 'bold 14px serif', rgbStr(sectionColor));
   sy += 18;
   ctx.strokeStyle = rgbStr(p.MUTED); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(x0 + 30, sy); ctx.lineTo(x0 + w - 30, sy); ctx.stroke();
   sy += 8;
-  // Armas con stats + battlekit (gear) en listado mezclado.
+  // Armas con perfil completo: nombre + manos + rango + daño + keywords.
   for (const wpn of (data.weapons || []).slice(0, 4)) {
-    drawTextLeft(ctx, '⚔ ' + wpn.name, x0 + 36, sy, '13px serif', rgbStr(p.TEXT));
-    drawTextLeft(ctx, wpn.range + ' / ' + wpn.dice + 'D / I' + wpn.injury,
-                 x0 + 250, sy, '11px monospace', rgbStr(p.MUTED));
-    sy += 18;
+    const handStr = wpn.hand ? ' [' + wpn.hand + ']' : '';
+    drawTextLeft(ctx, '⚔ ' + wpn.name + handStr, x0 + 36, sy, 'bold 12px serif', rgbStr(p.TEXT));
+    sy += 13;
+    // Línea perfil: Rango · Dado · Injury.
+    const stats = (wpn.range && wpn.range !== '—' ? wpn.range : '') +
+                  (wpn.dice && wpn.dice !== '—' ? '  ·  ' + wpn.dice + 'D' : '') +
+                  (wpn.injury && wpn.injury !== '—' ? '  ·  I' + wpn.injury : '');
+    if (stats.trim()) {
+      drawTextLeft(ctx, stats, x0 + 48, sy, '10px monospace', rgbStr(p.MUTED));
+      sy += 12;
+    }
+    // Línea keywords.
+    if (wpn.keyword && wpn.keyword.trim()) {
+      let kw = wpn.keyword;
+      if (kw.length > 80) kw = kw.slice(0, 79) + '…';
+      drawTextLeft(ctx, kw, x0 + 48, sy, '9px serif', rgbStr(p.MUTED));
+      sy += 11;
+    }
+    sy += 3;
   }
+  // Battlekit (gear no-arma) bajo armas.
   for (const b of (data.battlekit || []).slice(0, 6)) {
     drawTextLeft(ctx, '◆ ' + (b.name || ''), x0 + 36, sy, '12px serif', rgbStr(p.TEXT));
     if (b.type) drawTextLeft(ctx, b.type, x0 + w - 200, sy, 'italic 11px serif', rgbStr(p.MUTED));
     sy += 17;
   }
-  sy = Math.max(sy + 8, y0 + 480);
+  sy = Math.max(sy + 8, y0 + 520);
 
   // 7) REGLAS & HABILIDADES.
   drawTextLeft(ctx, 'REGLAS & HABILIDADES', x0 + 30, sy, 'bold 14px serif', rgbStr(sectionColor));
@@ -33179,19 +33226,29 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
     sy += 18;
   } else {
     const maxDescChars = 110;
-    // Regla: desc siempre, excepto reglas de facción, NEGATE (X) y
-    // faction tags (SULTANATE, HERETIC, etc — marcados con type='factionTag').
+    // Regla: desc siempre, excepto:
+    //   · NEGATE (X) — autoexplicativos
+    //   · factionTags (SULTANATE, HERETIC) — type='factionTag' en library
+    //   · tiers (ELITE, TROOPS, MERCENARY) — type='tier' en library
+    // Variant rules (Siege Jezzail Teams, Bagpipes, etc) SÍ muestran desc.
     const shouldShowDesc = (a) => {
       if (!a.desc || !a.desc.trim()) return false;
-      if (a.kind === 'factionRule') return false;
       if (/^NEGATE\b/i.test(a.name || '')) return false;
       if (typeof ABILITY_LIBRARY !== 'undefined') {
         const entry = ABILITY_LIBRARY[a.name];
-        if (entry && entry.type === 'factionTag') return false;
+        if (entry && (entry.type === 'factionTag' || entry.type === 'tier')) return false;
       }
       return true;
     };
-    for (const a of abList.slice(0, 12)) {
+    // Reorden: items con desc visible primero, sin desc al final.
+    // Marcos: "Mueve todas las palabras sin descripción al final, para
+    // que sea más fácil de buscar".
+    const sortedList = abList.slice().sort((a, b) => {
+      const ad = shouldShowDesc(a) ? 0 : 1;
+      const bd = shouldShowDesc(b) ? 0 : 1;
+      return ad - bd;
+    });
+    for (const a of sortedList.slice(0, 12)) {
       drawTextLeft(ctx, '▸ ' + (a.name || ''), x0 + 36, sy, nameFont, rgbStr(p.TEXT));
       if (shouldShowDesc(a)) {
         let d = a.desc.trim();
