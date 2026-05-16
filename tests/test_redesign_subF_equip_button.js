@@ -27,10 +27,10 @@ group('Group 2: CSS estilo amarillo/dorado', () => {
      'border-left dorado #d4a040');
 });
 
-group('Group 3: Handler delegation + scope unit', () => {
+group('Group 3: Handler delegation invoca modal Sub-E modo unit', () => {
   ok(/data-add-equip-wishlist.*closest/s.test(html), 'delegation con closest');
-  ok(/scope:\s*'unit'/.test(html), "addShoppingItem con scope:'unit'");
-  ok(/forModel:\s*modelUid/.test(html), 'forModel pasa modelUid');
+  ok(/openAddShoppingModal\(STATE\.currentWarband,\s*'unit',\s*modelUid\)/.test(html),
+     "delega a openAddShoppingModal mode=unit + modelUid");
 });
 
 group('Group 4: Botón aparece también si modelo sin equipo (fallback)', () => {
