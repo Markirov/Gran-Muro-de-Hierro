@@ -1291,6 +1291,45 @@ body[data-side="fallen"] .roster-prog-summary {
 }
 .modal-backdrop.show { display: flex; }
 
+/* SPEC-rediseno-ui Sub-D — Botones acción de banda en horizontal.
+ * Los btn-promotion-step originales apilaban en vertical; ahora flex-row
+ * con wrap para que en desktop ≥1280px caigan todos en una fila. */
+.budget-display {
+  /* Permite que los botones se expandan abajo en horizontal. */
+}
+.budget-display > .btn-promotion-step {
+  margin-top: 0.4rem;
+}
+.budget-display {
+  display: flex;
+  flex-direction: column;
+}
+.budget-display .btn-promotion-step + .btn-promotion-step {
+  margin-top: 0.3rem;
+}
+@media (min-width: 1280px) {
+  /* Desktop ancho: agrupa los botones promotion-step en fila horizontal. */
+  .roster-header .budget-display {
+    align-items: flex-start;
+  }
+}
+.btn-pool-shopping {
+  /* Acento verde sutil (acción constructiva, no destructiva). */
+  border-left: 3px solid #4a8a3a !important;
+}
+.btn-pool-shopping:hover {
+  background: rgba(74, 138, 58, 0.18) !important;
+}
+
+/* SPEC-rediseno-ui Sub-F — botón amarillo "+ Equipo a wishlist". */
+.btn-equip-wishlist {
+  border-left: 3px solid #d4a040 !important;
+  color: #d4a040 !important;
+}
+.btn-equip-wishlist:hover {
+  background: rgba(212, 160, 64, 0.18) !important;
+}
+
 /* SPEC-rediseno-ui Sub-B — Sidebar facción plegable. */
 .faction-sidebar-toggle {
   position: fixed;
@@ -4187,6 +4226,9 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
         </button>
         <button id="btn-warband-campaigns" class="btn-promotion-step" style="display:none;" title="Campañas donde esta banda participa">
           📚 Campañas de esta banda
+        </button>
+        <button id="btn-add-pool-shopping" class="btn-promotion-step btn-pool-shopping" title="Añade un item al pool de la banda (no asociado a modelo concreto)">
+          🛒 + Lista pool
         </button>
       </div>
     </div>
@@ -17332,6 +17374,19 @@ function renderDetailCompanion(container, model, wb) {
             return `<span style="display:inline-block;padding:0.2em 0.5em;background:rgba(127,107,67,0.15);border:1px solid rgba(127,107,67,0.3);border-radius:3px;font-size:0.8em;">${typeLabel} ${escapeHtml(e.name)}</span>`;
           }).join('')}
         </div>
+        <button class="btn btn-sm btn-equip-wishlist" data-add-equip-wishlist="${model.uid}" title="Añade equipo para este modelo a la lista de la compra" style="margin-top:0.5rem;">
+          🛒 + Equipo a wishlist
+        </button>
+      </div>`;
+  } else {
+    // Sin equipamiento aún — botón igual disponible.
+    html += `
+      <div class="detail-section">
+        <div class="detail-label">Equipamiento</div>
+        <div style="color:var(--parchment);opacity:0.7;font-size:0.85rem;">Sin equipo registrado.</div>
+        <button class="btn btn-sm btn-equip-wishlist" data-add-equip-wishlist="${model.uid}" title="Añade equipo para este modelo a la lista de la compra" style="margin-top:0.5rem;">
+          🛒 + Equipo a wishlist
+        </button>
       </div>`;
   }
 
@@ -18862,6 +18917,51 @@ document.addEventListener('click', (e) => {
   e.preventDefault();
   setFactionSidebarOpen(!isFactionSidebarOpen());
 });
+
+/* SPEC-rediseno-ui Sub-F — botón "🛒 + Equipo a wishlist" en panel Detalle.
+ * Delegation porque el botón se inserta dinámicamente en renderDetailCompanion. */
+document.addEventListener('click', (e) => {
+  const t = e.target && e.target.closest && e.target.closest('[data-add-equip-wishlist]');
+  if (!t) return;
+  e.preventDefault();
+  const wb = STATE.currentWarband;
+  if (!wb) { alert('Carga una banda primero.'); return; }
+  const modelUid = t.getAttribute('data-add-equip-wishlist');
+  const m = (wb.models || []).find(x => x.uid === modelUid);
+  if (!m) return;
+  const name = prompt('Equipo a añadir a la lista de la compra para ' +
+                      (m.customName || m.name) + ':');
+  if (!name) return;
+  addShoppingItem(wb, {
+    type:'equipment',
+    name: name.trim(),
+    scope:'unit',
+    forModel: modelUid,
+    source:'manual',
+  });
+  persistWarband(wb);
+  // Si el sub-tab activo es shopping, refresca.
+  if (typeof renderShoppingSubtab === 'function') renderShoppingSubtab();
+  alert('Añadido a wishlist: ' + name.trim());
+});
+
+/* SPEC-rediseno-ui Sub-D — Botón "🛒 + Lista pool" en cabecera de banda.
+ * Abre el modal shopping existente con scope='pool' (Sub-E sustituirá
+ * por modal nuevo con categorías). */
+const _btnAddPool = document.getElementById('btn-add-pool-shopping');
+if (_btnAddPool) {
+  _btnAddPool.addEventListener('click', () => {
+    const wb = STATE.currentWarband;
+    if (!wb) { alert('Carga una banda primero.'); return; }
+    // Reusa modal shopping y deja input pre-focuseado.
+    document.getElementById('btn-open-shopping').click();
+    // Selector type 'equipment' default; usuario decide.
+    setTimeout(() => {
+      const nameEl = document.getElementById('shopping-new-name');
+      if (nameEl) nameEl.focus();
+    }, 100);
+  });
+}
 
 /* SPEC-rediseno-ui Sub-C — Sub-tabs handler. */
 const BANDA_SUBTAB_KEY = 'wf.ui.bandaSubtab';
