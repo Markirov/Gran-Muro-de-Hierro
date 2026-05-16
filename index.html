@@ -146,13 +146,22 @@ header.app-header::after {
 
 /* Hamburger toggle: hidden on desktop, visible on mobile (≤768px) */
 .header-menu-toggle {
-  display: none;
+  /* Visible en TODOS los tamaños — abre drawer con acciones secundarias.
+   * Marcos pidió hamburguesa para colapsar botones que se comen pantalla. */
+  display: inline-flex !important;
   min-width: 40px;
   min-height: 40px;
   font-size: 1.1rem;
   padding: 0.4rem 0.7rem;
   align-items: center;
   justify-content: center;
+}
+/* En desktop ≥769px, ocultar botones secondary del header. Siguen
+ * accesibles via drawer ☰. */
+@media (min-width: 769px) {
+  .header-actions .btn[data-action-priority="secondary"] {
+    display: none;
+  }
 }
 
 /* Drawer: hidden by default; opens with .open class. Mobile-only. */
@@ -1290,6 +1299,74 @@ body[data-side="fallen"] .roster-prog-summary {
   padding: 1rem;
 }
 .modal-backdrop.show { display: flex; }
+
+/* Config menu dropdown (rueda ⚙ arriba derecha). */
+.config-menu-wrap { display: inline-block; }
+.config-menu-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.3rem);
+  min-width: 240px;
+  background: rgba(20,12,8,0.97);
+  border: 1px solid var(--gold, #c9a961);
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  z-index: 200;
+  padding: 0.3rem;
+}
+.config-menu-dropdown.show { display: block; }
+.config-menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--parchment, #d8c9a8);
+  padding: 0.55rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  border-radius: 3px;
+}
+.config-menu-item:hover {
+  background: rgba(127,107,67,0.18);
+  color: var(--gold, #c9a961);
+}
+
+/* Disclaimer fan-made toast — aparece 2s al entrar primera vez. */
+.disclaimer-toast {
+  position: fixed;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-150%);
+  background: rgba(20, 12, 8, 0.96);
+  border: 2px solid var(--gold, #c9a961);
+  border-radius: 6px;
+  padding: 0.9rem 1.4rem;
+  z-index: 9000;
+  max-width: 90vw;
+  width: 480px;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.55);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2), opacity 0.25s;
+  opacity: 0;
+  pointer-events: none;
+}
+.disclaimer-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+.disclaimer-toast-inner strong {
+  display: block;
+  color: var(--gold, #c9a961);
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+.disclaimer-toast-inner p {
+  color: var(--parchment, #d8c9a8);
+  font-size: 0.82rem;
+  margin: 0;
+  line-height: 1.4;
+}
 
 /* SPEC-rediseno-ui Sub-I — Drag&drop reorden roster (desktop). */
 .roster-card[draggable="true"] {
@@ -4105,24 +4182,31 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
   <div class="brand">
     <h1>WARBAND FORGE</h1>
     <span class="subtitle">Trench Crusade · Forjador de Bandas</span>
-    <span class="quote">"For eight centuries the Church has waged its crusade. The armies are at a stalemate."</span>
+    <span class="quote">«Durante ocho siglos la Iglesia ha librado su cruzada. Los ejércitos están en tablas.»</span>
   </div>
   <div class="mode-switcher">
     <button class="mode-btn active" data-mode="banda">⚔ Banda</button>
     <button class="mode-btn" data-mode="campana">🗡 Campaña</button>
     <button class="mode-btn" data-mode="lab">🔬 Lab</button>
     <button class="mode-btn" data-mode="battle">📋 Partida</button>
-    <button class="btn" id="btn-open-account" style="margin-left:auto;background:#2b3e5c;border-color:#4a6a8c;color:#cfd8e6;" title="Iniciar sesión / Tu cuenta (Ctrl+Alt+G)">☁ Tu cuenta</button>
-    <button class="btn" id="btn-open-github-sync-global" style="background:#3a3a3a;border-color:#666;color:#ccc;font-size:0.78rem;" title="(Avanzado) Backup via GitHub Gist">GitHub</button>
+    <div class="config-menu-wrap" style="margin-left:auto;position:relative;">
+      <button class="btn btn-icon" id="btn-config-menu" title="Configuración · cuenta · ayuda" aria-haspopup="true" aria-expanded="false" style="font-size:1.1rem;">⚙</button>
+      <div class="config-menu-dropdown" id="config-menu-dropdown" role="menu">
+        <button class="config-menu-item" data-config-action="account">☁ Tu cuenta (sync Google)</button>
+        <button class="config-menu-item" data-config-action="github">🔗 Backup avanzado (GitHub)</button>
+        <button class="config-menu-item" data-config-action="welcome">❓ Tour de bienvenida</button>
+        <button class="config-menu-item" data-config-action="disclaimer">⚠ Disclaimer fan-made</button>
+      </div>
+    </div>
   </div>
   <div class="header-actions" id="actions-banda">
+    <!-- 4 botones esenciales visibles en desktop. El resto via hamburguesa. -->
     <button class="btn btn-primary" id="btn-import-companion" data-action-priority="primary" title="Importa una banda creada en Trench Companion (https://trench-companion.com)">⤓ Importar de Companion</button>
-    <button class="btn" id="btn-refresh-companion" data-action-priority="primary" title="Re-importa desde Companion preservando variantes experimentales y lista de la compra">🔄 Refrescar de Companion</button>
+    <button class="btn" id="btn-refresh-companion" data-action-priority="primary" title="Re-importa desde Companion preservando variantes experimentales y lista de la compra">🔄 Refrescar</button>
     <button class="btn" id="btn-open-sandbox" data-action-priority="primary" title="Bifurca variantes experimentales de loadout sin tocar la banda canon">🧪 Variantes</button>
     <button class="btn" id="btn-open-shopping" data-action-priority="primary" title="Lista de la compra para programar adquisiciones futuras">🛒 Lista compra</button>
-    <button class="btn btn-primary" id="btn-open-github-sync" data-action-priority="primary" style="background:#2b3e5c;border-color:#4a6a8c;" title="Backup/restaura todas tus bandas en un GitHub Gist privado">☁ Backup GitHub</button>
-    <button class="btn" id="btn-show-welcome" data-action-priority="secondary" title="Volver a ver el tour de bienvenida">❓ Ayuda</button>
-    <button class="btn" id="btn-export-companion" data-action-priority="primary" title="Exporta esta banda en formato Companion JSON para volver a Trench Companion">⤒ Exportar a Companion</button>
+    <!-- Botones secundarios — accesibles vía ☰ siempre. -->
+    <button class="btn" id="btn-export-companion" data-action-priority="secondary" title="Exporta esta banda en formato Companion JSON para volver a Trench Companion">⤒ Exportar a Companion</button>
     <button class="btn" id="btn-new" data-action-priority="secondary" title="Crea una banda manualmente con el catálogo local (modo offline)">✠ Nueva Manual</button>
     <button class="btn" id="btn-load" data-action-priority="secondary">📜 Cargar</button>
     <button class="btn" id="btn-save-as" data-action-priority="secondary">💾 Guardar Como</button>
@@ -4138,6 +4222,9 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
             title="Genera PDF con los battletrackers (cuarto folio, 2 por hoja A4)">
       ⊞ Battletrackers PDF
     </button>
+    <!-- Botones legacy ocultos pero presentes para no romper handlers. -->
+    <button class="btn" id="btn-open-github-sync" data-action-priority="secondary" style="display:none;" title="(legacy) Backup via GitHub Gist">☁ GitHub legacy</button>
+    <button class="btn" id="btn-show-welcome" data-action-priority="secondary" style="display:none;" title="(legacy) Welcome">❓ Welcome</button>
     <button class="btn btn-icon header-menu-toggle" id="header-menu-banda" aria-label="Menú" title="Más acciones">☰</button>
     <span style="margin-left:auto;font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);letter-spacing:0.15em;text-transform:uppercase;" id="auto-save-status">Auto-save activo</span>
   </div>
@@ -4204,21 +4291,36 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
 <!-- ============ MAIN ============ -->
 <main>
 
-  <!-- LEFT: Faction & Unit Catalogue -->
+  <!-- LEFT: Bandas cargadas (default) o Catálogo facción (modo offline) -->
   <section class="panel panel-left" id="panel-catalogue">
-    <h2 class="panel-title">Facción</h2>
-    <p class="panel-subtitle">Elige tu bando en la Gran Guerra</p>
-
-    <div class="faction-select" id="faction-select"></div>
-
-    <div class="variant-select" id="variant-select" style="display:none;">
-      <label>Variante de Banda</label>
-      <select class="variant-dropdown" id="variant-dropdown"></select>
+    <!-- Vista bandas cargadas: lista de bandas en localStorage. -->
+    <div id="panel-bands-list">
+      <h2 class="panel-title">Tus bandas</h2>
+      <p class="panel-subtitle">Click para activar · drag para reordenar</p>
+      <div id="loaded-bands-list" style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.5rem;"></div>
+      <button id="btn-show-faction-catalogue" class="btn" style="margin-top:1rem;width:100%;font-size:0.78rem;" title="Cambia a vista catálogo facción (modo Nueva Manual)">
+        ⇄ Ver catálogo de facción
+      </button>
     </div>
+    <!-- Vista catálogo facción (modo manual). -->
+    <div id="panel-faction-catalogue" style="display:none;">
+      <button id="btn-show-bands-list" class="btn" style="margin-bottom:0.8rem;width:100%;font-size:0.78rem;">
+        ← Volver a tus bandas
+      </button>
+      <h2 class="panel-title">Facción</h2>
+      <p class="panel-subtitle">Elige tu bando en la Gran Guerra</p>
 
-    <h2 class="panel-title" style="margin-top:1.5rem;">Unidades</h2>
-    <p class="panel-subtitle">Tap para reclutar</p>
-    <div id="unit-catalogue"></div>
+      <div class="faction-select" id="faction-select"></div>
+
+      <div class="variant-select" id="variant-select" style="display:none;">
+        <label>Variante de Banda</label>
+        <select class="variant-dropdown" id="variant-dropdown"></select>
+      </div>
+
+      <h2 class="panel-title" style="margin-top:1.5rem;">Unidades</h2>
+      <p class="panel-subtitle">Tap para reclutar</p>
+      <div id="unit-catalogue"></div>
+    </div>
   </section>
 
   <!-- CENTER: Warband Roster -->
@@ -4889,6 +4991,39 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <div class="modal-actions">
       <button class="btn" data-close>Cancelar</button>
       <button class="btn btn-primary" id="btn-do-new-campaign">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DISCLAIMER FAN-MADE TOAST ============ -->
+<div id="disclaimer-toast" class="disclaimer-toast">
+  <div class="disclaimer-toast-inner">
+    <strong>⚠ Página fan-made</strong>
+    <p>Warband Forge es una herramienta no oficial creada por fans. Trench Crusade es propiedad de Factory Fortress Inc.</p>
+  </div>
+</div>
+
+<!-- ============ DISCLAIMER FULL MODAL (desde menú config) ============ -->
+<div class="modal-backdrop" id="modal-disclaimer">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>⚠ Disclaimer · Página fan-made</h3>
+    <div style="color:var(--parchment);font-size:0.9rem;line-height:1.6;padding:0.5rem 0;">
+      <p><strong>Warband Forge</strong> es una herramienta no oficial creada por la comunidad de fans de
+      <strong>Trench Crusade</strong>.</p>
+      <p>Trench Crusade y todas sus marcas, ilustraciones, textos canon y propiedad intelectual son propiedad
+      de <a href="https://www.trenchcrusade.com" target="_blank" rel="noopener" style="color:var(--gold);">Factory Fortress Inc.</a></p>
+      <p>Esta aplicación no compite con
+      <a href="https://trench-companion.com" target="_blank" rel="noopener" style="color:var(--gold);">Trench Companion</a>
+      (la herramienta oficial). Warband Forge actúa como companion físico-experimental: importa bandas creadas
+      en TC, te deja experimentar variantes en sandbox, genera tarjetas/battletrackers imprimibles y simula
+      tácticas en el Lab estadístico.</p>
+      <p>Sin afiliación oficial. Sin recogida de datos personales. Tu información vive solo en tu navegador
+      (o en tu cuenta Google/GitHub si activas sincronización).</p>
+      <p style="opacity:0.7;font-size:0.82rem;margin-top:1rem;">Versión single-file HTML, código fuente público.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" data-close>Entendido</button>
     </div>
   </div>
 </div>
@@ -20424,14 +20559,128 @@ document.getElementById('btn-welcome-dismiss').addEventListener('click', () => {
   closeModal('modal-welcome');
 });
 
-// Auto-show en primera visita (flag en localStorage).
-(function autoShowWelcomeFirstVisit() {
-  try {
-    if (!localStorage.getItem(WELCOME_FLAG_KEY)) {
-      // Pequeño delay para que el DOM termine de renderizar.
-      setTimeout(() => openModal('modal-welcome'), 500);
+/* Panel izquierdo — vista "Tus bandas" vs "Catálogo facción". */
+const LEFT_PANEL_VIEW_KEY = 'wf.ui.leftPanelView';
+
+function setLeftPanelView(view) {
+  const bands = document.getElementById('panel-bands-list');
+  const cat = document.getElementById('panel-faction-catalogue');
+  if (!bands || !cat) return;
+  const showBands = view !== 'catalogue';
+  bands.style.display = showBands ? '' : 'none';
+  cat.style.display = showBands ? 'none' : '';
+  try { localStorage.setItem(LEFT_PANEL_VIEW_KEY, showBands ? 'bands' : 'catalogue'); } catch (e) {}
+  if (showBands) renderLoadedBandsList();
+}
+
+function renderLoadedBandsList() {
+  const cont = document.getElementById('loaded-bands-list');
+  if (!cont) return;
+  cont.innerHTML = '';
+  const idx = (typeof loadIndex === 'function') ? loadIndex() : [];
+  if (idx.length === 0) {
+    cont.innerHTML = '<p style="color:var(--parchment);opacity:0.7;font-size:0.85rem;font-style:italic;">No hay bandas guardadas. Importa una de Companion o crea Nueva Manual.</p>';
+    return;
+  }
+  const currentId = STATE.currentWarband && STATE.currentWarband.id;
+  idx.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  for (const entry of idx) {
+    const row = document.createElement('button');
+    row.className = 'loaded-band-row';
+    row.setAttribute('data-wb-id', entry.id);
+    if (entry.id === currentId) row.classList.add('active');
+    row.style.cssText = 'text-align:left;padding:0.6rem 0.7rem;border:1px solid rgba(127,107,67,0.3);border-radius:4px;background:rgba(20,12,8,0.4);color:var(--parchment);cursor:pointer;font-family:inherit;';
+    if (entry.id === currentId) {
+      row.style.borderColor = 'var(--gold)';
+      row.style.background = 'rgba(95,25,25,0.35)';
     }
-  } catch (e) { /* localStorage no disponible — skip */ }
+    const fac = entry.factionId ? entry.factionId.replace(/-/g, ' ') : '—';
+    row.innerHTML =
+      '<div style="font-weight:bold;color:' + (entry.id === currentId ? 'var(--gold)' : 'var(--parchment)') + ';">' +
+        escapeHtml(entry.name || '(Sin nombre)') + '</div>' +
+      '<div style="font-size:0.72rem;opacity:0.7;margin-top:0.2rem;">' +
+        escapeHtml(fac) + ' · ' + (entry.models || 0) + ' modelos</div>';
+    row.addEventListener('click', () => {
+      if (typeof loadWarband === 'function') {
+        const wb = loadWarband(entry.id);
+        if (wb) {
+          STATE.currentWarband = wb;
+          STATE.selectedModelUid = null;
+          localStorage.setItem('warband-forge-v1:current', wb.id);
+          if (typeof renderAll === 'function') renderAll();
+          renderLoadedBandsList();
+        }
+      }
+    });
+    cont.appendChild(row);
+  }
+}
+
+(function setupLeftPanelToggle() {
+  const btnCat = document.getElementById('btn-show-faction-catalogue');
+  const btnBack = document.getElementById('btn-show-bands-list');
+  if (btnCat) btnCat.addEventListener('click', () => setLeftPanelView('catalogue'));
+  if (btnBack) btnBack.addEventListener('click', () => setLeftPanelView('bands'));
+})();
+
+// Hook renderLoadedBandsList tras persistWarband para auto-refresh.
+if (typeof persistWarband === 'function') {
+  const _origPersistWb = persistWarband;
+  persistWarband = function(wb) {
+    const r = _origPersistWb.apply(this, arguments);
+    if (typeof renderLoadedBandsList === 'function') {
+      try { renderLoadedBandsList(); } catch (e) {}
+    }
+    return r;
+  };
+}
+
+/* Menú config dropdown (rueda ⚙) — toggle + acciones. */
+(function setupConfigMenu() {
+  const btn = document.getElementById('btn-config-menu');
+  const dd = document.getElementById('config-menu-dropdown');
+  if (!btn || !dd) return;
+  function close() { dd.classList.remove('show'); btn.setAttribute('aria-expanded','false'); }
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = dd.classList.toggle('show');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', (e) => {
+    if (!dd.contains(e.target) && e.target !== btn) close();
+  });
+  dd.addEventListener('click', (e) => {
+    const item = e.target.closest('[data-config-action]');
+    if (!item) return;
+    close();
+    const action = item.getAttribute('data-config-action');
+    if (action === 'account') openAccountModal();
+    else if (action === 'github') _openGithubSyncModal();
+    else if (action === 'welcome') openModal('modal-welcome');
+    else if (action === 'disclaimer') openModal('modal-disclaimer');
+  });
+})();
+
+// Disclaimer fan-made primera visita: aparece 2s y se cierra solo.
+// Accesible siempre desde el menú de configuración (rueda ⚙).
+const DISCLAIMER_FLAG_KEY = 'wf-disclaimer-seen';
+function showFanMadeDisclaimer(autoCloseMs) {
+  const el = document.getElementById('disclaimer-toast');
+  if (!el) return;
+  el.classList.add('show');
+  if (typeof autoCloseMs === 'number' && autoCloseMs > 0) {
+    setTimeout(() => el.classList.remove('show'), autoCloseMs);
+  }
+}
+(function autoShowDisclaimerFirstVisit() {
+  try {
+    if (!localStorage.getItem(DISCLAIMER_FLAG_KEY)) {
+      setTimeout(() => {
+        showFanMadeDisclaimer(2000);
+        localStorage.setItem(DISCLAIMER_FLAG_KEY, '1');
+      }, 400);
+    }
+  } catch (e) {}
 })();
 
 /* Fase 13 PIVOT v2 — Shopping list modal handlers. */
@@ -30486,6 +30735,8 @@ function openHeaderDrawer() {
   buttons.forEach(srcBtn => {
     // Skip the hamburger toggle itself
     if (srcBtn.classList.contains('header-menu-toggle')) return;
+    // Skip botones legacy ocultos explícitamente con display:none inline.
+    if (srcBtn.style && srcBtn.style.display === 'none') return;
     const clone = document.createElement('button');
     clone.className = srcBtn.className;
     clone.textContent = srcBtn.textContent;
@@ -35070,6 +35321,10 @@ function boot() {
   setBandaSubtab(getActiveBandaSubtab());
   // SPEC-rediseno-ui Sub-B — restaurar sidebar facción (plegada default).
   setFactionSidebarOpen(isFactionSidebarOpen());
+  // Item 2 — panel izquierdo: vista "Tus bandas" por default.
+  let leftView = 'bands';
+  try { leftView = localStorage.getItem(LEFT_PANEL_VIEW_KEY) || 'bands'; } catch (e) {}
+  setLeftPanelView(leftView);
   // Sub-OA-C — auto-restore desde GitHub Gist si hay sesión OAuth activa.
   if (typeof _ghAutoRestoreOnBoot === 'function') _ghAutoRestoreOnBoot();
 }

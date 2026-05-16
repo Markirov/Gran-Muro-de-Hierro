@@ -92,7 +92,8 @@ group('Group 7: UI modal + botón en DOM', () => {
   const dom = new JSDOM(html, { runScripts: 'outside-only' });
   const doc = dom.window.document;
   ok(!!doc.getElementById('modal-firebase-login'), 'modal-firebase-login');
-  ok(!!doc.getElementById('btn-open-account'), 'btn-open-account header');
+  ok(!!doc.getElementById('btn-config-menu'), 'btn-config-menu header (config rueda)');
+  ok(/data-config-action="account"/.test(html), 'item "Tu cuenta" en menú config');
   ok(!!doc.getElementById('btn-fb-login-google'), 'btn-fb-login-google');
   ok(!!doc.getElementById('btn-fb-logout'), 'btn-fb-logout');
   ok(!!doc.getElementById('btn-fb-force-sync'), 'btn force sync');

@@ -49,7 +49,10 @@ group('Group 3: pasos del flujo en el tour', () => {
 
 group('Group 4: persistencia primera visita', () => {
   ok(/wf-tour-seen/.test(html), 'localStorage flag wf-tour-seen');
-  ok(/autoShowWelcomeFirstVisit/.test(html), 'autoShowWelcomeFirstVisit definido');
+  // Auto-show del modal welcome reemplazado por disclaimer fan-made
+  // (toast 2s). Modal welcome sigue accesible desde menú config (⚙).
+  ok(/autoShowDisclaimerFirstVisit|wf-disclaimer-seen/.test(html),
+     'disclaimer fan-made auto-show sustituye al welcome auto-show');
   ok(/localStorage\.setItem\(WELCOME_FLAG_KEY/.test(html), 'guarda flag tras dismiss');
 });
 
