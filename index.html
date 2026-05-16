@@ -1291,6 +1291,21 @@ body[data-side="fallen"] .roster-prog-summary {
 }
 .modal-backdrop.show { display: flex; }
 
+/* SPEC-rediseno-ui Sub-I — Drag&drop reorden roster (desktop). */
+.roster-card[draggable="true"] {
+  cursor: grab;
+}
+.roster-card.dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+.roster-card.drop-target-before {
+  border-top: 3px solid var(--gold, #c9a961) !important;
+}
+.roster-card.drop-target-after {
+  border-bottom: 3px solid var(--gold, #c9a961) !important;
+}
+
 /* SPEC-rediseno-ui Sub-D — Botones acción de banda en horizontal.
  * Los btn-promotion-step originales apilaban en vertical; ahora flex-row
  * con wrap para que en desktop ≥1280px caigan todos en una fila. */
@@ -7466,6 +7481,11 @@ function refreshCompanionWarband(wb, newJson, opts) {
       ? (Array.isArray(wb.discoveredLocations) ? wb.discoveredLocations : []) : [],
   };
 
+  // SPEC-rediseno-ui Sub-I — Preservar orden custom local por uid.
+  // Snapshot orden previo (uids) antes de importar fresco.
+  const previousOrder = Array.isArray(wb.models)
+    ? wb.models.map(m => m.uid).filter(Boolean) : [];
+
   // Importar fresco y volcar campos sobre wb existente — preserva referencia
   // del objeto (callers + STATE.wb siguen apuntando al mismo wb).
   const fresh = importCompanionWarband(parsed.data);
@@ -7482,6 +7502,23 @@ function refreshCompanionWarband(wb, newJson, opts) {
   // Restaurar preservados.
   for (const [k, v] of Object.entries(preserved)) {
     wb[k] = v;
+  }
+
+  // Aplicar orden custom: para cada uid del orden previo que aún exista en
+  // los modelos frescos, mantener su posición relativa. Modelos nuevos
+  // van al final. Modelos eliminados de TC desaparecen.
+  if (previousOrder.length > 0 && Array.isArray(wb.models)) {
+    const byUid = new Map(wb.models.map(m => [m.uid, m]));
+    const reordered = [];
+    for (const uid of previousOrder) {
+      if (byUid.has(uid)) {
+        reordered.push(byUid.get(uid));
+        byUid.delete(uid);
+      }
+    }
+    // Lo que queda en byUid son modelos nuevos de TC → al final.
+    for (const m of byUid.values()) reordered.push(m);
+    wb.models = reordered;
   }
 
   return { ok: true };
@@ -17052,6 +17089,7 @@ function renderRoster() {
 function rosterCardCompanion(model, wb) {
   const card = el('div', 'roster-card');
   card.dataset.uid = model.uid;
+  card.draggable = true;  // SPEC-rediseno-ui Sub-I — reorden por drag.
   card.classList.add('tier-companion');
   if (STATE.selectedModelUid === model.uid) card.classList.add('selected');
 
@@ -17134,6 +17172,7 @@ function rosterCard(model, unit, wb) {
   const card = el('div', 'roster-card');
   card.dataset.uid = model.uid;
   card.dataset.tier = unit.tier || 'mercenary';
+  card.draggable = true;  // SPEC-rediseno-ui Sub-I — reorden por drag.
   card.classList.add('tier-' + (unit.tier || 'mercenary'));
   if (STATE.selectedModelUid === model.uid) card.classList.add('selected');
 
@@ -18934,6 +18973,90 @@ document.addEventListener('click', (e) => {
   setFactionSidebarOpen(!isFactionSidebarOpen());
 });
 
+/* SPEC-rediseno-ui Sub-I — Drag & drop reorden roster.
+ *
+ * Mecánica HTML5 draggable nativa. Reordena wb.models[] in place, persiste,
+ * re-render. Solo desktop (touch no soportado en esta fase).
+ */
+function reorderWarbandModelByUid(wb, draggedUid, targetUid, position) {
+  if (!wb || !Array.isArray(wb.models)) return false;
+  if (!draggedUid || draggedUid === targetUid) return false;
+  const fromIdx = wb.models.findIndex(m => m.uid === draggedUid);
+  const toIdx = wb.models.findIndex(m => m.uid === targetUid);
+  if (fromIdx < 0 || toIdx < 0) return false;
+  const [moved] = wb.models.splice(fromIdx, 1);
+  // Recompute toIdx tras remove (si fromIdx < toIdx baja 1).
+  let insertAt = wb.models.findIndex(m => m.uid === targetUid);
+  if (position === 'after') insertAt = insertAt + 1;
+  wb.models.splice(insertAt, 0, moved);
+  return true;
+}
+
+(function setupRosterDragDrop() {
+  let draggedUid = null;
+  let lastTarget = null;
+
+  function clearTargets() {
+    document.querySelectorAll('.roster-card.drop-target-before, .roster-card.drop-target-after')
+      .forEach(el => el.classList.remove('drop-target-before', 'drop-target-after'));
+  }
+
+  document.addEventListener('dragstart', (e) => {
+    const card = e.target.closest && e.target.closest('.roster-card');
+    if (!card || !card.dataset.uid) return;
+    draggedUid = card.dataset.uid;
+    card.classList.add('dragging');
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', draggedUid); } catch (err) {}
+    }
+  });
+
+  document.addEventListener('dragover', (e) => {
+    const card = e.target.closest && e.target.closest('.roster-card');
+    if (!card || !draggedUid || card.dataset.uid === draggedUid) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    const rect = card.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const position = (e.clientY < midY) ? 'before' : 'after';
+    if (lastTarget !== card) {
+      clearTargets();
+      lastTarget = card;
+    }
+    card.classList.remove('drop-target-before', 'drop-target-after');
+    card.classList.add(position === 'before' ? 'drop-target-before' : 'drop-target-after');
+    card._dropPosition = position;
+  });
+
+  document.addEventListener('drop', (e) => {
+    const card = e.target.closest && e.target.closest('.roster-card');
+    if (!card || !draggedUid || card.dataset.uid === draggedUid) {
+      clearTargets();
+      draggedUid = null;
+      lastTarget = null;
+      return;
+    }
+    e.preventDefault();
+    const wb = STATE.currentWarband;
+    const position = card._dropPosition || 'after';
+    if (wb && reorderWarbandModelByUid(wb, draggedUid, card.dataset.uid, position)) {
+      persistWarband(wb);
+      if (typeof renderAll === 'function') renderAll();
+    }
+    clearTargets();
+    draggedUid = null;
+    lastTarget = null;
+  });
+
+  document.addEventListener('dragend', () => {
+    document.querySelectorAll('.roster-card.dragging').forEach(c => c.classList.remove('dragging'));
+    clearTargets();
+    draggedUid = null;
+    lastTarget = null;
+  });
+})();
+
 /* SPEC-rediseno-ui Sub-E — Modal "Añadir a wishlist" con categorías.
  *
  * Reusa f.armoury (catálogo manual) + classifyBattlekitItem para
@@ -19236,8 +19359,8 @@ if (_shoppingSubtabContent) {
 const _btnSubtabAdd = document.getElementById('btn-shopping-subtab-add');
 if (_btnSubtabAdd) {
   _btnSubtabAdd.addEventListener('click', () => {
-    // Por ahora reusa modal del header (Sub-E lo sustituirá por modal nuevo).
-    document.getElementById('btn-open-shopping').click();
+    // SPEC-rediseno-ui Sub-G — usa modal Sub-E modo pool.
+    openAddShoppingModal(STATE.currentWarband, 'pool', null);
   });
 }
 const _btnSubtabPdf = document.getElementById('btn-shopping-subtab-pdf');

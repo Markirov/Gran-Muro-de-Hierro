@@ -41,9 +41,10 @@ group('Group 3: Botones promotion-step en mismo bloque', () => {
      'btn-add-pool-shopping dentro de budget-display-block');
 });
 
-group('Group 4: Handler abre modal shopping existente', () => {
+group('Group 4: Handler abre modal Sub-E modo pool', () => {
   ok(/btn-add-pool-shopping.*addEventListener/s.test(html), 'listener wired');
-  ok(/btn-open-shopping.*click\(\)/.test(html), 'invoca modal shopping');
+  ok(/openAddShoppingModal\(STATE\.currentWarband,\s*'pool',\s*null\)/.test(html),
+     "invoca openAddShoppingModal mode=pool");
 });
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
