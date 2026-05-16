@@ -32470,13 +32470,33 @@ function buildModelCardData(model, wb) {
   const implicit = getImplicitAbilities(model);
   const factionRules = getVariantFactionRules(wb);
 
-  // Compose abilities en orden: native + keywords (excluyendo standard
-  // que el motor ya considera redundantes), reglas de banda, implicit.
-  const abilities = [];
-  for (const a of abilitiesNative) abilities.push({ name: a.name || String(a), desc: a.desc || '' });
-  for (const k of kws) abilities.push({ name: k, desc: '' });
-  for (const r of factionRules) abilities.push({ name: r.name, desc: r.desc });
-  for (const i of implicit) abilities.push({ name: i.name, desc: i.desc });
+  // Compose abilities en orden: native + keywords + reglas banda + implicit.
+  // Dedupe por nombre normalizado (case-insensitive trim). Funde descripción
+  // si el dup la tenía y el primero no. Fallback: ABILITY_LIBRARY[name].summary
+  // cuando la fuente directa no trae descripción.
+  const _abSeen = new Map();
+  function _abAdd(name, desc) {
+    if (!name) return;
+    const nameStr = String(name);
+    const key = nameStr.toLowerCase().trim();
+    if (!key) return;
+    let d = desc || '';
+    // Si no hay desc, intenta ABILITY_LIBRARY (canon resumen).
+    if (!d && typeof ABILITY_LIBRARY !== 'undefined' && ABILITY_LIBRARY[nameStr]) {
+      d = ABILITY_LIBRARY[nameStr].summary || '';
+    }
+    const existing = _abSeen.get(key);
+    if (!existing) {
+      _abSeen.set(key, { name: nameStr, desc: d });
+    } else if (!existing.desc && d) {
+      existing.desc = d;
+    }
+  }
+  for (const a of abilitiesNative) _abAdd(a.name || String(a), a.desc || '');
+  for (const k of kws) _abAdd(k, '');
+  for (const r of factionRules) _abAdd(r.name, r.desc);
+  for (const i of implicit) _abAdd(i.name, i.desc);
+  const abilities = Array.from(_abSeen.values());
 
   const hasElementalMastery = abilities.some(a =>
     /mastery of (the )?elements/i.test(a.name || '')
@@ -34169,17 +34189,22 @@ function pdfRenderModel(td, model) {
   }
 
   // Abilities (just names + summaries — short, leaves room)
-  // Effective list = unit base + upgrade-added + advancements
+  // Effective list = unit base + upgrade-added + advancements + companion
   const pdfBaseUnitAbilities = unit.abilities || [];
   const pdfEffAbilities = effectiveAbilities(model, unit);
   const baseAdvancements = (model.baseProgression && model.baseProgression.advancements) || [];
-  if (pdfEffAbilities.length || baseAdvancements.length) {
+  // Companion abilities (bandas importadas de Trench Companion). Pueden
+  // duplicar nombres con effectiveAbilities — el dedupe los une por name.
+  const companionAbs = (model.companionAbilities || [])
+    .map(a => (typeof a === 'string' ? { name: a } : a))
+    .filter(a => a && a.name);
+  if (pdfEffAbilities.length || baseAdvancements.length || companionAbs.length) {
     td.doc.setFont('helvetica', 'bold');
     td.doc.setFontSize(8);
     td.setText(td.accentDark());
     td.doc.text('HABILIDADES', startX, td.y);
     td.y += 4;
-    const all = [
+    const rawAll = [
       ...pdfEffAbilities.map(n => ({
         name: n,
         source: pdfBaseUnitAbilities.includes(n) ? 'unit' : 'upgrade',
@@ -34187,15 +34212,39 @@ function pdfRenderModel(td, model) {
       ...baseAdvancements.map(a => ({
         name: a.name,
         source: 'advancement',
-        // Pass the canonical origin for this advancement so we can render
-        // the "📜 Melee · 2D6 = 7 → Melee Proficiency" provenance line.
         adv: a,
       })),
+      ...companionAbs.map(a => ({
+        name: a.name,
+        source: 'companion',
+        companionDesc: a.description || a.desc || a.text || '',
+      })),
     ];
-    for (const { name, source, adv } of all) {
+    // Dedupe por nombre normalizado (case-insensitive + trim). Mantiene
+    // la primera ocurrencia + funde descripción de companion si falta.
+    const seen = new Map();
+    for (const entry of rawAll) {
+      const key = (entry.name || '').toLowerCase().trim();
+      if (!key) continue;
+      if (!seen.has(key)) {
+        seen.set(key, entry);
+      } else {
+        // Funde companion description al primer entry si no tenía.
+        const first = seen.get(key);
+        if (entry.companionDesc && !first.companionDesc) {
+          first.companionDesc = entry.companionDesc;
+        }
+      }
+    }
+    const all = Array.from(seen.values());
+    for (const { name, source, adv, companionDesc } of all) {
       const lib = ABILITY_LIBRARY[name];
       const userNote = (model.abilityNotes && model.abilityNotes[name]) || '';
-      const summary = userNote.trim() || (lib ? lib.summary : '');
+      // Prioridad summary: userNote > ABILITY_LIBRARY > companionDesc
+      //                    > placeholder "(sin descripción canon disponible)"
+      let summary = userNote.trim() || (lib ? lib.summary : '');
+      if (!summary && companionDesc) summary = companionDesc;
+      if (!summary) summary = '(descripción no disponible — añade nota en model.abilityNotes para personalizar)';
       td.ensureSpace(8);
       // Name in bold (with marker for source: ★ adv, ⊕ upgrade, ◊ unit)
       td.doc.setFont('helvetica', 'bold');
