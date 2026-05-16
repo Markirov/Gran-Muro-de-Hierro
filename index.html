@@ -1388,13 +1388,17 @@ body.faction-sidebar-collapsed .faction-sidebar-toggle {
   body.faction-sidebar-collapsed main { grid-template-columns: 1fr; }
 }
 
-/* SPEC-rediseno-ui Sub-C — Sub-tabs dentro de BANDA. */
+/* SPEC-rediseno-ui Sub-C — Sub-tabs dentro de BANDA.
+ * Solo visibles cuando mode=banda (body.mode-banda). Otros modos las ocultan. */
 .banda-subtabs {
-  display: flex;
+  display: none;
   gap: 0.25rem;
   padding: 0.5rem 1rem 0;
   border-bottom: 2px solid rgba(127,107,67,0.4);
   background: rgba(20, 12, 8, 0.6);
+}
+body.mode-banda .banda-subtabs {
+  display: flex;
 }
 .banda-subtab {
   padding: 0.5rem 1.1rem;
@@ -1431,10 +1435,23 @@ body.faction-sidebar-collapsed .faction-sidebar-toggle {
   .panel-fullwidth { grid-column: 1 / -1; }
 }
 
-/* SPEC-rediseno-ui Sub-A — body lock cuando hay banda cargada (desktop).
- * Evita doble scroll y permite que cada panel gestione el suyo. */
+/* SPEC-rediseno-ui Sub-A — body lock + altura main calculada (desktop).
+ * Cada panel necesita altura definida (no min-height) para que su
+ * overflow-y interno active scroll independiente. */
 @media (min-width: 1101px) {
   body.has-warband { overflow: hidden; }
+  /* Altura estimada: header (~60) + cabecera global mode-tabs (~50) +
+   * banda-subtabs (~46). Suma ~156, redondeo a 170 para margen. */
+  body.has-warband main {
+    height: calc(100vh - 170px);
+    min-height: 0;
+    overflow: hidden;
+  }
+  body.has-warband .panel {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+  }
 }
 
 /* Fase 14-A PIVOT v2 — Badges fuente de banda. */
@@ -4166,6 +4183,21 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
   <div class="header-drawer-body" id="header-drawer-body"></div>
 </aside>
 
+<!-- SPEC-rediseno-ui Sub-B — botón toggle sidebar facción (position:fixed, FUERA de main para no ocupar celda del grid). -->
+<button class="faction-sidebar-toggle" id="btn-toggle-faction-sidebar"
+        aria-label="Mostrar/ocultar catálogo de facciones"
+        title="Mostrar/ocultar catálogo de facciones">
+  <span class="faction-sidebar-toggle-icon">▸</span>
+  <span class="faction-sidebar-toggle-label">Facciones</span>
+</button>
+
+<!-- SPEC-rediseno-ui Sub-C — Sub-tabs BANDA (FUERA de main para ocupar fila propia). -->
+<nav class="banda-subtabs" id="banda-subtabs" role="tablist" aria-label="Vistas de la banda">
+  <button class="banda-subtab active" data-subtab="roster" role="tab" aria-selected="true">Roster</button>
+  <button class="banda-subtab" data-subtab="variantes" role="tab" aria-selected="false">🧪 Variantes</button>
+  <button class="banda-subtab" data-subtab="shopping" role="tab" aria-selected="false">🛒 Lista de compra</button>
+</nav>
+
 <!-- ============ MAIN ============ -->
 <main>
 
@@ -4185,21 +4217,6 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <p class="panel-subtitle">Tap para reclutar</p>
     <div id="unit-catalogue"></div>
   </section>
-
-  <!-- SPEC-rediseno-ui Sub-B — botón toggle sidebar facción (plegable). -->
-  <button class="faction-sidebar-toggle" id="btn-toggle-faction-sidebar"
-          aria-label="Mostrar/ocultar catálogo de facciones"
-          title="Mostrar/ocultar catálogo de facciones">
-    <span class="faction-sidebar-toggle-icon">▸</span>
-    <span class="faction-sidebar-toggle-label">Facciones</span>
-  </button>
-
-  <!-- SUB-TABS dentro de BANDA (SPEC-rediseno-ui Sub-C) -->
-  <nav class="banda-subtabs" id="banda-subtabs" role="tablist" aria-label="Vistas de la banda">
-    <button class="banda-subtab active" data-subtab="roster" role="tab" aria-selected="true">Roster</button>
-    <button class="banda-subtab" data-subtab="variantes" role="tab" aria-selected="false">🧪 Variantes</button>
-    <button class="banda-subtab" data-subtab="shopping" role="tab" aria-selected="false">🛒 Lista de compra</button>
-  </nav>
 
   <!-- CENTER: Warband Roster -->
   <section class="panel panel-center" id="panel-roster" data-subtab-panel="roster">
@@ -29370,6 +29387,10 @@ document.getElementById('wizard-next').addEventListener('click', () => {
 function setMode(mode) {
   STATE.mode = mode;
   localStorage.setItem(STORAGE_MODE, mode);
+  // SPEC-rediseno-ui Sub-C — body.mode-<X> para CSS selector de sub-tabs.
+  ['banda','campana','lab','battle'].forEach(m => {
+    document.body.classList.toggle('mode-' + m, m === mode);
+  });
   document.querySelectorAll('.mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
@@ -34033,6 +34054,10 @@ function boot() {
   // Apply mode visibility
   document.querySelectorAll('.mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === STATE.mode);
+  });
+  // SPEC-rediseno-ui Sub-C — body.mode-<X> para CSS sub-tabs.
+  ['banda','campana','lab','battle'].forEach(m => {
+    document.body.classList.toggle('mode-' + m, m === STATE.mode);
   });
   document.getElementById('actions-banda').style.display    = STATE.mode === 'banda'   ? '' : 'none';
   document.getElementById('actions-campana').style.display  = STATE.mode === 'campana' ? '' : 'none';
