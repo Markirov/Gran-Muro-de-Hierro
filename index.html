@@ -4112,13 +4112,14 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <button class="mode-btn" data-mode="campana">🗡 Campaña</button>
     <button class="mode-btn" data-mode="lab">🔬 Lab</button>
     <button class="mode-btn" data-mode="battle">📋 Partida</button>
+    <button class="btn" id="btn-open-github-sync-global" style="margin-left:auto;background:#2b3e5c;border-color:#4a6a8c;color:#cfd8e6;" title="Backup / Restore en GitHub Gist (Ctrl+Alt+G)">☁ Backup GitHub</button>
   </div>
   <div class="header-actions" id="actions-banda">
     <button class="btn btn-primary" id="btn-import-companion" data-action-priority="primary" title="Importa una banda creada en Trench Companion (https://trench-companion.com)">⤓ Importar de Companion</button>
     <button class="btn" id="btn-refresh-companion" data-action-priority="primary" title="Re-importa desde Companion preservando variantes experimentales y lista de la compra">🔄 Refrescar de Companion</button>
     <button class="btn" id="btn-open-sandbox" data-action-priority="primary" title="Bifurca variantes experimentales de loadout sin tocar la banda canon">🧪 Variantes</button>
     <button class="btn" id="btn-open-shopping" data-action-priority="primary" title="Lista de la compra para programar adquisiciones futuras">🛒 Lista compra</button>
-    <button class="btn" id="btn-open-github-sync" data-action-priority="secondary" title="Backup/restaura todas tus bandas en un GitHub Gist privado">☁ GitHub</button>
+    <button class="btn btn-primary" id="btn-open-github-sync" data-action-priority="primary" style="background:#2b3e5c;border-color:#4a6a8c;" title="Backup/restaura todas tus bandas en un GitHub Gist privado">☁ Backup GitHub</button>
     <button class="btn" id="btn-show-welcome" data-action-priority="secondary" title="Volver a ver el tour de bienvenida">❓ Ayuda</button>
     <button class="btn" id="btn-export-companion" data-action-priority="primary" title="Exporta esta banda en formato Companion JSON para volver a Trench Companion">⤒ Exportar a Companion</button>
     <button class="btn" id="btn-new" data-action-priority="secondary" title="Crea una banda manualmente con el catálogo local (modo offline)">✠ Nueva Manual</button>
@@ -19666,14 +19667,23 @@ function _ghRenderStatus(msg, kind) {
   }
 }
 
-const _btnOpenGhSync = document.getElementById('btn-open-github-sync');
-if (_btnOpenGhSync) {
-  _btnOpenGhSync.addEventListener('click', () => {
-    _ghLoadFields();
-    _ghRenderStatus('Sin actividad reciente.', '');
-    openModal('modal-github-sync');
-  });
+function _openGithubSyncModal() {
+  _ghLoadFields();
+  _ghRenderStatus('Sin actividad reciente.', '');
+  openModal('modal-github-sync');
 }
+const _btnOpenGhSync = document.getElementById('btn-open-github-sync');
+if (_btnOpenGhSync) _btnOpenGhSync.addEventListener('click', _openGithubSyncModal);
+const _btnOpenGhSyncGlobal = document.getElementById('btn-open-github-sync-global');
+if (_btnOpenGhSyncGlobal) _btnOpenGhSyncGlobal.addEventListener('click', _openGithubSyncModal);
+
+// Keyboard shortcut Ctrl+Alt+G abre modal desde cualquier modo.
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.altKey && (e.key === 'g' || e.key === 'G')) {
+    e.preventDefault();
+    _openGithubSyncModal();
+  }
+});
 
 const _btnGhBackup = document.getElementById('btn-gh-backup');
 if (_btnGhBackup) {
