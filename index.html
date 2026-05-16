@@ -7035,6 +7035,89 @@ const ABILITY_LIBRARY = {
     type: 'action',
     summary: 'Risky Success Roll a 24" sin LoS: pone 1 BLOOD MARKER al enemigo (2 si es BLACK GRAIL, DEMONIC o HERETIC).',
   },
+
+  /* ─── KEYWORDS CORE TC (resúmenes canon) ─── */
+  'TOUGH': {
+    type: 'keyword',
+    summary: '−1 INJURY DICE a las tiradas de lesión contra este modelo.',
+  },
+  'STRONG': {
+    type: 'keyword',
+    summary: '+1 INJURY DICE en los ataques cuerpo a cuerpo de este modelo.',
+  },
+  'FEAR': {
+    type: 'keyword',
+    summary: 'Modelos enemigos que vayan a cargar/atacar a este modelo deben pasar un Risky Success Roll o pierden la acción.',
+  },
+  'INFILTRATOR': {
+    type: 'keyword',
+    summary: 'Despliegue avanzado: puede empezar la batalla fuera de la zona normal (consultar reglas).',
+  },
+  'LEADER': {
+    type: 'keyword',
+    summary: 'Modelos amigos a 6" pueden usar el Morale del Leader para Morale Checks. Bonus de mando.',
+  },
+  'ELITE': {
+    type: 'keyword',
+    summary: 'Modelo de élite: puede ganar XP, avances y cicatrices entre batallas. Limit: 1 LEADER + hasta 4 ELITE adicionales.',
+  },
+  'ARTIFICIAL': {
+    type: 'keyword',
+    summary: 'Construcción/criatura artificial: inmune a FEAR, INFECTION MARKERS y efectos psicológicos.',
+  },
+  'FAST': {
+    type: 'keyword',
+    summary: '+2" al stat Movement.',
+  },
+  'LEAP': {
+    type: 'keyword',
+    summary: 'Puede saltar 1" de hueco sin Risky Roll. Atraviesa obstáculos pequeños sin penalización.',
+  },
+  'AGILE': {
+    type: 'keyword',
+    summary: 'Ignora penalizaciones de terreno difícil.',
+  },
+  'SKIRMISHER': {
+    type: 'keyword',
+    summary: '+1" al stat Movement. Puede moverse a través de modelos amigos.',
+  },
+  'DEAD-EYE': {
+    type: 'keyword',
+    summary: 'Re-roll fallos en ataques a distancia.',
+  },
+  'CAVALRY': {
+    type: 'keyword',
+    summary: 'Movimiento de caballería: ignora penalización por terreno abierto en Charge.',
+  },
+  'FLYING': {
+    type: 'keyword',
+    summary: 'Movimiento aéreo: ignora terreno y obstáculos en movimiento normal.',
+  },
+  'FANATIC': {
+    type: 'keyword',
+    summary: 'Inmune a Morale Checks. No huye ni recibe penalizaciones psicológicas.',
+  },
+  'BERSERKER': {
+    type: 'keyword',
+    summary: 'En Melee gana +1 DICE adicional cuando otros amigos están en estado Down u Out of Action.',
+  },
+  'NIMBLE': {
+    type: 'keyword',
+    summary: 'Re-roll fallos en Risky Rolls de Dash y movimiento.',
+  },
+  'TARGETED HIT': {
+    type: 'keyword',
+    summary: 'En ataques a distancia, ignora COVER de objetivos elegidos por el dado más alto.',
+  },
+
+  /* ─── FACTION TAGS (sin desc canon, kind interno) ─── */
+  'SULTANATE': { type: 'factionTag', summary: 'Modelo de la Sultanate of the Iron Wall.' },
+  'HERETIC': { type: 'factionTag', summary: 'Modelo de las Heretic Legions.' },
+  'NEW ANTIOCH': { type: 'factionTag', summary: 'Modelo de New Antioch.' },
+  'PILGRIM': { type: 'factionTag', summary: 'Modelo de los Trench Pilgrims.' },
+  'BLACK GRAIL': { type: 'factionTag', summary: 'Modelo del Cult of the Black Grail.' },
+  'COURT': { type: 'factionTag', summary: 'Modelo de la Court of the Seven-Headed Serpent.' },
+  'DEMONIC': { type: 'factionTag', summary: 'Modelo de origen demoníaco (Heretic, Black Grail, Court).' },
 };
 
 /* ======================================================================
@@ -32481,8 +32564,16 @@ function buildModelCardData(model, wb) {
     const key = nameStr.toLowerCase().trim();
     if (!key) return;
     let d = desc || '';
-    if (!d && typeof ABILITY_LIBRARY !== 'undefined' && ABILITY_LIBRARY[nameStr]) {
-      d = ABILITY_LIBRARY[nameStr].summary || '';
+    if (!d && typeof ABILITY_LIBRARY !== 'undefined') {
+      // Lookup directo + case-insensitive normalizado.
+      let entry = ABILITY_LIBRARY[nameStr];
+      if (!entry) {
+        const lcKey = nameStr.toLowerCase().trim();
+        for (const k of Object.keys(ABILITY_LIBRARY)) {
+          if (k.toLowerCase().trim() === lcKey) { entry = ABILITY_LIBRARY[k]; break; }
+        }
+      }
+      if (entry) d = entry.summary || '';
     }
     const existing = _abSeen.get(key);
     if (!existing) {
@@ -33088,11 +33179,16 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
     sy += 18;
   } else {
     const maxDescChars = 110;
-    // Regla: desc siempre, excepto reglas de facción y NEGATE (X).
+    // Regla: desc siempre, excepto reglas de facción, NEGATE (X) y
+    // faction tags (SULTANATE, HERETIC, etc — marcados con type='factionTag').
     const shouldShowDesc = (a) => {
       if (!a.desc || !a.desc.trim()) return false;
       if (a.kind === 'factionRule') return false;
       if (/^NEGATE\b/i.test(a.name || '')) return false;
+      if (typeof ABILITY_LIBRARY !== 'undefined') {
+        const entry = ABILITY_LIBRARY[a.name];
+        if (entry && entry.type === 'factionTag') return false;
+      }
       return true;
     };
     for (const a of abList.slice(0, 12)) {
