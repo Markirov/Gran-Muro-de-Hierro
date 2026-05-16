@@ -4118,6 +4118,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <button class="btn" id="btn-refresh-companion" data-action-priority="primary" title="Re-importa desde Companion preservando variantes experimentales y lista de la compra">🔄 Refrescar de Companion</button>
     <button class="btn" id="btn-open-sandbox" data-action-priority="primary" title="Bifurca variantes experimentales de loadout sin tocar la banda canon">🧪 Variantes</button>
     <button class="btn" id="btn-open-shopping" data-action-priority="primary" title="Lista de la compra para programar adquisiciones futuras">🛒 Lista compra</button>
+    <button class="btn" id="btn-open-github-sync" data-action-priority="secondary" title="Backup/restaura todas tus bandas en un GitHub Gist privado">☁ GitHub</button>
     <button class="btn" id="btn-show-welcome" data-action-priority="secondary" title="Volver a ver el tour de bienvenida">❓ Ayuda</button>
     <button class="btn" id="btn-export-companion" data-action-priority="primary" title="Exporta esta banda en formato Companion JSON para volver a Trench Companion">⤒ Exportar a Companion</button>
     <button class="btn" id="btn-new" data-action-priority="secondary" title="Crea una banda manualmente con el catálogo local (modo offline)">✠ Nueva Manual</button>
@@ -4886,6 +4887,44 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <div class="modal-actions">
       <button class="btn" data-close>Cancelar</button>
       <button class="btn btn-primary" id="btn-do-new-campaign">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GITHUB BACKUP/RESTORE MODAL (Sub-GH-C) ============ -->
+<div class="modal-backdrop" id="modal-github-sync">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>☁ Sincronización con GitHub Gist</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0 0.8rem;">
+      Guarda todas tus bandas, campañas y settings en un GitHub Gist privado.
+      Sin server propio: solo tu cuenta GitHub.
+    </p>
+    <details style="margin-bottom:0.8rem;padding:0.5rem;border:1px solid rgba(127,107,67,0.3);border-radius:3px;">
+      <summary style="cursor:pointer;color:var(--gold);">📋 Cómo configurar (primera vez)</summary>
+      <ol style="font-size:0.82rem;line-height:1.5;color:var(--parchment);padding-left:1.2rem;margin-top:0.5rem;">
+        <li>Crea un Personal Access Token en
+          <a href="https://github.com/settings/tokens/new?scopes=gist&description=Warband%20Forge%20backup" target="_blank" rel="noopener" style="color:var(--gold);">github.com/settings/tokens</a>
+          con scope <strong>gist</strong>.</li>
+        <li>Copia el token (empieza por <code>ghp_</code>) y pégalo abajo.</li>
+        <li>Pulsa <strong>Backup ahora</strong>. La primera vez crea un gist secreto;
+          siguientes veces sobrescribe el mismo.</li>
+        <li>Para restaurar en otro dispositivo: pega token + Gist ID y pulsa Restaurar.</li>
+      </ol>
+    </details>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:0.5rem 0.8rem;align-items:center;margin-bottom:0.8rem;">
+      <label for="gh-token" style="color:var(--gold);font-size:0.85rem;">Token GitHub:</label>
+      <input type="password" id="gh-token" placeholder="ghp_..." autocomplete="off" style="font-family:var(--font-mono);font-size:0.78rem;"/>
+      <label for="gh-gist-id" style="color:var(--gold);font-size:0.85rem;">Gist ID (vacío = crear nuevo):</label>
+      <input type="text" id="gh-gist-id" placeholder="(vacío para crear nuevo)" autocomplete="off" style="font-family:var(--font-mono);font-size:0.78rem;"/>
+    </div>
+    <div id="gh-sync-status" style="padding:0.5rem;background:rgba(20,12,8,0.4);border-radius:3px;font-size:0.82rem;color:var(--parchment);min-height:1.6em;">
+      Sin sincronizar aún.
+    </div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cerrar</button>
+      <button class="btn" id="btn-gh-restore" title="Descarga estado de gist y reemplaza localStorage">⤓ Restaurar</button>
+      <button class="btn btn-primary" id="btn-gh-backup" title="Sube estado actual al gist">⤒ Backup ahora</button>
     </div>
   </div>
 </div>
@@ -14513,6 +14552,195 @@ function saveIndex(idx) {
   localStorage.setItem(STORAGE_INDEX, JSON.stringify(idx));
 }
 
+/* ─── Sub-GH-A: GitHub backup serialize/deserialize ───────────────────
+ *
+ * Recoge todo el estado persistido en localStorage (bandas + campañas +
+ * settings UI + history) en un objeto JSON único para backup en GitHub
+ * Gist. Round-trip: deserializeAppState(serializeAppState()) preserva
+ * datos a la perfección.
+ *
+ * Prefijos canon:
+ *   - warband-forge-v1:<wbId>            → bandas individuales
+ *   - warband-forge-v1:cmp:<cId>         → campañas individuales
+ *   - warband-forge-index                → índice de bandas
+ *   - warband-forge-campaigns-index      → índice de campañas
+ *   - warband-forge-v1:current           → puntero a banda actual
+ *   - warband-forge-v1:mode              → modo activo (banda/campana/lab/battle)
+ *
+ * Settings UI preservadas:
+ *   - wf.ui.bandaSubtab
+ *   - wf.ui.factionSidebarOpen
+ *   - wf-tour-seen
+ *   - wf_sim_history (cap 100 entradas)
+ */
+const _SETTINGS_KEYS = [
+  'wf.ui.bandaSubtab',
+  'wf.ui.factionSidebarOpen',
+  'wf-tour-seen',
+  'wf_sim_history',
+  'warband-forge-v1:current',
+  'warband-forge-v1:mode',
+  'warband-forge-current-campaign',
+];
+
+function serializeAppState() {
+  const warbands = [];
+  const campaigns = [];
+  const settings = {};
+  if (typeof localStorage === 'undefined') {
+    return { version: 1, exportedAt: new Date().toISOString(), warbands, campaigns, settings };
+  }
+  // Recoge bandas (prefix warband-forge-v1:<id>) excluyendo subkeys con ':'
+  // adicionales (current, mode, cmp:).
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (k.indexOf('warband-forge-v1:') === 0 &&
+        k.indexOf('warband-forge-v1:cmp:') !== 0 &&
+        k !== 'warband-forge-v1:current' &&
+        k !== 'warband-forge-v1:mode') {
+      try {
+        const wb = JSON.parse(localStorage.getItem(k));
+        if (wb && wb.id) warbands.push(wb);
+      } catch (e) {}
+    } else if (k.indexOf('warband-forge-v1:cmp:') === 0) {
+      try {
+        const c = JSON.parse(localStorage.getItem(k));
+        if (c && c.id) campaigns.push(c);
+      } catch (e) {}
+    }
+  }
+  // Settings explícitas + indexes.
+  for (const sk of _SETTINGS_KEYS) {
+    const v = localStorage.getItem(sk);
+    if (v != null) settings[sk] = v;
+  }
+  const idxWb = localStorage.getItem('warband-forge-index');
+  if (idxWb != null) settings['warband-forge-index'] = idxWb;
+  const idxCmp = localStorage.getItem('warband-forge-campaigns-index');
+  if (idxCmp != null) settings['warband-forge-campaigns-index'] = idxCmp;
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    warbands,
+    campaigns,
+    settings,
+  };
+}
+
+function deserializeAppState(state) {
+  if (!state || typeof state !== 'object') {
+    return { ok: false, error: 'Estado inválido (no es objeto).' };
+  }
+  if (!Array.isArray(state.warbands)) {
+    return { ok: false, error: 'Campo "warbands" debe ser array.' };
+  }
+  if (typeof localStorage === 'undefined') {
+    return { ok: false, error: 'localStorage no disponible.' };
+  }
+  // Restaura bandas.
+  for (const wb of state.warbands) {
+    if (wb && wb.id) {
+      localStorage.setItem('warband-forge-v1:' + wb.id, JSON.stringify(wb));
+    }
+  }
+  // Restaura campañas.
+  for (const c of (state.campaigns || [])) {
+    if (c && c.id) {
+      localStorage.setItem('warband-forge-v1:cmp:' + c.id, JSON.stringify(c));
+    }
+  }
+  // Restaura settings.
+  const settings = state.settings || {};
+  for (const k of Object.keys(settings)) {
+    if (settings[k] != null) localStorage.setItem(k, settings[k]);
+  }
+  return { ok: true };
+}
+
+/* ─── Sub-GH-B: GitHub Gist API backup/restore ─────────────────────
+ *
+ * Backup → PATCH gist existente (si gistId) o POST gist nuevo.
+ * Restore → GET gist, deserializa el archivo wf-state.json.
+ *
+ * Auth: Personal Access Token (PAT) con scope 'gist'. Usuario crea en
+ *   https://github.com/settings/tokens
+ * Privado: gists con public=false (visibility 'secret').
+ *
+ * Returns { ok:true, gistId?, htmlUrl? } o { ok:false, error:string }.
+ */
+const GIST_FILENAME = 'wf-state.json';
+const GIST_DESCRIPTION = 'Warband Forge — backup de estado (bandas, campañas, settings)';
+
+async function githubBackup(token, gistId) {
+  if (!token) return { ok: false, error: 'Token GitHub requerido (PAT con scope gist).' };
+  const state = serializeAppState();
+  const body = {
+    description: GIST_DESCRIPTION,
+    files: { [GIST_FILENAME]: { content: JSON.stringify(state, null, 2) } },
+  };
+  const url = gistId
+    ? 'https://api.github.com/gists/' + encodeURIComponent(gistId)
+    : 'https://api.github.com/gists';
+  const method = gistId ? 'PATCH' : 'POST';
+  if (!gistId) body.public = false;  // Privado por defecto al crear.
+  try {
+    const res = await (typeof window !== 'undefined' && window.fetch ? window.fetch : fetch)(url, {
+      method,
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      let errMsg = 'HTTP ' + res.status;
+      try { const j = await res.json(); if (j && j.message) errMsg += ' · ' + j.message; } catch (e) {}
+      return { ok: false, error: errMsg };
+    }
+    const data = await res.json();
+    return { ok: true, gistId: data.id, htmlUrl: data.html_url };
+  } catch (e) {
+    return { ok: false, error: 'Error de red: ' + (e.message || String(e)) };
+  }
+}
+
+async function githubRestore(token, gistId) {
+  if (!token) return { ok: false, error: 'Token GitHub requerido.' };
+  if (!gistId) return { ok: false, error: 'Gist ID requerido para restaurar.' };
+  const url = 'https://api.github.com/gists/' + encodeURIComponent(gistId);
+  try {
+    const res = await (typeof window !== 'undefined' && window.fetch ? window.fetch : fetch)(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+    if (!res.ok) {
+      let errMsg = 'HTTP ' + res.status;
+      try { const j = await res.json(); if (j && j.message) errMsg += ' · ' + j.message; } catch (e) {}
+      return { ok: false, error: errMsg };
+    }
+    const data = await res.json();
+    const file = data && data.files && data.files[GIST_FILENAME];
+    if (!file || typeof file.content !== 'string') {
+      return { ok: false, error: 'El gist no contiene ' + GIST_FILENAME };
+    }
+    let parsed;
+    try { parsed = JSON.parse(file.content); }
+    catch (e) { return { ok: false, error: 'JSON inválido en gist: ' + e.message }; }
+    const r = deserializeAppState(parsed);
+    if (!r.ok) return r;
+    return { ok: true, gistId: data.id, htmlUrl: data.html_url };
+  } catch (e) {
+    return { ok: false, error: 'Error de red: ' + (e.message || String(e)) };
+  }
+}
+
 function persistWarband(wb) {
   if (!wb) return;
   wb.updatedAt = new Date().toISOString();
@@ -19407,6 +19635,94 @@ if (_btnSubtabClear) {
     clearCheckedShoppingItems(wb);
     persistWarband(wb);
     renderShoppingSubtab();
+  });
+}
+
+/* Sub-GH-C — GitHub Gist backup/restore UI handlers. */
+const GH_TOKEN_KEY = 'wf.gh.token';
+const GH_GIST_KEY = 'wf.gh.gistId';
+const GH_LAST_SYNC_KEY = 'wf.gh.lastSync';
+
+function _ghLoadFields() {
+  const t = localStorage.getItem(GH_TOKEN_KEY) || '';
+  const g = localStorage.getItem(GH_GIST_KEY) || '';
+  const tEl = document.getElementById('gh-token');
+  const gEl = document.getElementById('gh-gist-id');
+  if (tEl) tEl.value = t;
+  if (gEl) gEl.value = g;
+}
+
+function _ghRenderStatus(msg, kind) {
+  const el = document.getElementById('gh-sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = (kind === 'error') ? '#c92424'
+                 : (kind === 'ok')    ? '#7fb069'
+                                       : 'var(--parchment)';
+  // Última sincro persistida.
+  const last = localStorage.getItem(GH_LAST_SYNC_KEY);
+  if (last && kind !== 'error') {
+    el.textContent += '  ·  Última sync: ' + new Date(last).toLocaleString();
+  }
+}
+
+const _btnOpenGhSync = document.getElementById('btn-open-github-sync');
+if (_btnOpenGhSync) {
+  _btnOpenGhSync.addEventListener('click', () => {
+    _ghLoadFields();
+    _ghRenderStatus('Sin actividad reciente.', '');
+    openModal('modal-github-sync');
+  });
+}
+
+const _btnGhBackup = document.getElementById('btn-gh-backup');
+if (_btnGhBackup) {
+  _btnGhBackup.addEventListener('click', async () => {
+    const token = (document.getElementById('gh-token').value || '').trim();
+    const gistId = (document.getElementById('gh-gist-id').value || '').trim();
+    if (!token) { _ghRenderStatus('Falta token GitHub.', 'error'); return; }
+    // Persiste token + gistId localmente para próximas veces.
+    localStorage.setItem(GH_TOKEN_KEY, token);
+    if (gistId) localStorage.setItem(GH_GIST_KEY, gistId);
+    _ghRenderStatus('Subiendo...', '');
+    _btnGhBackup.disabled = true;
+    try {
+      const r = await githubBackup(token, gistId || null);
+      if (!r.ok) { _ghRenderStatus('Error: ' + r.error, 'error'); return; }
+      // Guarda gistId devuelto (útil cuando se creó nuevo).
+      localStorage.setItem(GH_GIST_KEY, r.gistId);
+      localStorage.setItem(GH_LAST_SYNC_KEY, new Date().toISOString());
+      document.getElementById('gh-gist-id').value = r.gistId;
+      _ghRenderStatus('✓ Backup OK · gist ' + r.gistId, 'ok');
+    } finally {
+      _btnGhBackup.disabled = false;
+    }
+  });
+}
+
+const _btnGhRestore = document.getElementById('btn-gh-restore');
+if (_btnGhRestore) {
+  _btnGhRestore.addEventListener('click', async () => {
+    const token = (document.getElementById('gh-token').value || '').trim();
+    const gistId = (document.getElementById('gh-gist-id').value || '').trim();
+    if (!token || !gistId) {
+      _ghRenderStatus('Falta token o Gist ID.', 'error'); return;
+    }
+    if (!confirm('Restaurar desde GitHub SOBREESCRIBE todas tus bandas, campañas y settings locales. ¿Continuar?')) return;
+    localStorage.setItem(GH_TOKEN_KEY, token);
+    localStorage.setItem(GH_GIST_KEY, gistId);
+    _ghRenderStatus('Descargando...', '');
+    _btnGhRestore.disabled = true;
+    try {
+      const r = await githubRestore(token, gistId);
+      if (!r.ok) { _ghRenderStatus('Error: ' + r.error, 'error'); return; }
+      localStorage.setItem(GH_LAST_SYNC_KEY, new Date().toISOString());
+      _ghRenderStatus('✓ Restaurado · recarga la app para ver los cambios', 'ok');
+      // Recarga tras pequeño delay para que vea el mensaje.
+      setTimeout(() => window.location.reload(), 1500);
+    } finally {
+      _btnGhRestore.disabled = false;
+    }
   });
 }
 
