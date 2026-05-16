@@ -1300,6 +1300,39 @@ body[data-side="fallen"] .roster-prog-summary {
 }
 .modal-backdrop.show { display: flex; }
 
+/* FIX visibility — paneles por modo + sub-tab usando body classes.
+ * Prioridad: !important para ganar a manipulación legacy de style.display. */
+#panel-lab, #panel-battle { display: none !important; }
+body.mode-lab #panel-lab { display: block !important; }
+body.mode-battle #panel-battle { display: block !important; }
+/* En modos Lab/Battle, ocultar paneles de banda. */
+body.mode-lab #panel-roster, body.mode-lab #panel-detail,
+body.mode-lab #panel-catalogue, body.mode-lab #panel-variantes,
+body.mode-lab #panel-shopping, body.mode-lab .banda-subtabs,
+body.mode-battle #panel-roster, body.mode-battle #panel-detail,
+body.mode-battle #panel-catalogue, body.mode-battle #panel-variantes,
+body.mode-battle #panel-shopping, body.mode-battle .banda-subtabs {
+  display: none !important;
+}
+/* En modos Campaña, ocultar paneles banda + Lab/Battle. */
+body.mode-campana #panel-roster, body.mode-campana #panel-detail,
+body.mode-campana #panel-catalogue, body.mode-campana #panel-variantes,
+body.mode-campana #panel-shopping, body.mode-campana .banda-subtabs,
+body.mode-campana #panel-lab, body.mode-campana #panel-battle {
+  display: none !important;
+}
+/* En modo Banda, sub-tabs gobiernan visibility de paneles. */
+body.mode-banda.subtab-roster #panel-variantes,
+body.mode-banda.subtab-roster #panel-shopping,
+body.mode-banda.subtab-variantes #panel-roster,
+body.mode-banda.subtab-variantes #panel-detail,
+body.mode-banda.subtab-variantes #panel-shopping,
+body.mode-banda.subtab-shopping #panel-roster,
+body.mode-banda.subtab-shopping #panel-detail,
+body.mode-banda.subtab-shopping #panel-variantes {
+  display: none !important;
+}
+
 /* Config menu dropdown (rueda ⚙ arriba derecha). */
 .config-menu-wrap { display: inline-block; }
 .config-menu-dropdown {
@@ -4408,7 +4441,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
   </section>
 
   <!-- LAB: Battle simulator (visible only in mode='lab') -->
-  <section class="panel" id="panel-lab" style="display:none;grid-column:1 / -1;padding:1.5rem;">
+  <section class="panel" id="panel-lab" style="grid-column:1 / -1;padding:1.5rem;">
     <div style="max-width:900px;margin:0 auto;">
       <h2 class="panel-title" style="margin-bottom:0.5rem;">🔬 Battle Lab</h2>
       <p class="panel-subtitle" style="margin-bottom:1.5rem;">
@@ -4641,7 +4674,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     </div>
   </section>
 
-  <section class="panel" id="panel-battle" style="display:none;grid-column:1 / -1;padding:1.5rem;">
+  <section class="panel" id="panel-battle" style="grid-column:1 / -1;padding:1.5rem;">
     <div style="max-width:1100px;margin:0 auto;">
       <!-- Lobby view: list of saved sessions + new game button -->
       <div id="battle-lobby">
@@ -19956,11 +19989,13 @@ function setBandaSubtab(name) {
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-selected', active ? 'true' : 'false');
   });
-  // Paneles. Roster usa 2 paneles (panel-roster + panel-detail);
-  // Variantes y Shopping cada uno un panel-fullwidth.
+  // Paneles via body class (CSS gobierna visibility con !important).
+  // Limpia data-subtab-panel style inline residual de versiones previas.
   document.querySelectorAll('[data-subtab-panel]').forEach(p => {
-    const myTab = p.getAttribute('data-subtab-panel');
-    p.style.display = (myTab === name) ? '' : 'none';
+    p.style.display = '';
+  });
+  ['roster','variantes','shopping'].forEach(s => {
+    document.body.classList.toggle('subtab-' + s, s === name);
   });
   try { localStorage.setItem(BANDA_SUBTAB_KEY, name); } catch (e) {}
   // Render content on-demand.
