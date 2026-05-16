@@ -4892,6 +4892,75 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
   </div>
 </div>
 
+<!-- ============ GITHUB OAUTH LOGIN MODAL (Sub-OA-B) ============ -->
+<div class="modal-backdrop" id="modal-github-login">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>🔐 Iniciar sesión con GitHub</h3>
+    <div id="gh-oauth-phase-setup" style="display:none;">
+      <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0;">
+        Primera vez: necesitas crear una OAuth App en tu cuenta GitHub (5 min, una sola vez).
+      </p>
+      <details style="margin:0.5rem 0;padding:0.5rem;border:1px solid rgba(127,107,67,0.3);border-radius:3px;">
+        <summary style="cursor:pointer;color:var(--gold);">📋 Cómo crear la OAuth App</summary>
+        <ol style="font-size:0.82rem;line-height:1.5;color:var(--parchment);padding-left:1.2rem;margin-top:0.5rem;">
+          <li>Ve a <a href="https://github.com/settings/applications/new" target="_blank" rel="noopener" style="color:var(--gold);">github.com/settings/applications/new</a></li>
+          <li>Application name: <code>Warband Forge</code></li>
+          <li>Homepage URL: la URL donde despliegas la app (ej. <code>https://markirov.github.io/Gran-Muro-de-Hierro</code>)</li>
+          <li>Authorization callback URL: la misma URL anterior</li>
+          <li><strong>IMPORTANTE</strong>: marca "Enable Device Flow" ✓</li>
+          <li>Crea la app → copia el <strong>Client ID</strong> (NO necesitas Client Secret)</li>
+          <li>Pega el Client ID abajo y pulsa "Guardar"</li>
+        </ol>
+      </details>
+      <label style="display:block;color:var(--gold);font-size:0.85rem;margin-bottom:0.3rem;">Client ID de tu OAuth App:</label>
+      <input type="text" id="gh-oauth-clientid" placeholder="Iv1.abc123def456..." autocomplete="off" style="width:100%;font-family:var(--font-mono);font-size:0.8rem;"/>
+      <div class="modal-actions">
+        <button class="btn" data-close>Cancelar</button>
+        <button class="btn btn-primary" id="btn-gh-oauth-save-clientid">Guardar Client ID</button>
+      </div>
+    </div>
+
+    <div id="gh-oauth-phase-login" style="display:none;">
+      <p style="color:var(--parchment);font-size:0.9rem;margin:0.4rem 0 0.8rem;">
+        Pulsa el botón. GitHub te dará un código corto. Lo introduces en su web y autorizas. Una vez por dispositivo.
+      </p>
+      <div class="modal-actions">
+        <button class="btn" data-close>Cancelar</button>
+        <button class="btn btn-primary" id="btn-gh-oauth-start-login">🔐 Iniciar login con GitHub</button>
+        <button class="btn" id="btn-gh-oauth-reset-clientid" title="Cambiar Client ID">⚙ Cambiar Client ID</button>
+      </div>
+    </div>
+
+    <div id="gh-oauth-phase-code" style="display:none;text-align:center;">
+      <p style="color:var(--parchment);font-size:0.95rem;margin:0.6rem 0;">
+        1. Pulsa <a id="gh-oauth-verify-link" href="#" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline;">aquí para abrir GitHub</a> (o ya está abierto en otra pestaña)
+      </p>
+      <p style="color:var(--parchment);font-size:0.95rem;margin:0.4rem 0;">
+        2. Introduce este código:
+      </p>
+      <div id="gh-oauth-user-code" style="font-family:var(--font-mono);font-size:2.4rem;font-weight:bold;color:var(--gold);letter-spacing:0.3em;padding:1rem;background:rgba(20,12,8,0.5);border:2px dashed var(--gold);border-radius:4px;margin:1rem auto;display:inline-block;">XXXX-XXXX</div>
+      <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0;">
+        3. Autoriza la app. Esta ventana detecta el login automáticamente.
+      </p>
+      <div id="gh-oauth-polling-status" style="font-size:0.82rem;color:var(--gold);min-height:1.5em;margin-top:0.5rem;">
+        Esperando autorización...
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="btn-gh-oauth-cancel-polling">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="gh-oauth-phase-done" style="display:none;text-align:center;">
+      <p style="color:#7fb069;font-size:1.1rem;margin:1rem 0;">✓ Sesión iniciada correctamente</p>
+      <p id="gh-oauth-done-detail" style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0;"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ GITHUB BACKUP/RESTORE MODAL (Sub-GH-C) ============ -->
 <div class="modal-backdrop" id="modal-github-sync">
   <div class="modal modal-lg">
@@ -14659,6 +14728,105 @@ function deserializeAppState(state) {
   return { ok: true };
 }
 
+/* ─── Sub-OA-A: OAuth Device Flow GitHub ──────────────────────────
+ *
+ * Permite login transparente con cuenta GitHub sin pegar PAT manual.
+ *
+ * Flujo (https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow):
+ *   1. requestDeviceCode(clientId) → POST /login/device/code → { device_code,
+ *      user_code, verification_uri, expires_in, interval }
+ *   2. UI muestra user_code + abre verification_uri en nueva tab
+ *   3. pollForAccessToken(clientId, device_code, interval, maxAttempts) →
+ *      polls /login/oauth/access_token cada `interval` segundos hasta:
+ *      · access_token (autorizado → ok:true)
+ *      · access_denied / expired_token (ok:false)
+ *      · authorization_pending (sigue esperando)
+ *      · slow_down (aumenta intervalo en 5s)
+ *
+ * Requiere OAuth App registrada en https://github.com/settings/applications/new
+ * con "Enable Device Flow" activado. client_id es PÚBLICO (se hardcodea en JS),
+ * NO se usa client_secret (Device Flow para public clients).
+ */
+
+const GITHUB_DEVICE_CODE_URL = 'https://github.com/login/device/code';
+const GITHUB_ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token';
+
+async function requestDeviceCode(clientId, scope) {
+  if (!clientId) return { ok: false, error: 'client_id requerido (OAuth App de GitHub).' };
+  scope = scope || 'gist';
+  const params = new URLSearchParams({ client_id: clientId, scope });
+  try {
+    const f = (typeof window !== 'undefined' && window.fetch) ? window.fetch : fetch;
+    const res = await f(GITHUB_DEVICE_CODE_URL, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: params.toString(),
+    });
+    if (!res.ok) return { ok: false, error: 'HTTP ' + res.status };
+    const data = await res.json();
+    if (data.error) return { ok: false, error: data.error_description || data.error };
+    return {
+      ok: true,
+      device_code: data.device_code,
+      user_code: data.user_code,
+      verification_uri: data.verification_uri,
+      expires_in: data.expires_in || 900,
+      interval: data.interval || 5,
+    };
+  } catch (e) {
+    return { ok: false, error: 'Error de red: ' + (e.message || String(e)) };
+  }
+}
+
+function _sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function pollForAccessToken(clientId, deviceCode, interval, maxAttempts) {
+  if (!clientId || !deviceCode) return { ok: false, error: 'client_id y device_code requeridos.' };
+  interval = interval || 5;
+  maxAttempts = maxAttempts || 180;  // ~15min con interval=5s
+  let currentInterval = interval;
+  const params = new URLSearchParams({
+    client_id: clientId,
+    device_code: deviceCode,
+    grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+  });
+  const f = (typeof window !== 'undefined' && window.fetch) ? window.fetch : fetch;
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      const res = await f(GITHUB_ACCESS_TOKEN_URL, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: params.toString(),
+      });
+      const data = await res.json();
+      if (data.access_token) {
+        return { ok: true, access_token: data.access_token, scope: data.scope };
+      }
+      if (data.error === 'authorization_pending') {
+        await _sleep(currentInterval * 1000);
+        continue;
+      }
+      if (data.error === 'slow_down') {
+        currentInterval += 5;
+        await _sleep(currentInterval * 1000);
+        continue;
+      }
+      if (data.error === 'access_denied') {
+        return { ok: false, error: 'Autorización denegada por el usuario.' };
+      }
+      if (data.error === 'expired_token') {
+        return { ok: false, error: 'Código expirado. Repite el login.' };
+      }
+      return { ok: false, error: data.error_description || data.error || 'Error desconocido' };
+    } catch (e) {
+      return { ok: false, error: 'Error de red: ' + (e.message || String(e)) };
+    }
+  }
+  return { ok: false, error: 'Timeout esperando autorización.' };
+}
+
 /* ─── Sub-GH-B: GitHub Gist API backup/restore ─────────────────────
  *
  * Backup → PATCH gist existente (si gistId) o POST gist nuevo.
@@ -19667,10 +19835,192 @@ function _ghRenderStatus(msg, kind) {
   }
 }
 
+/* Sub-OA-B + C — OAuth Device Flow UI + auto-sync. */
+const GH_CLIENT_ID_KEY = 'wf.gh.clientId';
+const GH_AUTO_SYNC_KEY = 'wf.gh.autoSync';
+
+function _ghShowPhase(phase) {
+  for (const p of ['setup','login','code','done']) {
+    const el = document.getElementById('gh-oauth-phase-' + p);
+    if (el) el.style.display = (p === phase) ? '' : 'none';
+  }
+}
+
+function _openGithubLoginModal() {
+  const clientId = localStorage.getItem(GH_CLIENT_ID_KEY) || '';
+  if (!clientId) {
+    _ghShowPhase('setup');
+  } else {
+    _ghShowPhase('login');
+  }
+  openModal('modal-github-login');
+}
+
+let _ghOAuthAbort = false;
+
+async function _ghStartLogin() {
+  _ghOAuthAbort = false;
+  const clientId = localStorage.getItem(GH_CLIENT_ID_KEY);
+  if (!clientId) { _ghShowPhase('setup'); return; }
+  _ghShowPhase('code');
+  document.getElementById('gh-oauth-user-code').textContent = '...';
+  document.getElementById('gh-oauth-polling-status').textContent = 'Solicitando código a GitHub...';
+
+  const codeRes = await requestDeviceCode(clientId, 'gist');
+  if (!codeRes.ok) {
+    document.getElementById('gh-oauth-polling-status').textContent =
+      '✗ Error: ' + codeRes.error + ' (¿CORS bloqueado? Usa fallback PAT.)';
+    return;
+  }
+  document.getElementById('gh-oauth-user-code').textContent = codeRes.user_code;
+  const link = document.getElementById('gh-oauth-verify-link');
+  link.href = codeRes.verification_uri;
+  // Auto-abre tab.
+  try { window.open(codeRes.verification_uri, '_blank', 'noopener'); } catch (e) {}
+  document.getElementById('gh-oauth-polling-status').textContent =
+    'Esperando autorización... (intervalo ' + codeRes.interval + 's)';
+
+  // Polling con check de cancelación.
+  const maxAttempts = Math.ceil((codeRes.expires_in || 900) / (codeRes.interval || 5));
+  let token = null;
+  for (let i = 0; i < maxAttempts; i++) {
+    if (_ghOAuthAbort) return;
+    const oneRes = await pollForAccessToken(clientId, codeRes.device_code, codeRes.interval, 1);
+    if (oneRes.ok) { token = oneRes.access_token; break; }
+    if (/denied|expir|denegad/i.test(oneRes.error || '')) {
+      document.getElementById('gh-oauth-polling-status').textContent = '✗ ' + oneRes.error;
+      return;
+    }
+    // authorization_pending / slow_down → sigue.
+  }
+  if (!token) {
+    document.getElementById('gh-oauth-polling-status').textContent = '✗ Timeout. Reintenta.';
+    return;
+  }
+  // Token recibido — guarda + activa auto-sync.
+  localStorage.setItem(GH_TOKEN_KEY, token);
+  localStorage.setItem(GH_AUTO_SYNC_KEY, '1');
+  _ghShowPhase('done');
+  document.getElementById('gh-oauth-done-detail').textContent =
+    'Token guardado localmente. Auto-sync activado. Las próximas modificaciones se subirán a tu Gist automáticamente.';
+  // Si no hay gistId, hace primer backup que crea uno.
+  const gistId = localStorage.getItem(GH_GIST_KEY) || null;
+  if (!gistId) {
+    githubBackup(token, null).then(r => {
+      if (r.ok) {
+        localStorage.setItem(GH_GIST_KEY, r.gistId);
+        localStorage.setItem(GH_LAST_SYNC_KEY, new Date().toISOString());
+      }
+    });
+  }
+}
+
+// Handlers fases modal OAuth.
+const _btnSaveClientId = document.getElementById('btn-gh-oauth-save-clientid');
+if (_btnSaveClientId) {
+  _btnSaveClientId.addEventListener('click', () => {
+    const cid = (document.getElementById('gh-oauth-clientid').value || '').trim();
+    if (!cid) { alert('Client ID requerido.'); return; }
+    localStorage.setItem(GH_CLIENT_ID_KEY, cid);
+    _ghShowPhase('login');
+  });
+}
+const _btnStartLogin = document.getElementById('btn-gh-oauth-start-login');
+if (_btnStartLogin) _btnStartLogin.addEventListener('click', _ghStartLogin);
+const _btnResetClientId = document.getElementById('btn-gh-oauth-reset-clientid');
+if (_btnResetClientId) {
+  _btnResetClientId.addEventListener('click', () => {
+    document.getElementById('gh-oauth-clientid').value = localStorage.getItem(GH_CLIENT_ID_KEY) || '';
+    _ghShowPhase('setup');
+  });
+}
+const _btnCancelPolling = document.getElementById('btn-gh-oauth-cancel-polling');
+if (_btnCancelPolling) {
+  _btnCancelPolling.addEventListener('click', () => {
+    _ghOAuthAbort = true;
+    closeModal('modal-github-login');
+  });
+}
+
+/* Sub-OA-C — Auto-sync hooks. */
+let _ghAutoSyncTimer = null;
+function _ghScheduleAutoSync() {
+  if (localStorage.getItem(GH_AUTO_SYNC_KEY) !== '1') return;
+  const token = localStorage.getItem(GH_TOKEN_KEY);
+  const gistId = localStorage.getItem(GH_GIST_KEY);
+  if (!token || !gistId) return;
+  if (_ghAutoSyncTimer) clearTimeout(_ghAutoSyncTimer);
+  _ghAutoSyncTimer = setTimeout(async () => {
+    _ghAutoSyncTimer = null;
+    const r = await githubBackup(token, gistId);
+    if (r.ok) {
+      localStorage.setItem(GH_LAST_SYNC_KEY, new Date().toISOString());
+      // Discreto: indicador en consola.
+      console.log('[wf-sync] auto-backup OK · ' + new Date().toLocaleTimeString());
+    } else {
+      console.warn('[wf-sync] auto-backup falló: ' + r.error);
+    }
+  }, 8000);  // Debounce 8s tras última modificación.
+}
+
+// Wrap persistWarband para hook auto-sync.
+if (typeof persistWarband === 'function') {
+  const _origPersistWarband = persistWarband;
+  persistWarband = function(wb) {
+    const r = _origPersistWarband.apply(this, arguments);
+    _ghScheduleAutoSync();
+    return r;
+  };
+}
+
+async function _ghAutoRestoreOnBoot() {
+  if (localStorage.getItem(GH_AUTO_SYNC_KEY) !== '1') return;
+  const token = localStorage.getItem(GH_TOKEN_KEY);
+  const gistId = localStorage.getItem(GH_GIST_KEY);
+  if (!token || !gistId) return;
+  // Solo si hay un gist remoto MÁS reciente que la última sincro local.
+  // Implementación simple: descarga + diff de exportedAt vs local.
+  try {
+    const f = (typeof window !== 'undefined' && window.fetch) ? window.fetch : fetch;
+    const res = await f('https://api.github.com/gists/' + encodeURIComponent(gistId), {
+      headers: { 'Authorization': 'Bearer ' + token,
+                 'Accept': 'application/vnd.github+json' },
+    });
+    if (!res.ok) { console.warn('[wf-sync] no se pudo verificar gist: HTTP ' + res.status); return; }
+    const data = await res.json();
+    const file = data.files && data.files['wf-state.json'];
+    if (!file) return;
+    const remoteState = JSON.parse(file.content);
+    const localLast = localStorage.getItem(GH_LAST_SYNC_KEY);
+    const remoteAt = remoteState.exportedAt;
+    if (localLast && remoteAt && new Date(remoteAt) <= new Date(localLast)) {
+      // Local ya sincronizado o más reciente.
+      return;
+    }
+    // Remote más reciente → restaura silenciosamente.
+    const r = deserializeAppState(remoteState);
+    if (r.ok) {
+      localStorage.setItem(GH_LAST_SYNC_KEY, new Date().toISOString());
+      console.log('[wf-sync] auto-restore desde gist · estado remoto era más reciente');
+      // Recarga UI para reflejar cambios.
+      if (typeof renderAll === 'function') renderAll();
+    }
+  } catch (e) {
+    console.warn('[wf-sync] auto-restore falló: ' + e.message);
+  }
+}
+
 function _openGithubSyncModal() {
-  _ghLoadFields();
-  _ghRenderStatus('Sin actividad reciente.', '');
-  openModal('modal-github-sync');
+  // Si hay sesión OAuth activa → muestra modal sync clásico con campos
+  // pre-rellenados. Si no, abre flujo login OAuth.
+  if (localStorage.getItem(GH_AUTO_SYNC_KEY) === '1' &&
+      localStorage.getItem(GH_TOKEN_KEY)) {
+    _ghLoadFields();
+    _ghRenderStatus('Sesión OAuth activa · auto-sync ON', 'ok');
+    openModal('modal-github-sync');
+  } else {
+    _openGithubLoginModal();
+  }
 }
 const _btnOpenGhSync = document.getElementById('btn-open-github-sync');
 if (_btnOpenGhSync) _btnOpenGhSync.addEventListener('click', _openGithubSyncModal);
@@ -34394,6 +34744,8 @@ function boot() {
   setBandaSubtab(getActiveBandaSubtab());
   // SPEC-rediseno-ui Sub-B — restaurar sidebar facción (plegada default).
   setFactionSidebarOpen(isFactionSidebarOpen());
+  // Sub-OA-C — auto-restore desde GitHub Gist si hay sesión OAuth activa.
+  if (typeof _ghAutoRestoreOnBoot === 'function') _ghAutoRestoreOnBoot();
 }
 
 boot();
