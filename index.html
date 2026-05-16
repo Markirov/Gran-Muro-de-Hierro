@@ -4112,7 +4112,8 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <button class="mode-btn" data-mode="campana">🗡 Campaña</button>
     <button class="mode-btn" data-mode="lab">🔬 Lab</button>
     <button class="mode-btn" data-mode="battle">📋 Partida</button>
-    <button class="btn" id="btn-open-github-sync-global" style="margin-left:auto;background:#2b3e5c;border-color:#4a6a8c;color:#cfd8e6;" title="Backup / Restore en GitHub Gist (Ctrl+Alt+G)">☁ Backup GitHub</button>
+    <button class="btn" id="btn-open-account" style="margin-left:auto;background:#2b3e5c;border-color:#4a6a8c;color:#cfd8e6;" title="Iniciar sesión / Tu cuenta (Ctrl+Alt+G)">☁ Tu cuenta</button>
+    <button class="btn" id="btn-open-github-sync-global" style="background:#3a3a3a;border-color:#666;color:#ccc;font-size:0.78rem;" title="(Avanzado) Backup via GitHub Gist">GitHub</button>
   </div>
   <div class="header-actions" id="actions-banda">
     <button class="btn btn-primary" id="btn-import-companion" data-action-priority="primary" title="Importa una banda creada en Trench Companion (https://trench-companion.com)">⤓ Importar de Companion</button>
@@ -4888,6 +4889,42 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <div class="modal-actions">
       <button class="btn" data-close>Cancelar</button>
       <button class="btn btn-primary" id="btn-do-new-campaign">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FIREBASE LOGIN MODAL (Sub-FB-D) ============ -->
+<div class="modal-backdrop" id="modal-firebase-login">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>☁ Tu cuenta</h3>
+    <div id="fb-login-not-configured" style="display:none;">
+      <p style="color:var(--parchment);font-size:0.85rem;">
+        La sincronización con cuenta de usuario no está configurada en esta instalación.
+        Usa el sistema clásico (GitHub Gist) si tienes cuenta GitHub.
+      </p>
+    </div>
+    <div id="fb-login-signed-out" style="display:none;text-align:center;padding:1rem 0;">
+      <p style="color:var(--parchment);font-size:0.95rem;margin:0.5rem 0 1rem;">
+        Inicia sesión para que tus bandas, campañas y settings se sincronicen automáticamente entre dispositivos.
+      </p>
+      <button class="btn btn-primary" id="btn-fb-login-google" style="font-size:1rem;padding:0.7rem 1.4rem;background:#fff;color:#333;border:1px solid #ddd;">
+        <span style="margin-right:0.5rem;">🔵</span> Continuar con Google
+      </button>
+      <p style="color:var(--parchment);opacity:0.6;font-size:0.75rem;margin-top:1rem;">
+        Tus datos viven en tu cuenta personal. Nadie más los ve.
+      </p>
+    </div>
+    <div id="fb-login-signed-in" style="display:none;text-align:center;padding:1rem 0;">
+      <img id="fb-user-avatar" src="" alt="" style="width:64px;height:64px;border-radius:50%;border:2px solid var(--gold);display:none;margin:0 auto 0.6rem;"/>
+      <p style="color:var(--gold);font-size:1rem;margin:0.3rem 0;" id="fb-user-name">—</p>
+      <p style="color:var(--parchment);opacity:0.7;font-size:0.8rem;" id="fb-user-email">—</p>
+      <p id="fb-user-sync-status" style="font-size:0.8rem;color:#7fb069;margin-top:0.8rem;">✓ Sincronizado</p>
+      <div class="modal-actions">
+        <button class="btn" id="btn-fb-force-sync" title="Subir el estado actual ahora">⤒ Forzar sync</button>
+        <button class="btn" id="btn-fb-pull-now" title="Descargar estado de la nube ahora">⤓ Restaurar de nube</button>
+        <button class="btn btn-danger" id="btn-fb-logout">Cerrar sesión</button>
+      </div>
     </div>
   </div>
 </div>
@@ -14728,6 +14765,148 @@ function deserializeAppState(state) {
   return { ok: true };
 }
 
+/* ─── Sub-FB-A: Firebase config + helpers ─────────────────────────
+ *
+ * Login con Google + storage en Firestore. Sync transparente entre
+ * dispositivos. Usuario solo pulsa "Continuar con Google" una vez por
+ * navegador y se queda logueado.
+ *
+ * SETUP (Marcos, una vez):
+ *   1. https://console.firebase.google.com → "Add project"
+ *   2. Authentication → Sign-in method → Google → Enable
+ *   3. Firestore Database → Create database (test mode OK al inicio)
+ *   4. Project settings → General → "Your apps" → web (</>) → Register
+ *   5. Copia firebaseConfig JSON → pégalo abajo en FIREBASE_CONFIG
+ *   6. Firestore Rules → permite solo dueño leer/escribir su doc:
+ *        rules_version='2'; service cloud.firestore {
+ *          match /databases/{db}/documents {
+ *            match /users/{uid} {
+ *              allow read, write: if request.auth!=null && request.auth.uid==uid;
+ *            }
+ *          }
+ *        }
+ *
+ * Si FIREBASE_CONFIG.apiKey está vacío, todo el sistema queda inactivo
+ * (fallback al sistema GitHub PAT/OAuth previo).
+ */
+const FIREBASE_CONFIG = {
+  apiKey: "",            // ← Marcos pega aquí (pública)
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: "",
+};
+
+let _fbApp = null, _fbAuth = null, _fbDb = null, _fbUser = null;
+let _fbReady = false;
+let _fbModuleCache = null;
+
+function isFirebaseConfigured() {
+  return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey &&
+            FIREBASE_CONFIG.projectId);
+}
+
+async function _fbLoadModules() {
+  if (_fbModuleCache) return _fbModuleCache;
+  // Carga dinámica via ES module imports desde CDN gstatic.
+  const ver = '10.13.2';
+  const [appMod, authMod, firestoreMod] = await Promise.all([
+    import(/* @vite-ignore */ 'https://www.gstatic.com/firebasejs/' + ver + '/firebase-app.js'),
+    import(/* @vite-ignore */ 'https://www.gstatic.com/firebasejs/' + ver + '/firebase-auth.js'),
+    import(/* @vite-ignore */ 'https://www.gstatic.com/firebasejs/' + ver + '/firebase-firestore.js'),
+  ]);
+  _fbModuleCache = { appMod, authMod, firestoreMod };
+  return _fbModuleCache;
+}
+
+async function firebaseInit() {
+  if (!isFirebaseConfigured()) return { ok: false, error: 'Firebase no configurado.' };
+  if (_fbReady) return { ok: true };
+  try {
+    const { appMod, authMod, firestoreMod } = await _fbLoadModules();
+    _fbApp = appMod.initializeApp(FIREBASE_CONFIG);
+    _fbAuth = authMod.getAuth(_fbApp);
+    _fbDb = firestoreMod.getFirestore(_fbApp);
+    _fbReady = true;
+    // Suscribe a cambios de auth — UI puede reaccionar.
+    authMod.onAuthStateChanged(_fbAuth, (u) => {
+      _fbUser = u;
+      if (typeof onFirebaseAuthChanged === 'function') {
+        try { onFirebaseAuthChanged(u); } catch (e) { console.warn(e); }
+      }
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: 'Carga Firebase falló: ' + (e.message || String(e)) };
+  }
+}
+
+async function firebaseLoginGoogle() {
+  const initRes = await firebaseInit();
+  if (!initRes.ok) return initRes;
+  try {
+    const { authMod } = await _fbLoadModules();
+    const provider = new authMod.GoogleAuthProvider();
+    const result = await authMod.signInWithPopup(_fbAuth, provider);
+    _fbUser = result.user;
+    return { ok: true, user: { uid: result.user.uid, email: result.user.email,
+                                displayName: result.user.displayName,
+                                photoURL: result.user.photoURL } };
+  } catch (e) {
+    return { ok: false, error: 'Login Google falló: ' + (e.message || String(e)) };
+  }
+}
+
+async function firebaseLogout() {
+  if (!_fbReady) return { ok: true };
+  try {
+    const { authMod } = await _fbLoadModules();
+    await authMod.signOut(_fbAuth);
+    _fbUser = null;
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message || String(e) };
+  }
+}
+
+function firebaseCurrentUser() {
+  return _fbUser ? {
+    uid: _fbUser.uid, email: _fbUser.email,
+    displayName: _fbUser.displayName, photoURL: _fbUser.photoURL,
+  } : null;
+}
+
+async function firebaseSaveState() {
+  if (!_fbReady || !_fbUser) return { ok: false, error: 'No autenticado.' };
+  try {
+    const { firestoreMod } = await _fbLoadModules();
+    const state = serializeAppState();
+    const ref = firestoreMod.doc(_fbDb, 'users', _fbUser.uid);
+    await firestoreMod.setDoc(ref, { state, updatedAt: new Date().toISOString() });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: 'Firestore save: ' + (e.message || String(e)) };
+  }
+}
+
+async function firebaseLoadState() {
+  if (!_fbReady || !_fbUser) return { ok: false, error: 'No autenticado.' };
+  try {
+    const { firestoreMod } = await _fbLoadModules();
+    const ref = firestoreMod.doc(_fbDb, 'users', _fbUser.uid);
+    const snap = await firestoreMod.getDoc(ref);
+    if (!snap.exists()) return { ok: true, empty: true };
+    const data = snap.data();
+    if (!data || !data.state) return { ok: true, empty: true };
+    const r = deserializeAppState(data.state);
+    if (!r.ok) return r;
+    return { ok: true, updatedAt: data.updatedAt };
+  } catch (e) {
+    return { ok: false, error: 'Firestore load: ' + (e.message || String(e)) };
+  }
+}
+
 /* ─── Sub-OA-A: OAuth Device Flow GitHub ──────────────────────────
  *
  * Permite login transparente con cuenta GitHub sin pegar PAT manual.
@@ -19833,6 +20012,153 @@ function _ghRenderStatus(msg, kind) {
   if (last && kind !== 'error') {
     el.textContent += '  ·  Última sync: ' + new Date(last).toLocaleString();
   }
+}
+
+/* Sub-FB-D — Firebase modal handlers + auto-sync. */
+function _fbShowSection(id) {
+  for (const x of ['not-configured','signed-out','signed-in']) {
+    const el = document.getElementById('fb-login-' + x);
+    if (el) el.style.display = (x === id) ? '' : 'none';
+  }
+}
+
+function openAccountModal() {
+  if (!isFirebaseConfigured()) {
+    _fbShowSection('not-configured');
+    openModal('modal-firebase-login');
+    return;
+  }
+  firebaseInit().then(r => {
+    if (!r.ok) {
+      _fbShowSection('not-configured');
+      const el = document.getElementById('fb-login-not-configured');
+      if (el) el.innerHTML = '<p style="color:#c92424;">Error inicializando Firebase: ' + (r.error||'') + '</p>';
+    } else {
+      const u = firebaseCurrentUser();
+      if (u) _fbRenderSignedIn(u); else _fbShowSection('signed-out');
+    }
+    openModal('modal-firebase-login');
+  });
+}
+
+function _fbRenderSignedIn(u) {
+  _fbShowSection('signed-in');
+  document.getElementById('fb-user-name').textContent = u.displayName || '(sin nombre)';
+  document.getElementById('fb-user-email').textContent = u.email || '';
+  const av = document.getElementById('fb-user-avatar');
+  if (u.photoURL) { av.src = u.photoURL; av.style.display = 'block'; }
+  else av.style.display = 'none';
+}
+
+// Hook expuesto a firebaseInit listener.
+function onFirebaseAuthChanged(user) {
+  if (user) {
+    const u = firebaseCurrentUser();
+    if (document.getElementById('modal-firebase-login').classList.contains('show')) {
+      _fbRenderSignedIn(u);
+    }
+    // Tras login fresco, pull de Firestore.
+    _fbAutoPullOnLogin();
+  } else {
+    if (document.getElementById('modal-firebase-login').classList.contains('show')) {
+      _fbShowSection('signed-out');
+    }
+  }
+}
+
+async function _fbAutoPullOnLogin() {
+  const r = await firebaseLoadState();
+  if (r.ok && !r.empty) {
+    console.log('[wf-fb] auto-pull al login OK · updatedAt:', r.updatedAt);
+    if (typeof renderAll === 'function') renderAll();
+  } else if (r.ok && r.empty) {
+    // Primera vez para este usuario — sube estado local actual como base.
+    console.log('[wf-fb] usuario nuevo, subiendo estado local como inicial');
+    firebaseSaveState();
+  }
+}
+
+const _btnOpenAccount = document.getElementById('btn-open-account');
+if (_btnOpenAccount) _btnOpenAccount.addEventListener('click', openAccountModal);
+
+const _btnFbLoginGoogle = document.getElementById('btn-fb-login-google');
+if (_btnFbLoginGoogle) {
+  _btnFbLoginGoogle.addEventListener('click', async () => {
+    _btnFbLoginGoogle.disabled = true;
+    const r = await firebaseLoginGoogle();
+    _btnFbLoginGoogle.disabled = false;
+    if (!r.ok) alert('Error: ' + r.error);
+  });
+}
+
+const _btnFbLogout = document.getElementById('btn-fb-logout');
+if (_btnFbLogout) {
+  _btnFbLogout.addEventListener('click', async () => {
+    if (!confirm('Cerrar sesión. Las modificaciones futuras NO se sincronizarán hasta que vuelvas a iniciar sesión. ¿Continuar?')) return;
+    await firebaseLogout();
+    _fbShowSection('signed-out');
+  });
+}
+
+const _btnFbForceSync = document.getElementById('btn-fb-force-sync');
+if (_btnFbForceSync) {
+  _btnFbForceSync.addEventListener('click', async () => {
+    const status = document.getElementById('fb-user-sync-status');
+    if (status) status.textContent = 'Sincronizando...';
+    const r = await firebaseSaveState();
+    if (status) status.textContent = r.ok ? '✓ Sincronizado · ' + new Date().toLocaleTimeString() : '✗ Error: ' + r.error;
+  });
+}
+const _btnFbPullNow = document.getElementById('btn-fb-pull-now');
+if (_btnFbPullNow) {
+  _btnFbPullNow.addEventListener('click', async () => {
+    if (!confirm('Restaurar SOBREESCRIBE el estado local con lo que haya en tu cuenta. ¿Continuar?')) return;
+    const status = document.getElementById('fb-user-sync-status');
+    if (status) status.textContent = 'Descargando...';
+    const r = await firebaseLoadState();
+    if (status) status.textContent = r.ok ? '✓ Restaurado' : '✗ Error: ' + r.error;
+    if (r.ok && !r.empty) setTimeout(() => window.location.reload(), 1000);
+  });
+}
+
+/* Sub-FB-E — Auto-save debounced tras cada persistWarband. */
+let _fbAutoSaveTimer = null;
+function _fbScheduleAutoSave() {
+  if (!_fbReady || !_fbUser) return;
+  if (_fbAutoSaveTimer) clearTimeout(_fbAutoSaveTimer);
+  _fbAutoSaveTimer = setTimeout(async () => {
+    _fbAutoSaveTimer = null;
+    const r = await firebaseSaveState();
+    if (r.ok) {
+      console.log('[wf-fb] auto-save OK ·', new Date().toLocaleTimeString());
+      const status = document.getElementById('fb-user-sync-status');
+      if (status) status.textContent = '✓ Sincronizado · ' + new Date().toLocaleTimeString();
+    } else {
+      console.warn('[wf-fb] auto-save falló:', r.error);
+    }
+  }, 5000);  // 5s debounce.
+}
+
+// Wrap persistWarband por segunda vez para hook Firebase.
+if (typeof persistWarband === 'function') {
+  const _origPersistWarbandFb = persistWarband;
+  persistWarband = function(wb) {
+    const r = _origPersistWarbandFb.apply(this, arguments);
+    _fbScheduleAutoSave();
+    return r;
+  };
+}
+
+// Init Firebase al cargar — auto-login si sesión persistente.
+if (isFirebaseConfigured()) {
+  firebaseInit().then(r => {
+    if (r.ok) {
+      // onAuthStateChanged dispara _fbAutoPullOnLogin si hay usuario.
+      console.log('[wf-fb] Firebase init OK');
+    } else {
+      console.warn('[wf-fb] Firebase init falló:', r.error);
+    }
+  });
 }
 
 /* Sub-OA-B + C — OAuth Device Flow UI + auto-sync. */
