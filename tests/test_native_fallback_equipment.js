@@ -58,7 +58,7 @@ group('Sub-D Group 1: modelo nativo con unitId canon resuelve stats', () => {
   const wb = { factionId: fid };
   const m = { name: unit.name, unitId: unit.id };
   const data = buildModelCardData(m, wb);
-  ok(data.stats.length === 5, '5 stats devueltos');
+  ok(data.stats.length === 4, '4 stats devueltos (MOV/RNG/MEL/ARM, sin B Blood)');
   // Verifica que algún stat tiene valor != '0' (es nativo, no companion)
   const hasRealStat = data.stats.some(s => s.value && s.value !== '0');
   ok(hasRealStat, `algún stat nativo no-cero (canon unit "${unit.name}")`);

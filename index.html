@@ -6789,7 +6789,7 @@ const ABILITY_LIBRARY = {
   },
   'Mastery of the Elements': {
     type: 'passive',
-    summary: 'Al desplegarse, puede aplicar efectos elementales especiales del alquimista (consultar reglas).',
+    summary: 'Cada turno cambia el efecto de sus armas entre Fire, Gas o Shrapnel.',
   },
   'Temporal Assassin': {
     type: 'passive',
@@ -32611,12 +32611,13 @@ function buildModelCardData(model, wb) {
     const s = String(v).replace(/"/g, '');
     return s;
   };
+  // 4 stats canon: Movement / Ranged / Melee / Armour.
+  // (Eliminada B = Blood Markers placeholder — siempre 0, confundía.)
   const statRow = [
-    { label:'M', value: parseStat(stats.move) },
-    { label:'R', value: parseStat(stats.ranged) },
-    { label:'M', value: parseStat(stats.melee) },
-    { label:'A', value: parseStat(stats.armour) },
-    { label:'B', value: '0' /* bloodMarkers tracking visual; valor 0 base */ },
+    { label:'MOV',    value: parseStat(stats.move) },
+    { label:'RNG',    value: parseStat(stats.ranged) },
+    { label:'MEL',    value: parseStat(stats.melee) },
+    { label:'ARM',    value: parseStat(stats.armour) },
   ];
 
   // Weapons (de equipment con type weapon/grenade). Perfil completo:
@@ -33163,7 +33164,7 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
 
   // 5) Tira de stats. Header usa STAT_HEADER_COLOR si lo define la variante.
   let sy = cy + 95;
-  const statW = (w - 80) / 5;
+  const statW = (w - 80) / Math.max(data.stats.length, 1);
   for (let i = 0; i < data.stats.length; i++) {
     const sx = x0 + 40 + i * statW;
     ctx.fillStyle = rgbStr(statHeader);
@@ -33181,27 +33182,44 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
   ctx.strokeStyle = rgbStr(p.MUTED); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(x0 + 30, sy); ctx.lineTo(x0 + w - 30, sy); ctx.stroke();
   sy += 8;
-  // Armas con perfil completo: nombre + manos + rango + daño + keywords.
+  // Armas con perfil completo. Intenta 1 línea (nombre+manos+rango+keywords)
+  // si cabe en ancho de tarjeta; sino, fallback a 3 líneas multi.
+  const maxWeaponWidth = w - 70;  // ancho útil
   for (const wpn of (data.weapons || []).slice(0, 4)) {
     const handStr = wpn.hand ? ' [' + wpn.hand + ']' : '';
-    drawTextLeft(ctx, '⚔ ' + wpn.name + handStr, x0 + 36, sy, 'bold 12px serif', rgbStr(p.TEXT));
-    sy += 13;
-    // Línea perfil: Rango · Dado · Injury.
-    const stats = (wpn.range && wpn.range !== '—' ? wpn.range : '') +
-                  (wpn.dice && wpn.dice !== '—' ? '  ·  ' + wpn.dice + 'D' : '') +
-                  (wpn.injury && wpn.injury !== '—' ? '  ·  I' + wpn.injury : '');
-    if (stats.trim()) {
-      drawTextLeft(ctx, stats, x0 + 48, sy, '10px monospace', rgbStr(p.MUTED));
-      sy += 12;
+    const rangeStr = (wpn.range && wpn.range !== '—') ? wpn.range : '';
+    const kwStr = (wpn.keyword || '').trim();
+    // Línea única candidata: "⚔ Name [1H] · 12" · CRITICAL · HEAVY"
+    const parts = ['⚔ ' + wpn.name + handStr];
+    if (rangeStr) parts.push(rangeStr);
+    if (kwStr) parts.push(kwStr);
+    const singleLine = parts.join('  ·  ');
+    ctx.save();
+    ctx.font = '12px serif';
+    const singleW = ctx.measureText(singleLine).width;
+    ctx.restore();
+    if (singleW <= maxWeaponWidth) {
+      // 1 línea: cabe entero.
+      drawTextLeft(ctx, singleLine, x0 + 36, sy, '12px serif', rgbStr(p.TEXT));
+      sy += 18;
+    } else {
+      // Fallback multi-línea: nombre+manos arriba, perfil+keywords debajo.
+      drawTextLeft(ctx, '⚔ ' + wpn.name + handStr, x0 + 36, sy, 'bold 12px serif', rgbStr(p.TEXT));
+      sy += 13;
+      const stats = rangeStr +
+                    (wpn.dice && wpn.dice !== '—' ? '  ·  ' + wpn.dice + 'D' : '') +
+                    (wpn.injury && wpn.injury !== '—' ? '  ·  I' + wpn.injury : '');
+      if (stats.trim()) {
+        drawTextLeft(ctx, stats, x0 + 48, sy, '10px monospace', rgbStr(p.MUTED));
+        sy += 12;
+      }
+      if (kwStr) {
+        let kw = kwStr.length > 80 ? kwStr.slice(0, 79) + '…' : kwStr;
+        drawTextLeft(ctx, kw, x0 + 48, sy, '9px serif', rgbStr(p.MUTED));
+        sy += 11;
+      }
+      sy += 3;
     }
-    // Línea keywords.
-    if (wpn.keyword && wpn.keyword.trim()) {
-      let kw = wpn.keyword;
-      if (kw.length > 80) kw = kw.slice(0, 79) + '…';
-      drawTextLeft(ctx, kw, x0 + 48, sy, '9px serif', rgbStr(p.MUTED));
-      sy += 11;
-    }
-    sy += 3;
   }
   // Battlekit (gear no-arma) bajo armas.
   for (const b of (data.battlekit || []).slice(0, 6)) {

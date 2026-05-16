@@ -136,7 +136,7 @@ group('Group 6: buildModelCardData orquesta todo', () => {
   // 4 keywords + 2 reglas banda + 1 Binoculars implicit = 7
   ok(data.abilities.length >= 6, `abilities >= 6 (got ${data.abilities.length})`);
   ok(typeof data.cost === 'number', 'cost numeric');
-  ok(Array.isArray(data.stats) && data.stats.length === 5, '5 stats: M/R/M/A/B');
+  ok(Array.isArray(data.stats) && data.stats.length === 4, '4 stats canon: MOV/RNG/MEL/ARM (B Blood eliminada)');
 });
 
 group('Group 7: buildModelCardData — hasElementalMastery flag', () => {
