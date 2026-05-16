@@ -32470,32 +32470,33 @@ function buildModelCardData(model, wb) {
   const implicit = getImplicitAbilities(model);
   const factionRules = getVariantFactionRules(wb);
 
-  // Compose abilities en orden: native + keywords + reglas banda + implicit.
-  // Dedupe por nombre normalizado (case-insensitive trim). Funde descripción
-  // si el dup la tenía y el primero no. Fallback: ABILITY_LIBRARY[name].summary
-  // cuando la fuente directa no trae descripción.
+  // Compose abilities con tag kind para filtrado de descripción.
+  // Dedupe case-insensitive + fallback ABILITY_LIBRARY.summary.
+  // kind: 'native' | 'keyword' | 'factionRule' | 'implicit'
+  // Render decide si muestra desc según kind (factionRule + NEGATE skip).
   const _abSeen = new Map();
-  function _abAdd(name, desc) {
+  function _abAdd(name, desc, kind) {
     if (!name) return;
     const nameStr = String(name);
     const key = nameStr.toLowerCase().trim();
     if (!key) return;
     let d = desc || '';
-    // Si no hay desc, intenta ABILITY_LIBRARY (canon resumen).
     if (!d && typeof ABILITY_LIBRARY !== 'undefined' && ABILITY_LIBRARY[nameStr]) {
       d = ABILITY_LIBRARY[nameStr].summary || '';
     }
     const existing = _abSeen.get(key);
     if (!existing) {
-      _abSeen.set(key, { name: nameStr, desc: d });
-    } else if (!existing.desc && d) {
-      existing.desc = d;
+      _abSeen.set(key, { name: nameStr, desc: d, kind: kind || 'native' });
+    } else {
+      if (!existing.desc && d) existing.desc = d;
+      // factionRule gana prioridad si llega después (señala origen real).
+      if (kind === 'factionRule') existing.kind = 'factionRule';
     }
   }
-  for (const a of abilitiesNative) _abAdd(a.name || String(a), a.desc || '');
-  for (const k of kws) _abAdd(k, '');
-  for (const r of factionRules) _abAdd(r.name, r.desc);
-  for (const i of implicit) _abAdd(i.name, i.desc);
+  for (const a of abilitiesNative) _abAdd(a.name || String(a), a.desc || '', 'native');
+  for (const k of kws) _abAdd(k, '', 'keyword');
+  for (const r of factionRules) _abAdd(r.name, r.desc, 'factionRule');
+  for (const i of implicit) _abAdd(i.name, i.desc, 'implicit');
   const abilities = Array.from(_abSeen.values());
 
   const hasElementalMastery = abilities.some(a =>
@@ -33052,17 +33053,23 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
   }
   sy += 80;
 
-  // 6) ARMAS — section color.
-  drawTextLeft(ctx, 'ARMAS', x0 + 30, sy, 'bold 14px serif', rgbStr(sectionColor));
+  // 6) EQUIPO — armas + battlekit unificados en una sola sección.
+  drawTextLeft(ctx, 'EQUIPO', x0 + 30, sy, 'bold 14px serif', rgbStr(sectionColor));
   sy += 18;
   ctx.strokeStyle = rgbStr(p.MUTED); ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(x0 + 30, sy); ctx.lineTo(x0 + w - 30, sy); ctx.stroke();
   sy += 8;
+  // Armas con stats + battlekit (gear) en listado mezclado.
   for (const wpn of (data.weapons || []).slice(0, 4)) {
-    drawTextLeft(ctx, wpn.name, x0 + 36, sy, '13px serif', rgbStr(p.TEXT));
+    drawTextLeft(ctx, '⚔ ' + wpn.name, x0 + 36, sy, '13px serif', rgbStr(p.TEXT));
     drawTextLeft(ctx, wpn.range + ' / ' + wpn.dice + 'D / I' + wpn.injury,
                  x0 + 250, sy, '11px monospace', rgbStr(p.MUTED));
-    sy += 20;
+    sy += 18;
+  }
+  for (const b of (data.battlekit || []).slice(0, 6)) {
+    drawTextLeft(ctx, '◆ ' + (b.name || ''), x0 + 36, sy, '12px serif', rgbStr(p.TEXT));
+    if (b.type) drawTextLeft(ctx, b.type, x0 + w - 200, sy, 'italic 11px serif', rgbStr(p.MUTED));
+    sy += 17;
   }
   sy = Math.max(sy + 8, y0 + 480);
 
@@ -33072,64 +33079,39 @@ function drawCardOnCanvas(ctx, x0, y0, w, h, data) {
   ctx.beginPath(); ctx.moveTo(x0 + 30, sy); ctx.lineTo(x0 + w - 30, sy); ctx.stroke();
   sy += 10;
   const abList = data.abilities || [];
-  // Dimensiona font según densidad. Con desc, cada item ocupa ~2 líneas.
-  const showDesc = abList.length <= 8;  // Sólo si caben (≤8) mostramos desc.
   const nameFont = abList.length >= 8 ? 'bold 10px serif'
                  : abList.length >= 6 ? 'bold 11px serif'
                                        : 'bold 12px serif';
   const descFont = abList.length >= 6 ? '9px serif' : '10px serif';
-  const itemStep = showDesc
-    ? (abList.length >= 6 ? 28 : 34)
-    : (abList.length >= 8 ? 14 : 16);
   if (abList.length === 0) {
     drawTextLeft(ctx, '— Sin habilidades especiales —', x0 + 36, sy, 'italic 12px serif', rgbStr(p.MUTED));
-    sy += itemStep;
+    sy += 18;
   } else {
-    const maxDescChars = 90;
+    const maxDescChars = 110;
+    // Regla: desc siempre, excepto reglas de facción y NEGATE (X).
+    const shouldShowDesc = (a) => {
+      if (!a.desc || !a.desc.trim()) return false;
+      if (a.kind === 'factionRule') return false;
+      if (/^NEGATE\b/i.test(a.name || '')) return false;
+      return true;
+    };
     for (const a of abList.slice(0, 12)) {
       drawTextLeft(ctx, '▸ ' + (a.name || ''), x0 + 36, sy, nameFont, rgbStr(p.TEXT));
-      if (showDesc && a.desc && a.desc.trim()) {
+      if (shouldShowDesc(a)) {
         let d = a.desc.trim();
         if (d.length > maxDescChars) d = d.slice(0, maxDescChars - 1) + '…';
         drawTextLeft(ctx, d, x0 + 48, sy + 12, descFont, rgbStr(p.MUTED));
+        sy += abList.length >= 6 ? 26 : 30;
+      } else {
+        sy += abList.length >= 8 ? 14 : 16;
       }
-      sy += itemStep;
     }
   }
   sy = Math.max(sy + 8, y0 + 780);
 
-  // 8) BATTLEKIT.
-  drawTextLeft(ctx, 'BATTLEKIT', x0 + 30, sy, 'bold 14px serif', rgbStr(sectionColor));
-  sy += 18;
-  ctx.beginPath(); ctx.moveTo(x0 + 30, sy); ctx.lineTo(x0 + w - 30, sy); ctx.stroke();
-  sy += 10;
-  for (const b of (data.battlekit || []).slice(0, 5)) {
-    drawTextLeft(ctx, '◆ ' + (b.name || ''), x0 + 36, sy, '12px serif', rgbStr(p.TEXT));
-    if (b.type) drawTextLeft(ctx, b.type, x0 + w - 200, sy, 'italic 11px serif', rgbStr(p.MUTED));
-    sy += 17;
-  }
-  sy = Math.max(sy + 6, y0 + 910);
-
-  // 9) PE.
-  drawTextLeft(ctx, 'PE', x0 + 30, sy, 'bold 12px serif', rgbStr(sectionColor));
-  const barW = w - 100;
-  ctx.fillStyle = rgbStr(p.PANEL_BG);
-  ctx.fillRect(x0 + 60, sy - 8, barW, 16);
-  ctx.fillStyle = rgbStr(p.PROGRESS);
-  const ratio = Math.min(1, (data.pe.current || 0) / (data.pe.max || 12));
-  ctx.fillRect(x0 + 60, sy - 8, barW * ratio, 16);
-  ctx.strokeStyle = rgbStr(p.FRAME); ctx.lineWidth = 1;
-  for (const m of [3, 6, 12]) {
-    const mx = x0 + 60 + barW * (m / 12);
-    ctx.beginPath(); ctx.moveTo(mx, sy - 10); ctx.lineTo(mx, sy + 10); ctx.stroke();
-  }
-  sy += 22;
-
-  // 10) Avances / Cicatrices / Récord.
-  drawTextLeft(ctx,
-    'Avances: ' + (data.advancements || 0) + ' · Cicatrices: ' + (data.scars || 0) + ' · Récord: ' + (data.record || '—'),
-    x0 + 30, sy, '11px monospace', rgbStr(p.MUTED));
-  sy += 18;
+  // (BATTLEKIT unificado dentro de EQUIPO arriba — sección eliminada.)
+  // (Bloque PROGRESIÓN — PE bar + Avances/Cicatrices/Récord — eliminado
+  //  por petición Marcos: tarjetas más limpias, sin tracking ingame.)
 
   // 11) Cita narrativa — NARRATIVE_COLOR si definido.
   if (data.narrative) {
