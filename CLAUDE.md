@@ -154,10 +154,10 @@ Documento maestro: `herramientas/specs-y-plans/PIVOT-companion-of-tc-v2.md`.
 
 **Suite tras PIVOT v2**: 77+ suites · 1248+ verifications · 0 failures.
 
-**Pendiente menor**:
-- Sub-Fase 12-D: integración Lab variante vs canon (comparativa directa en simulador). Lógica `runCompare_lab` ya existe; solo wire UI.
-- Banner Post Game Reporter en modal campañas (recomendar TC para tracking oficial).
-- README.md (no existe — CLAUDE.md hace de readme técnico).
+**Pendiente menor — todo cerrado en sesión 2026-05-18** (ver más abajo):
+- ~~Sub-Fase 12-D: integración Lab variante vs canon~~ → ya estaba wired (línea 21080+ del sandbox handler) con tests test_pivot_fase12d_lab_compare.js + test_pivot_fase12_sandbox_ui.js (36 verifs entre ambos). CLAUDE.md estaba stale.
+- ~~Banner Post Game Reporter en modal campañas~~ → añadido bloque `.post-game-reporter-banner` antes de los inputs en `#modal-new-campaign` con link a trench-companion.com (commit e4f24df).
+- ~~README.md~~ → existe en la raíz del repo + LICENSE MIT.
 
 ## Reorganización del repo (2026-05-15)
 
@@ -165,4 +165,34 @@ Documento maestro: `herramientas/specs-y-plans/PIVOT-companion-of-tc-v2.md`.
 
 `.gitignore` ahora cubre: `herramientas/`, `STLs/`, `.claude/`, `assets/wwi-placeholders/`, `tarjetas-*.pdf`, `battletrackers-*.pdf`, `desktop.ini` recursive, PDFs canon individuales como red de seguridad.
 
-Root tras limpieza: `index.html`, `CLAUDE.md`, `BACKLOG.md`, `package.json`, `Bandas/` (fixtures), `tests/` (suite completa, 80 archivos `test_*.js`).
+Root tras limpieza: `index.html`, `CLAUDE.md`, `BACKLOG.md`, `ROADMAP.md`, `README.md`, `LICENSE`, `package.json`, `Bandas/` (fixtures), `tests/` (suite completa, ~100 archivos `test_*.js`).
+
+## Sesión 2026-05-18 — Cierre completo de backlog roadmap
+
+Sesión orientada a barrer los ítems "Alta prio" y "Baja prio" del `ROADMAP.md`. Resultado: 6 commits, +263 verificaciones, 0 regresiones netas (2 bugs colaterales cazados y corregidos).
+
+| Commit | Verifs | Tema |
+|---|---|---|
+| b188724 | 21 | Sub-G SPEC rediseño UI — test funcional render Lista compra (cierra la última sub-tarea sin test propio del SPEC). |
+| e4f24df | 12 | Banner Post Game Reporter en modal Nueva Campaña — recomienda registrar XP/avances oficiales en TC. |
+| 1aa35e6 | 30 | Paridad VARIANT_PALETTES vs VARIANT_FACTION_RULES: añadidas 3 paletas + 3 ornamentos canon (Red Brigade red_star_hammer; Great Hegemon plague_banner; Great Hunger gluttony_maw). |
+| 0bf683f | 115 | FACTION_PLACEHOLDERS poblados con 64 imágenes WWI dominio público en `assets/wwi-placeholders/` (gitignored). Mapeo canon-grimdark: NA→Aliados, IS→Otomano, HL→Imperios Centrales, BG→MG/gas/devastación, TC→Maxim/Vickers nobles. |
+| 190177a | 74 | 13 paletas restantes + 6 ornamentos: Trench Pilgrims (sacred-affliction thorn_crown, st-methodius orthodox_cross, tenth-plague lamb_skull); Heretic Legions vars (trench-ghosts ghost_mask, avarice-knights coin_stack, naval-raiders anchor_skull); The Court 7 Sins (comparten seven_headed_serpent, diferenciados por color VARIANT). |
+| 92a668e | 11 | Pestaña "📚 Campañas" plural en nav principal + fix regresión Sub-C (CSS ocultaba panel-catalogue/roster/detail en mode-campana, dejando la vista en blanco). |
+
+**Bugs colaterales cazados y corregidos**:
+1. **Alias court-serpent ↔ the-court**: el factionId real en DATA es `court-serpent` pero FACTION_PALETTES + FACTION_PLACEHOLDERS sólo tenían entrada `the-court`. Bandas de The Court caían al fallback de New Antioch silenciosamente. Añadido alias en ambos diccionarios (commit 190177a).
+2. **Regresión Sub-C en mode-campana**: la regla CSS introducida en el rediseño UI Sub-C ocultaba `#panel-catalogue`, `#panel-roster`, `#panel-detail` cuando el body tenía clase `mode-campana`. El módulo de campaña usa precisamente esos 3 paneles para Lista/Centro/Detalle. La pestaña Campaña quedaba en blanco. Regla reescrita para ocultar SOLO variantes + shopping + lab + battle (commit 92a668e).
+
+**Auditoría inicial del estado del backlog**:
+- SPEC rediseño UI sub-tareas A-I: todas estaban implementadas. Sólo faltaba el test funcional Sub-G.
+- Sub-Fase 12-D Lab compare: ya estaba completa (sandbox handler + tests). CLAUDE.md decía "pendiente" — stale.
+- Disclaimer fan-made footer: ya existía como toast + modal.
+- README.md y LICENSE: ya existían.
+
+**Suite final**: 99 suites · 1800 verifications · 0 failures.
+
+**Backlog tras esta sesión**:
+- Validación física en mesa (imprimir tarjetas Cazadores + Herejes, jugar 2-3 partidas). No codeable.
+- Lab 2.0 espacial (idea futura, 3-6 sprints, ver ROADMAP.md sección 6).
+- Glossary PDF y house rules partida libre (baja prio futuro).
