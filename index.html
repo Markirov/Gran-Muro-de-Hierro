@@ -16397,6 +16397,46 @@ function effectiveAbilities(model, unit) {
 }
 
 /**
+ * Lista de abilities a mostrar en UI roster + PDF para un modelo. Resuelve
+ * el bug Cazadores del Muro donde Silahdar (alias COMPANION_ID_ALIASES
+ * 'md_yuzbasicaptain_mv_silahdar' → 'yuzbasi') heredaba 'Mubarizun' de la
+ * unit base, aunque canonicamente el Silahdar tiene otras reglas (Siege
+ * Jezzail Teams + Marksmanship of the Iron Wall).
+ *
+ * Filosofía PIVOT v2: Trench Companion es la verdad oficial. Cuando un
+ * modelo viene de Companion (companionStats / companionAbilities), sus
+ * abilities son las del JSON. La unit de Forge es fallback nativo SOLO
+ * cuando el modelo NO trae companion data.
+ *
+ * Retorna array de objetos `{ name: string }`. Normaliza:
+ *  - String → {name}
+ *  - {name} → tal cual
+ *  - {'ability-name': X} (shape exportado por Companion JSON) → {name: X}
+ *
+ * Native path: unit.abilities (strings) + upgrade.addsAbilities activos.
+ * Aplana a `{name}` para coherencia con el path Companion.
+ */
+function displayAbilitiesForCard(model, unit) {
+  if (!model || typeof model !== 'object') return [];
+  const hasCompanion = !!(model.companionStats || (Array.isArray(model.companionAbilities) && model.companionAbilities.length > 0));
+  if (hasCompanion) {
+    const arr = model.companionAbilities || [];
+    return arr.map(a => {
+      if (typeof a === 'string') return { name: a };
+      if (a && typeof a === 'object') {
+        const name = a.name || a['ability-name'] || '';
+        const desc = a.desc || a.description || a['ability-description'] || '';
+        return desc ? { name, desc } : { name };
+      }
+      return { name: String(a) };
+    }).filter(o => o.name);
+  }
+  // Native fallback: unit.abilities + activeUpgrades.addsAbilities.
+  const eff = effectiveAbilities(model, unit);
+  return eff.map(n => ({ name: n }));
+}
+
+/**
  * Parse a stat value of the form "+N DICE", "-N DICE", "+0 DICE", "-".
  * Returns { sign, value, suffix } or null if it's a special value like '-'.
  */
@@ -18116,9 +18156,13 @@ function rosterCard(model, unit, wb) {
     ? `<div class="roster-constraints" style="margin-top:0.2rem;">${constraintBadges.join(' ')}</div>`
     : '';
 
-  // Abilities (innate + upgrades + advancements)
-  const unitAbilities = effectiveAbilities(model, unit);
-  const baseUnitAbilities = unit.abilities || [];
+  // Abilities (innate + upgrades + advancements).
+  // Modelos Companion-imported: TC es verdad oficial, no mezclar abilities
+  // del unit alias de Forge (bug Silahdar/Yüzbaşı, ver displayAbilitiesForCard).
+  const displayAbs = displayAbilitiesForCard(model, unit);
+  const unitAbilities = displayAbs.map(a => a.name);
+  const hasCompanion = !!(model.companionStats || (Array.isArray(model.companionAbilities) && model.companionAbilities.length));
+  const baseUnitAbilities = hasCompanion ? unitAbilities : (unit.abilities || []);
   const baseAdvancements = (model.baseProgression && model.baseProgression.advancements) || [];
   const totalAbilityCount = unitAbilities.length + baseAdvancements.length;
   const expanded = STATE.rosterCardAbilitiesOpen && STATE.rosterCardAbilitiesOpen[model.uid];
@@ -34933,10 +34977,12 @@ function pdfRenderModel(td, model) {
     td.y += 1;
   }
 
-  // Abilities (just names + summaries — short, leaves room)
-  // Effective list = unit base + upgrade-added + advancements + companion
-  const pdfBaseUnitAbilities = unit.abilities || [];
-  const pdfEffAbilities = effectiveAbilities(model, unit);
+  // Abilities (just names + summaries — short, leaves room).
+  // Modelos Companion-imported: TC es verdad oficial. Saltamos unit base
+  // abilities para evitar el bug Silahdar (alias yuzbasi inyectaba Mubarizun).
+  const pdfHasCompanion = !!(model.companionStats || (Array.isArray(model.companionAbilities) && model.companionAbilities.length));
+  const pdfBaseUnitAbilities = pdfHasCompanion ? [] : (unit.abilities || []);
+  const pdfEffAbilities = pdfHasCompanion ? [] : effectiveAbilities(model, unit);
   const baseAdvancements = (model.baseProgression && model.baseProgression.advancements) || [];
   // Companion abilities (bandas importadas de Trench Companion). Pueden
   // duplicar nombres con effectiveAbilities — el dedupe los une por name.
