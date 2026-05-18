@@ -32421,15 +32421,84 @@ function getFactionPalette(wb) {
  * foto para el mismo modelo.
  */
 const FACTION_PLACEHOLDERS = {
-  // Marcos puebla tras descargar de Wikimedia Commons. Variante > base.
-  'new-antioch': [],
-  'trench-pilgrims': [],
-  'iron-sultanate': [],
-  'heretic-legions': [],
-  'black-grail': [],
-  'the-court': [],
-  // Variantes (override) — vacío hasta tener imágenes específicas.
-  'iron-sultanate:iron-wall-def': [],
+  // Pool poblado tras descarga manual de Wikimedia Commons (~65 imágenes
+  // WWI dominio público). Selección determinística por nombre del modelo
+  // (simpleHashStr). Mapeo temático grimdark, no histórico estricto:
+  //
+  // - new-antioch    → Aliados (francés / británico / ANZAC).
+  // - trench-pilgrims → trincheras + procesiones + soldados ascéticos.
+  // - iron-sultanate → Otomano / Mesopotamia / Kemal Atatürk.
+  // - heretic-legions → Imperios Centrales (alemán Stosstrupp / austríaco).
+  // - black-grail    → masacre / gas / artillería / devastación (MG icónica).
+  // - the-court      → tecnología pesada noble (Maxim / Vickers / Wz1910).
+  //
+  // Variante > base. Si una variante específica define su pool, sustituye.
+
+  'new-antioch': [
+    'assets/wwi-placeholders/soldado_frances.JPG',
+    'assets/wwi-placeholders/soldado_frances_uniforme_temprano.jpg',
+    'assets/wwi-placeholders/artilleria_britanica_accion.jpg',
+    'assets/wwi-placeholders/gallipoli_anzac_1915.jpg',
+    'assets/wwi-placeholders/loc_sol_001.jpg',
+    'assets/wwi-placeholders/loc_sol_002.jpg',
+    'assets/wwi-placeholders/loc_sol_003.jpg',
+  ],
+  'trench-pilgrims': [
+    'assets/wwi-placeholders/loc_tr_001.jpg',
+    'assets/wwi-placeholders/loc_tr_002.jpg',
+    'assets/wwi-placeholders/loc_tr_003.jpg',
+    'assets/wwi-placeholders/loc_tr_004.jpg',
+    'assets/wwi-placeholders/no_mans_land_cullen.jpg',
+    'assets/wwi-placeholders/trinchera_aerea_primera_guerra.jpg',
+    'assets/wwi-placeholders/loc_sol_004.jpg',
+    'assets/wwi-placeholders/loc_sol_005.jpg',
+  ],
+  'iron-sultanate': [
+    'assets/wwi-placeholders/otomano_ataturk_1907.JPG',
+    'assets/wwi-placeholders/otomano_ataturk_uniforme.JPG',
+    'assets/wwi-placeholders/otomano_kemal5.JPG',
+    'assets/wwi-placeholders/otomano_kemal_postcard.jpg',
+    'assets/wwi-placeholders/loc_ot_001.jpg',
+    'assets/wwi-placeholders/loc_ot_002.jpg',
+    'assets/wwi-placeholders/loc_ot_003.jpg',
+    'assets/wwi-placeholders/loc_ot_004.jpg',
+    'assets/wwi-placeholders/loc_ot_005.jpg',
+  ],
+  'heretic-legions': [
+    'assets/wwi-placeholders/armadura_escudo_aleman.jpg',
+    'assets/wwi-placeholders/soldados_alemanes.jpg',
+    'assets/wwi-placeholders/soldados_germano_austriacos_postal.jpg',
+    'assets/wwi-placeholders/uniforme_infanteria_alemana_1914.jpg',
+    'assets/wwi-placeholders/mortero_trinchera_aleman_1916.jpg',
+    'assets/wwi-placeholders/porra_asalto_trinchera.jpg',
+    'assets/wwi-placeholders/ametrallador_aleman_acorazado.jpg',
+  ],
+  'black-grail': [
+    'assets/wwi-placeholders/loc_mg_001.jpg',
+    'assets/wwi-placeholders/loc_mg_002.jpg',
+    'assets/wwi-placeholders/loc_mg_003.jpg',
+    'assets/wwi-placeholders/loc_mg_004.jpg',
+    'assets/wwi-placeholders/loc_mg_005.jpg',
+    'assets/wwi-placeholders/ametralladora_vickers_gas.jpg',
+    'assets/wwi-placeholders/proyectiles_artilleria.jpg',
+    'assets/wwi-placeholders/ametralladoras_museo.jpg',
+  ],
+  'the-court': [
+    'assets/wwi-placeholders/maxim_mg_1.jpg',
+    'assets/wwi-placeholders/maxim_mg_2.jpg',
+    'assets/wwi-placeholders/maxim_wz1910.jpg',
+    'assets/wwi-placeholders/vickers_hmg.jpg',
+    'assets/wwi-placeholders/municion_rifle.jpg',
+  ],
+  // Variantes (override) — pool propio si la sub-facción tiene aesthetic
+  // diferenciable de la base.
+  'iron-sultanate:iron-wall-def': [
+    'assets/wwi-placeholders/loc_ot_006.jpg',
+    'assets/wwi-placeholders/loc_ot_007.jpg',
+    'assets/wwi-placeholders/loc_ot_008.jpg',
+    'assets/wwi-placeholders/loc_ot_009.jpg',
+    'assets/wwi-placeholders/loc_ot_010.jpg',
+  ],
 };
 
 const EMBEDDED_PLACEHOLDERS = {

@@ -100,8 +100,15 @@ group('Group 3: drawCardPlaceholder skip si img.complete false', () => {
 
 group('Group 4: drawCardOnCanvas integra placeholder', () => {
   // Inyecta imagen mock en IMAGE_CACHE para que getPlaceholderForModel
-  // y drawCardOnCanvas la encuentren.
+  // y drawCardOnCanvas la encuentren. Snapshot + restore para evitar
+  // contaminar otros tests si corren en mismo proceso.
   const wb = { factionId:'iron-sultanate', variantId:'iron-wall-def' };
+  const variantKey = 'iron-sultanate:iron-wall-def';
+  const prevBase = FACTION_PLACEHOLDERS['iron-sultanate'];
+  const prevVariant = FACTION_PLACEHOLDERS[variantKey];
+  // El motor prioriza variante > base. Sobrescribimos el variantKey para
+  // que la búsqueda devuelva el mock determinísticamente.
+  FACTION_PLACEHOLDERS[variantKey] = ['assets/mock-test.jpg'];
   FACTION_PLACEHOLDERS['iron-sultanate'] = ['assets/mock-test.jpg'];
   IMAGE_CACHE.set('assets/mock-test.jpg',
                   { complete:true, naturalWidth:800, naturalHeight:600, width:800, height:600 });
@@ -117,8 +124,9 @@ group('Group 4: drawCardOnCanvas integra placeholder', () => {
   drawCardOnCanvas(ctx, 0, 0, 744, 1039, data);
   ok(ctx._calls.some(c => c.fn === 'drawImage'), 'drawCardOnCanvas → drawImage (placeholder integrado)');
 
-  // Cleanup.
-  FACTION_PLACEHOLDERS['iron-sultanate'] = [];
+  // Cleanup — restaura snapshot.
+  FACTION_PLACEHOLDERS['iron-sultanate'] = prevBase;
+  FACTION_PLACEHOLDERS[variantKey] = prevVariant;
   IMAGE_CACHE.delete('assets/mock-test.jpg');
 });
 
