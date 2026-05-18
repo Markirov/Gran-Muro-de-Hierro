@@ -239,6 +239,26 @@ body[data-side="fallen"] .header-drawer-title {
   flex-direction: column;
   gap: 0.4rem;
 }
+.header-drawer-section {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faithful-gold);
+  padding: 0.6rem 0.4rem 0.2rem;
+  margin-top: 0.4rem;
+  border-top: 1px solid rgba(127, 107, 67, 0.35);
+  opacity: 0.85;
+  font-weight: 700;
+}
+.header-drawer-section:first-child {
+  border-top: none;
+  margin-top: 0;
+}
+body[data-side="fallen"] .header-drawer-section {
+  color: var(--fallen-blood-bright);
+  border-top-color: rgba(155, 30, 30, 0.4);
+}
 .header-drawer-body .btn {
   width: 100%;
   text-align: left;
@@ -4273,22 +4293,29 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <button class="btn" id="btn-refresh-companion" data-action-priority="primary" title="Re-importa desde Companion preservando variantes experimentales y lista de la compra">🔄 Refrescar</button>
     <button class="btn" id="btn-open-sandbox" data-action-priority="primary" title="Bifurca variantes experimentales de loadout sin tocar la banda canon">🧪 Variantes</button>
     <button class="btn" id="btn-open-shopping" data-action-priority="primary" title="Lista de la compra para programar adquisiciones futuras">🛒 Lista compra</button>
-    <!-- Botones secundarios — accesibles vía ☰ siempre. -->
-    <button class="btn" id="btn-export-companion" data-action-priority="secondary" title="Exporta esta banda en formato Companion JSON para volver a Trench Companion">⤒ Exportar a Companion</button>
-    <button class="btn" id="btn-new" data-action-priority="secondary" title="Crea una banda manualmente con el catálogo local (modo offline)">✠ Nueva Manual</button>
-    <button class="btn" id="btn-load" data-action-priority="secondary">📜 Cargar</button>
-    <button class="btn" id="btn-save-as" data-action-priority="secondary">💾 Guardar Como</button>
-    <button class="btn" id="btn-export" data-action-priority="secondary">⤓ Exportar JSON Forge</button>
-    <button class="btn" id="btn-import" data-action-priority="secondary">⤒ Importar JSON Forge</button>
-    <button class="btn" id="btn-print" data-action-priority="secondary">🖨 Imprimir</button>
-    <button class="btn" id="btn-pdf" data-action-priority="secondary">📜 PDF</button>
-    <button class="btn" id="btn-cards-pdf" data-action-priority="secondary"
+    <!-- Botones secundarios — accesibles vía ☰ siempre.
+         Agrupados por data-action-group: el drawer inserta separadores
+         con header de sección para reducir la fatiga visual de 10+
+         botones dispares. -->
+    <button class="btn" id="btn-export-companion" data-action-priority="secondary" data-action-group="companion-tc" title="Exporta esta banda en formato Companion JSON para volver a Trench Companion">⤒ Exportar a Companion</button>
+    <button class="btn" id="btn-new" data-action-priority="secondary" data-action-group="banda" title="Crea una banda manualmente con el catálogo local (modo offline)">✠ Nueva Manual</button>
+    <button class="btn" id="btn-load" data-action-priority="secondary" data-action-group="banda">📜 Cargar</button>
+    <button class="btn" id="btn-save-as" data-action-priority="secondary" data-action-group="banda">💾 Guardar Como</button>
+    <button class="btn" id="btn-export" data-action-priority="secondary" data-action-group="forge-json">⤓ Exportar JSON Forge</button>
+    <button class="btn" id="btn-import" data-action-priority="secondary" data-action-group="forge-json">⤒ Importar JSON Forge</button>
+    <button class="btn" id="btn-print" data-action-priority="secondary" data-action-group="impresion">🖨 Imprimir</button>
+    <button class="btn" id="btn-pdf" data-action-priority="secondary" data-action-group="impresion">📜 PDF</button>
+    <button class="btn" id="btn-cards-pdf" data-action-priority="secondary" data-action-group="impresion"
             title="Genera PDF con las tarjetas de los modelos (formato Magic, 9 por hoja A4)">
       🃏 Tarjetas PDF
     </button>
-    <button class="btn" id="btn-trackers-pdf" data-action-priority="secondary"
+    <button class="btn" id="btn-trackers-pdf" data-action-priority="secondary" data-action-group="impresion"
             title="Genera PDF con los battletrackers (cuarto folio, 2 por hoja A4)">
       ⊞ Battletrackers PDF
+    </button>
+    <button class="btn" id="btn-glossary-pdf" data-action-priority="secondary" data-action-group="impresion"
+            title="Genera PDF con el Glosario: reglas de facción, habilidades ELITE y términos generales referenciados por la banda. Útil para llevar a mesa.">
+      📖 Glosario PDF
     </button>
     <!-- Botones legacy ocultos pero presentes para no romper handlers. -->
     <button class="btn" id="btn-open-github-sync" data-action-priority="secondary" style="display:none;" title="(legacy) Backup via GitHub Gist">☁ GitHub legacy</button>
@@ -19699,6 +19726,17 @@ document.getElementById('btn-trackers-pdf')?.addEventListener('click', async () 
     alert('Error generando PDF de battletrackers: ' + e.message);
   }
 });
+document.getElementById('btn-glossary-pdf')?.addEventListener('click', async () => {
+  const wb = STATE.currentWarband;
+  if (!wb) { alert('No hay banda activa.'); return; }
+  try {
+    const blob = await generateGlossaryPdf(wb);
+    const safeName = (wb.name || 'banda').replace(/[^\w\d -]/g, '').trim() || 'banda';
+    await _downloadPdfBlob(blob, 'glosario-' + safeName + '.pdf');
+  } catch (e) {
+    alert('Error generando Glosario PDF: ' + e.message);
+  }
+});
 
 /* =================================================================
  * COMPANION IMPORT / EXPORT HANDLERS
@@ -30943,24 +30981,61 @@ function openHeaderDrawer() {
   // Build drawer items: include EVERY button from the source actions row,
   // not just the secondary ones. Primary buttons in the drawer give a
   // friendlier alternative to the squeezed top bar.
+  // Limpieza top-bar: agrupar secundarios por data-action-group con un
+  // header descriptivo por sección (Companion, PDF/Imprimir, etc.). Los
+  // primarios y los sin grupo van primero (top-level).
   body.innerHTML = '';
-  const buttons = source.querySelectorAll('button.btn');
-  buttons.forEach(srcBtn => {
-    // Skip the hamburger toggle itself
-    if (srcBtn.classList.contains('header-menu-toggle')) return;
-    // Skip botones legacy ocultos explícitamente con display:none inline.
-    if (srcBtn.style && srcBtn.style.display === 'none') return;
+  const GROUP_LABELS = {
+    'companion-tc': 'Companion (Trench Companion)',
+    'banda':        'Banda local (offline)',
+    'forge-json':   'JSON Forge (backup local)',
+    'impresion':    'Imprimir y PDF',
+  };
+  function _appendDrawerButton(srcBtn) {
     const clone = document.createElement('button');
     clone.className = srcBtn.className;
     clone.textContent = srcBtn.textContent;
     clone.disabled = srcBtn.disabled;
+    const title = srcBtn.getAttribute('title');
+    if (title) clone.setAttribute('title', title);
     clone.addEventListener('click', () => {
       closeHeaderDrawer();
-      // Delegate the click to the original button so handlers fire
-      srcBtn.click();
+      srcBtn.click();  // Delegate to original so handlers fire.
     });
     body.appendChild(clone);
+  }
+  function _appendDrawerHeader(label) {
+    const h = document.createElement('div');
+    h.className = 'header-drawer-section';
+    h.textContent = label;
+    body.appendChild(h);
+  }
+  const allBtns = Array.from(source.querySelectorAll('button.btn')).filter(b => {
+    if (b.classList.contains('header-menu-toggle')) return false;
+    if (b.style && b.style.display === 'none') return false;
+    return true;
   });
+  // Sección 1: primarios + sin grupo (los pintamos en el orden DOM).
+  const topLevel = allBtns.filter(b => !b.getAttribute('data-action-group'));
+  for (const b of topLevel) _appendDrawerButton(b);
+  // Secciones por grupo, en el orden de GROUP_LABELS (orden semántico
+  // por flujo del usuario: TC primero, luego local/forge/imprimir).
+  for (const gid of Object.keys(GROUP_LABELS)) {
+    const groupBtns = allBtns.filter(b => b.getAttribute('data-action-group') === gid);
+    if (!groupBtns.length) continue;
+    _appendDrawerHeader(GROUP_LABELS[gid]);
+    for (const b of groupBtns) _appendDrawerButton(b);
+  }
+  // Grupos no listados en GROUP_LABELS (futuros): los pintamos al final.
+  const knownGroups = new Set(Object.keys(GROUP_LABELS));
+  const extras = allBtns.filter(b => {
+    const g = b.getAttribute('data-action-group');
+    return g && !knownGroups.has(g);
+  });
+  if (extras.length) {
+    _appendDrawerHeader('Otros');
+    for (const b of extras) _appendDrawerButton(b);
+  }
   drawer.classList.add('open');
   backdrop.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -34091,6 +34166,42 @@ async function generateCardsPdf(wb) {
   }
 
   return doc.output('blob');
+}
+
+/* Roadmap baja prio — Glosario PDF imprimible.
+ * Reusa pdfRenderSpecialRulesSection (Section 3 del warband PDF completo)
+ * en un documento dedicado A4 portrait, sin roster ni quartermaster.
+ *
+ * Pensado para imprimir como hoja de referencia rápida en mesa:
+ *  - Regla especial de la facción (Pride of Jabir, Hellbound Soul, etc.)
+ *  - Variante de banda (si aplica).
+ *  - Habilidades de unidades ELITE (con companion-aware grouping del
+ *    fix Silahdar — agrupa por model.name en bandas TC).
+ *  - Términos generales referenciados (BLAST, FIRE, GAS, INFILTRATOR, ...).
+ *
+ * Devuelve Blob A4. El caller decide nombre del archivo + URL.createObjectURL.
+ */
+async function generateGlossaryPdf(wb) {
+  if (!wb) throw new Error('No hay banda activa para generar el glosario.');
+  if (typeof window === 'undefined' || !window.jspdf || !window.jspdf.jsPDF) {
+    throw new Error('jsPDF no cargado. Causa probable: estás abriendo el HTML con file:// y un adblocker/firewall bloquea los CDN. Solución: 1) descarga https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js junto al HTML, o 2) sirve el HTML desde un servidor local (python -m http.server).');
+  }
+  const td = new TCDocument();
+  td.setWarband(wb);
+
+  // Cabecera específica del glosario (no full title page del warband PDF).
+  td.h1((wb.name || 'Banda') + ' — Glosario de Reglas', { newPage: false });
+  td.paragraph(
+    'Referencia rápida para llevar a mesa: reglas de la facción, habilidades de las unidades ELITE y términos generales del juego que aparecen en esta banda. Sigue las paráfrasis de Trench Companion + canon Trench Crusade.',
+    { size: 9, color: PDF_COLORS.greyMid, style: 'italic' }
+  );
+  td.y += 3;
+
+  // Reusa la sección 3 ya implementada en el warband PDF completo.
+  pdfRenderSpecialRulesSection(td);
+
+  td.drawPageFooter();
+  return td.doc.output('blob');
 }
 
 /* Fase 13-B PIVOT v2 — Lista de compra PDF imprimible.
