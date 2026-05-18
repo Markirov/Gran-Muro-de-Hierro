@@ -18625,9 +18625,10 @@ function renderDetail() {
       </div>`;
   }
 
-  // Abilities (paraphrased + user notes) — effective list includes upgrade abilities
-  // Always show even if empty so user can manually add notes
-  const unitAbilities = effectiveAbilities(model, unit);
+  // Abilities (paraphrased + user notes) — effective list includes upgrade abilities.
+  // Companion-imported models: TC es fuente oficial. displayAbilitiesForCard
+  // evita el bug Silahdar (alias yuzbasi inyectaba Mubarizun).
+  const unitAbilities = displayAbilitiesForCard(model, unit).map(a => a.name);
   // Plus advancements bought via campaign progression base
   const baseAdvancements = (model.baseProgression && model.baseProgression.advancements) || [];
   if (unitAbilities.length || baseAdvancements.length) {
@@ -18895,25 +18896,30 @@ function renderDetail() {
  * Includes both unit abilities and advancements bought via base progression.
  */
 function renderAbilitiesList(container, model, unit, wb) {
-  // Effective abilities = base unit abilities + abilities added by active upgrades
-  const baseAbilities = unit.abilities || [];
-  const upgradeAdded = [];
-  for (const up of activeUpgrades(model, unit)) {
-    for (const a of (up.addsAbilities || [])) {
-      if (!baseAbilities.includes(a) && !upgradeAdded.includes(a)) {
-        upgradeAdded.push(a);
-      }
-    }
-  }
+  // Effective abilities = base unit abilities + abilities added by active upgrades.
+  // Companion-imported models: la lista canon viene del JSON de TC; los
+  // upgrades de Forge no aplican (su variant rules ya están en la lista).
+  const hasCompanion = !!(model.companionStats || (Array.isArray(model.companionAbilities) && model.companionAbilities.length));
   const baseAdvancements = (model.baseProgression && model.baseProgression.advancements) || [];
 
-  // Sources: 'unit' (innate), 'upgrade' (from active upgrade), 'advancement' (★ progression)
+  // Sources: 'unit' (innate / canon TC), 'upgrade' (from active upgrade en
+  // bandas nativas), 'advancement' (★ progression).
   const items = [];
-  for (const name of baseAbilities) {
-    items.push({ name, source: 'unit' });
-  }
-  for (const name of upgradeAdded) {
-    items.push({ name, source: 'upgrade' });
+  if (hasCompanion) {
+    const companionList = displayAbilitiesForCard(model, unit);
+    for (const a of companionList) items.push({ name: a.name, source: 'unit' });
+  } else {
+    const baseAbilities = unit.abilities || [];
+    const upgradeAdded = [];
+    for (const up of activeUpgrades(model, unit)) {
+      for (const a of (up.addsAbilities || [])) {
+        if (!baseAbilities.includes(a) && !upgradeAdded.includes(a)) {
+          upgradeAdded.push(a);
+        }
+      }
+    }
+    for (const name of baseAbilities) items.push({ name, source: 'unit' });
+    for (const name of upgradeAdded) items.push({ name, source: 'upgrade' });
   }
   for (const adv of baseAdvancements) {
     items.push({ name: adv.name, source: 'advancement' });
@@ -35889,25 +35895,33 @@ function gatherWarbandSpecialRules(wb) {
     }
   }
 
-  // Elite unit abilities — for each ELITE unit in the band, list its abilities
-  // (effective: includes upgrade-added). Group by unit (one section each).
-  // Use a Map keyed by unitId to dedupe but preserve order.
+  // Elite unit abilities — for each ELITE model en la banda, list its abilities.
+  // Group key:
+  //   - Companion model (TC): por model.name (Silahdar, Janissary Officer)
+  //     — el alias unitId puede apuntar a yuzbasi/janissaries base y mezclaría
+  //     abilities de unidad equivocada. Header de sección refleja canon TC.
+  //   - Native model: por unit.id como antes.
   const eliteUnitsSeen = new Map();
   for (const model of wb.models) {
     const u = getUnit(wb.factionId, model.unitId);
     if (!u || u.tier !== 'elite') continue;
-    if (eliteUnitsSeen.has(u.id)) continue;  // already collected for this unit
-    const abilities = effectiveAbilities(model, u);
-    if (!abilities.length) continue;
-    const items = abilities
-      .map(name => {
+    const hasCompanion = !!(model.companionStats || (Array.isArray(model.companionAbilities) && model.companionAbilities.length));
+    const groupKey = hasCompanion ? ('companion:' + (model.name || u.name)) : u.id;
+    if (eliteUnitsSeen.has(groupKey)) continue;
+    const abilitiesObj = displayAbilitiesForCard(model, u);
+    if (!abilitiesObj.length) continue;
+    const items = abilitiesObj
+      .map(({ name }) => {
         const lib = ABILITY_LIBRARY[name];
         if (!lib) return null;
         return { name, type: lib.type, summary: lib.summary };
       })
       .filter(Boolean);
     if (items.length) {
-      eliteUnitsSeen.set(u.id, { unitName: u.name, abilities: items });
+      eliteUnitsSeen.set(groupKey, {
+        unitName: hasCompanion ? (model.name || u.name) : u.name,
+        abilities: items,
+      });
     }
   }
   result.eliteAbilities = Array.from(eliteUnitsSeen.values());
