@@ -32309,6 +32309,33 @@ const VARIANT_PALETTES = {
     ORNAMENT:'fortified_tower',
     STAT_HEADER_COLOR:[132,88,32], SECTION_COLOR:[132,88,32], NARRATIVE_COLOR:[95,52,18],
   },
+  // Roadmap fix — paridad reglas/paletas.
+  'new-antioch:red-brigade': {
+    // Soviético grimdark: rojo intenso + sickle/star, lleno de Wear and Tear.
+    BG:[228,218,200], FRAME:[40,18,18], FRAME_DARK:[20,8,8], FRAME_LIGHT:[88,28,28],
+    ACCENT:[210,170,70], ACCENT_DK:[160,128,42],
+    VARIANT:[180,32,32], VARIANT_DK:[125,18,18],
+    ORNAMENT:'red_star_hammer',
+    STAT_HEADER_COLOR:[125,18,18], SECTION_COLOR:[125,18,18], NARRATIVE_COLOR:[40,18,18],
+  },
+  'black-grail:great-hegemon': {
+    // Dirge of the Great Hegemon: ceniza + bilis plague + bronce viejo.
+    BG:[218,208,180], FRAME:[28,30,18], FRAME_DARK:[14,16,8], FRAME_LIGHT:[58,60,32],
+    ACCENT:[152,138,58], ACCENT_DK:[110,98,42],
+    VARIANT:[140,148,40], VARIANT_DK:[100,108,28],
+    ORNAMENT:'plague_banner',
+    PLAGUE:[152,158,42], PLAGUE_DK:[112,118,28],
+    STAT_HEADER_COLOR:[100,108,28], SECTION_COLOR:[100,108,28], NARRATIVE_COLOR:[28,30,18],
+  },
+  'black-grail:great-hunger': {
+    // The Great Hunger: rojo visceral + dientes de hueso. Antipope devorador.
+    BG:[218,200,176], FRAME:[26,16,16], FRAME_DARK:[12,6,6], FRAME_LIGHT:[58,32,32],
+    ACCENT:[182,150,82], ACCENT_DK:[138,108,52],
+    VARIANT:[152,28,40], VARIANT_DK:[105,18,28],
+    ORNAMENT:'gluttony_maw',
+    PLAGUE:[152,28,40], PLAGUE_DK:[105,18,28],
+    STAT_HEADER_COLOR:[105,18,28], SECTION_COLOR:[105,18,28], NARRATIVE_COLOR:[26,16,16],
+  },
 };
 
 // Helper: RGB array → CSS string. Tolera hex strings (back-compat) y null.
@@ -33086,6 +33113,106 @@ function drawOrnament_sevenHeadedSerpent(ctx, cx, cy, P, s) {
   ctx.restore();
 }
 
+// Roadmap fix — 3 ornamentos para variantes con reglas pero sin paleta.
+
+function drawOrnament_redStarHammer(ctx, cx, cy, P, s) {
+  // Red Brigade: estrella roja de 5 puntas + hoz cruzada (Soviet grimdark).
+  ctx.save();
+  // Estrella 5 puntas.
+  ctx.fillStyle = rgbStr(P.VARIANT || [180,32,32]);
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i / 10) * Math.PI * 2;
+    const r = (i % 2 === 0) ? s : s * 0.42;
+    const x = cx + Math.cos(a) * r;
+    const y = cy + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  // Borde oscuro.
+  ctx.strokeStyle = rgbStr(P.VARIANT_DK || P.FRAME_DARK);
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // Hoz dorada cruzada (arco simple).
+  ctx.strokeStyle = rgbStr(P.ACCENT || [210,170,70]);
+  ctx.lineWidth = Math.max(1.5, s * 0.08);
+  ctx.beginPath();
+  ctx.arc(cx, cy, s * 0.35, Math.PI * 0.15, Math.PI * 0.95);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawOrnament_plagueBanner(ctx, cx, cy, P, s) {
+  // Great Hegemon: pendón fúnebre + campana plague.
+  ctx.save();
+  // Asta vertical.
+  ctx.fillStyle = rgbStr(P.FRAME_DARK || [14,16,8]);
+  const t = Math.max(1.5, s * 0.1);
+  ctx.fillRect(cx - t/2, cy - s, t, s * 1.8);
+  // Pendón rectangular sesgado.
+  ctx.fillStyle = rgbStr(P.PLAGUE || P.VARIANT);
+  ctx.beginPath();
+  ctx.moveTo(cx + t/2, cy - s * 0.85);
+  ctx.lineTo(cx + s * 0.8, cy - s * 0.85);
+  ctx.lineTo(cx + s * 0.65, cy - s * 0.45);
+  ctx.lineTo(cx + s * 0.8, cy - s * 0.05);
+  ctx.lineTo(cx + t/2, cy - s * 0.05);
+  ctx.closePath();
+  ctx.fill();
+  // Cruz pequeña en pendón.
+  ctx.fillStyle = rgbStr(P.FRAME_DARK || [14,16,8]);
+  const cc = cx + s * 0.4, cv = cy - s * 0.45;
+  ctx.fillRect(cc - s*0.04, cv - s*0.2, s*0.08, s*0.4);
+  ctx.fillRect(cc - s*0.16, cv - s*0.04, s*0.32, s*0.08);
+  // Campana plague colgando.
+  ctx.fillStyle = rgbStr(P.ACCENT_DK || [110,98,42]);
+  ctx.beginPath();
+  ctx.arc(cx, cy + s * 0.55, s * 0.22, 0, Math.PI);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawOrnament_gluttonyMaw(ctx, cx, cy, P, s) {
+  // Great Hunger: fauces dentadas circulares (boca devoradora del Antipope).
+  ctx.save();
+  // Boca circular roja.
+  ctx.fillStyle = rgbStr(P.VARIANT_DK || [105,18,28]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, s * 0.85, 0, Math.PI * 2);
+  ctx.fill();
+  // Borde rojo más claro (labio).
+  ctx.strokeStyle = rgbStr(P.VARIANT || [152,28,40]);
+  ctx.lineWidth = Math.max(1.5, s * 0.1);
+  ctx.stroke();
+  // Dientes triangulares (12) hacia el centro.
+  ctx.fillStyle = rgbStr(P.ACCENT || [182,150,82]);
+  const dientes = 12;
+  for (let i = 0; i < dientes; i++) {
+    const a = (i / dientes) * Math.PI * 2;
+    const x1 = cx + Math.cos(a) * s * 0.85;
+    const y1 = cy + Math.sin(a) * s * 0.85;
+    const a2 = a + Math.PI / dientes * 0.7;
+    const x2 = cx + Math.cos(a2) * s * 0.85;
+    const y2 = cy + Math.sin(a2) * s * 0.85;
+    const xt = cx + Math.cos(a + Math.PI/dientes*0.35) * s * 0.45;
+    const yt = cy + Math.sin(a + Math.PI/dientes*0.35) * s * 0.45;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.lineTo(xt, yt);
+    ctx.closePath();
+    ctx.fill();
+  }
+  // Punto negro central (garganta).
+  ctx.fillStyle = rgbStr(P.FRAME_DARK || [12,6,6]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, s * 0.18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 const ORNAMENT_FUNCTIONS = {
   'papal_cross':           drawOrnament_papalCross,
   'crossed_keys':          drawOrnament_crossedKeys,
@@ -33101,6 +33228,9 @@ const ORNAMENT_FUNCTIONS = {
   'inverted_star':         drawOrnament_invertedStar,
   'fly_cross':             drawOrnament_flyCross,
   'seven_headed_serpent':  drawOrnament_sevenHeadedSerpent,
+  'red_star_hammer':       drawOrnament_redStarHammer,
+  'plague_banner':         drawOrnament_plagueBanner,
+  'gluttony_maw':          drawOrnament_gluttonyMaw,
 };
 
 function drawOrnament(ctx, cx, cy, palette, size) {
