@@ -1314,12 +1314,23 @@ body.mode-battle #panel-catalogue, body.mode-battle #panel-variantes,
 body.mode-battle #panel-shopping, body.mode-battle .banda-subtabs {
   display: none !important;
 }
-/* En modos Campaña, ocultar paneles banda + Lab/Battle. */
-body.mode-campana #panel-roster, body.mode-campana #panel-detail,
-body.mode-campana #panel-catalogue, body.mode-campana #panel-variantes,
+/* En modos Campaña, ocultar SOLO los paneles ajenos al módulo de campaña.
+ * panel-catalogue + panel-roster + panel-detail SÍ se reutilizan: el
+ * módulo de campaña pinta la lista en el izquierdo, el centro y el detalle.
+ * Antes este bloque los ocultaba también, dejando la vista campana en
+ * blanco — regresión silenciosa desde Sub-C, corregida en P3 nav. */
+body.mode-campana #panel-variantes,
 body.mode-campana #panel-shopping, body.mode-campana .banda-subtabs,
 body.mode-campana #panel-lab, body.mode-campana #panel-battle {
   display: none !important;
+}
+/* Mode-campana fuerza sidebar visible: la columna izquierda contiene la
+ * lista "Mis Campañas". Si el usuario tiene la sidebar plegada por
+ * decisión de Banda mode, la abrimos sin tocar el flag persistente.
+ * Override gana al body.faction-sidebar-collapsed .panel-left { display:none }. */
+body.mode-campana .panel-left { display: block !important; }
+body.mode-campana.faction-sidebar-collapsed main {
+  grid-template-columns: 320px 1fr 380px;
 }
 /* En modo Banda, sub-tabs gobiernan visibility de paneles. */
 body.mode-banda.subtab-roster #panel-variantes,
@@ -4243,7 +4254,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
   </div>
   <div class="mode-switcher">
     <button class="mode-btn active" data-mode="banda">⚔ Banda</button>
-    <button class="mode-btn" data-mode="campana">🗡 Campaña</button>
+    <button class="mode-btn" data-mode="campana" title="Mis Campañas — listado y gestión de crónicas">📚 Campañas</button>
     <button class="mode-btn" data-mode="lab">🔬 Lab</button>
     <button class="mode-btn" data-mode="battle">📋 Partida</button>
     <div class="config-menu-wrap" style="margin-left:auto;position:relative;">
