@@ -1585,6 +1585,30 @@ body.mode-banda .banda-subtabs {
   border: 1px solid rgba(127, 107, 67, 0.5);
 }
 
+/* Roadmap alta prio — Banner Post Game Reporter en modal Nueva Campaña.
+ * Recomendación informativa: Forge trackea local, lo oficial vive en TC. */
+.post-game-reporter-banner {
+  background: rgba(85, 145, 105, 0.12);
+  border: 1px solid rgba(85, 145, 105, 0.4);
+  border-left: 4px solid #8fd3a8;
+  padding: 0.7rem 0.9rem;
+  border-radius: 3px;
+  margin: 0.5rem 0 1rem;
+  font-size: 0.82rem;
+  color: var(--parchment);
+  line-height: 1.5;
+}
+.post-game-reporter-banner strong {
+  color: #8fd3a8;
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.88rem;
+}
+.post-game-reporter-banner a {
+  color: var(--gold);
+  font-weight: bold;
+}
+
 /* Fase 9-B — Overlay visual cuando arrastras un .json sobre la ventana. */
 body.json-drop-active::after {
   content: '⤓ Soltar archivo JSON de Companion';
@@ -5016,6 +5040,14 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
   <div class="modal">
     <button class="modal-close" data-close>×</button>
     <h3>Nueva Campaña</h3>
+    <div class="post-game-reporter-banner">
+      <strong>📜 Tracking oficial vive en Trench Companion</strong>
+      Warband Forge guarda los resultados de cada partida de forma local
+      (estadísticas, BLOOD MARKERS, anotaciones tácticas). Para que el XP,
+      los avances y la progresión oficial de tu banda queden bien registrados,
+      apunta cada partida también en el
+      <a href="https://trench-companion.com" target="_blank" rel="noopener">Post Game Reporter de Trench Companion</a>.
+    </div>
     <label>Nombre</label>
     <input type="text" id="new-campaign-name" placeholder="ej. Frente del Mosa, Otoño 1916" />
     <label>Descripción (opcional)</label>
