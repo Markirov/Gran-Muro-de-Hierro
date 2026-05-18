@@ -138,7 +138,13 @@ group('Group 10: House of Wisdom variant key bug regression', () => {
   // Previene typo silencioso al añadir variantes futuras.
   const KNOWN_VARIANT_IDS = ['papal-states','alba','prussia','eire-rangers','abyssinia',
     'red-brigade','fidai-alamut','house-wisdom','iron-wall-def',
-    'great-hegemon','great-hunger'];
+    'great-hegemon','great-hunger',
+    // Trench Pilgrims (3).
+    'sacred-affliction','st-methodius','tenth-plague',
+    // Heretic Legions (3 variantes).
+    'trench-ghosts','avarice-knights','naval-raiders',
+    // The Court — 7 Sins.
+    'sin-wrath','sin-envy','sin-lust','sin-pride','sin-sloth','sin-gluttony','sin-greed'];
   for (const key of Object.keys(VARIANT_PALETTES)) {
     const vid = key.split(':')[1];
     ok(KNOWN_VARIANT_IDS.includes(vid),
