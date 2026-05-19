@@ -4715,6 +4715,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
           </div>
           <div style="display:flex;gap:0.5rem;margin-top:0.8rem;align-items:center;flex-wrap:wrap;">
             <button id="btn-lab-spatial-run" class="btn btn-primary">▶ Simular en mapa</button>
+            <button id="btn-lab-spatial-replay" class="btn" disabled title="Ver replay 2D de la última batalla">🎬 Ver replay</button>
             <span id="lab-spatial-status" style="font-size:0.85em;color:var(--parchment-dim);">Listo.</span>
           </div>
           <div id="lab-spatial-results" style="margin-top:1rem;font-family:var(--font-mono);font-size:0.85em;line-height:1.5;color:var(--parchment);white-space:pre-wrap;"></div>
@@ -5155,6 +5156,30 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
       <button class="btn" data-close>Cancelar</button>
       <button class="btn btn-primary" id="btn-do-new-campaign">Crear</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ LAB 2.0 REPLAY MODAL (Sprint 12) ============ -->
+<div class="modal-backdrop" id="modal-lab2-replay">
+  <div class="modal" style="max-width:900px;">
+    <button class="modal-close" data-close>×</button>
+    <h3 style="margin-bottom:0.5rem;">🎬 Replay batalla espacial</h3>
+    <p style="font-size:0.82em;color:var(--parchment-dim);margin-bottom:0.8rem;">
+      Reproducción 2D de la última batalla simulada. Disparos en línea continua = hit; punteada = miss. ✕ rojo = KO.
+    </p>
+    <canvas id="lab2-replay-canvas" width="780" height="520" style="display:block;background:#1a1410;border:2px solid var(--rust);margin:0 auto;"></canvas>
+    <div style="margin-top:0.8rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+      <button id="btn-lab2-replay-first" class="btn btn-sm" title="Ir al inicio">⏮</button>
+      <button id="btn-lab2-replay-prev"  class="btn btn-sm" title="Anterior">◀</button>
+      <button id="btn-lab2-replay-play"  class="btn btn-sm" title="Play / Pause">▶</button>
+      <button id="btn-lab2-replay-next"  class="btn btn-sm" title="Siguiente">▶</button>
+      <button id="btn-lab2-replay-last"  class="btn btn-sm" title="Ir al final">⏭</button>
+      <span style="margin-left:0.6rem;font-family:var(--font-mono);font-size:0.78em;color:var(--parchment);">
+        Frame <span id="lab2-replay-frame-idx">0</span> / <span id="lab2-replay-frame-total">0</span>
+      </span>
+      <input type="range" id="lab2-replay-slider" min="0" max="0" value="0" style="flex:1;min-width:200px;margin-left:0.6rem;" />
+    </div>
+    <div id="lab2-replay-result" style="margin-top:0.6rem;font-family:var(--font-mono);font-size:0.85em;color:var(--parchment);"></div>
   </div>
 </div>
 
@@ -23251,6 +23276,91 @@ document.getElementById('btn-loadout-add-variant')?.addEventListener('click', ()
 
 // ─────────────────────────────────────────────────────────────────────
 
+/* Lab 2.0 Sprint 12 — Replay UI state + handlers (modal + play/pause/step). */
+let LAB2_LAST_REPLAY = null;
+let LAB2_REPLAY_FRAME = 0;
+let LAB2_REPLAY_TIMER = null;
+const LAB2_REPLAY_TICK_MS = 700;
+
+function _lab2RenderReplayCurrent() {
+  if (!LAB2_LAST_REPLAY) return;
+  const cnv = document.getElementById('lab2-replay-canvas');
+  if (!cnv || !cnv.getContext) return;
+  const ctx = cnv.getContext('2d');
+  // Clear.
+  ctx.fillStyle = '#1a1410';
+  ctx.fillRect(0, 0, cnv.width, cnv.height);
+  // cellPx para que 48×32 quepa en el canvas: 780/48 = 16.25, 520/32 = 16.25.
+  const cellPx = Math.min(Math.floor((cnv.width - 20) / LAB2_LAST_REPLAY.map.width),
+                          Math.floor((cnv.height - 20) / LAB2_LAST_REPLAY.map.height));
+  const x0 = Math.floor((cnv.width - LAB2_LAST_REPLAY.map.width * cellPx) / 2);
+  const y0 = Math.floor((cnv.height - LAB2_LAST_REPLAY.map.height * cellPx) / 2);
+  renderReplayFrame(ctx, LAB2_LAST_REPLAY, LAB2_REPLAY_FRAME, { cellPx, x0, y0 });
+  // Update UI counters.
+  const idxEl = document.getElementById('lab2-replay-frame-idx');
+  const totEl = document.getElementById('lab2-replay-frame-total');
+  const slider = document.getElementById('lab2-replay-slider');
+  if (idxEl) idxEl.textContent = String(LAB2_REPLAY_FRAME);
+  if (totEl) totEl.textContent = String(LAB2_LAST_REPLAY.frames.length - 1);
+  if (slider) slider.value = String(LAB2_REPLAY_FRAME);
+}
+
+function _lab2ReplaySetFrame(idx) {
+  if (!LAB2_LAST_REPLAY) return;
+  const max = LAB2_LAST_REPLAY.frames.length - 1;
+  LAB2_REPLAY_FRAME = Math.max(0, Math.min(max, idx | 0));
+  _lab2RenderReplayCurrent();
+}
+
+function _lab2ReplayPlayToggle() {
+  const btn = document.getElementById('btn-lab2-replay-play');
+  if (LAB2_REPLAY_TIMER) {
+    clearInterval(LAB2_REPLAY_TIMER);
+    LAB2_REPLAY_TIMER = null;
+    if (btn) btn.textContent = '▶';
+    return;
+  }
+  if (!LAB2_LAST_REPLAY) return;
+  if (btn) btn.textContent = '⏸';
+  LAB2_REPLAY_TIMER = setInterval(() => {
+    if (!LAB2_LAST_REPLAY) { clearInterval(LAB2_REPLAY_TIMER); LAB2_REPLAY_TIMER = null; return; }
+    const max = LAB2_LAST_REPLAY.frames.length - 1;
+    if (LAB2_REPLAY_FRAME >= max) {
+      clearInterval(LAB2_REPLAY_TIMER); LAB2_REPLAY_TIMER = null;
+      if (btn) btn.textContent = '▶';
+      return;
+    }
+    _lab2ReplaySetFrame(LAB2_REPLAY_FRAME + 1);
+  }, LAB2_REPLAY_TICK_MS);
+}
+
+document.getElementById('btn-lab-spatial-replay')?.addEventListener('click', () => {
+  if (!LAB2_LAST_REPLAY) { alert('Aún no hay replay — ejecuta una simulación primero.'); return; }
+  LAB2_REPLAY_FRAME = 0;
+  const slider = document.getElementById('lab2-replay-slider');
+  if (slider) slider.max = String(LAB2_LAST_REPLAY.frames.length - 1);
+  const resultEl = document.getElementById('lab2-replay-result');
+  if (resultEl) {
+    const r = LAB2_LAST_REPLAY.result;
+    resultEl.textContent = 'Winner: ' + r.winner + ' · turns: ' + r.turns
+      + ' · KO friendly: ' + r.friendlyKO + ' · KO enemy: ' + r.enemyKO;
+  }
+  openModal('modal-lab2-replay');
+  _lab2RenderReplayCurrent();
+});
+
+document.getElementById('btn-lab2-replay-first')?.addEventListener('click', () => _lab2ReplaySetFrame(0));
+document.getElementById('btn-lab2-replay-prev')?.addEventListener('click', () => _lab2ReplaySetFrame(LAB2_REPLAY_FRAME - 1));
+document.getElementById('btn-lab2-replay-next')?.addEventListener('click', () => _lab2ReplaySetFrame(LAB2_REPLAY_FRAME + 1));
+document.getElementById('btn-lab2-replay-last')?.addEventListener('click', () => {
+  if (!LAB2_LAST_REPLAY) return;
+  _lab2ReplaySetFrame(LAB2_LAST_REPLAY.frames.length - 1);
+});
+document.getElementById('btn-lab2-replay-play')?.addEventListener('click', () => _lab2ReplayPlayToggle());
+document.getElementById('lab2-replay-slider')?.addEventListener('input', (e) => {
+  _lab2ReplaySetFrame(parseInt(e.target.value, 10) || 0);
+});
+
 /* Lab 2.0 Sprint 8 — Wire del botón "Simular en mapa" del panel Espacial. */
 document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => {
   const wb = STATE.currentWarband;
@@ -23297,6 +23407,23 @@ document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => 
       ];
       if (resultsEl) resultsEl.textContent = lines.join('\n');
       if (statusEl) { statusEl.textContent = '✓ Listo.'; statusEl.style.color = '#7fb069'; }
+      // Sprint 12: cachea UN replay extra (la última batalla) para visualizar.
+      try {
+        const fClones = friendlyModels.map(m => JSON.parse(JSON.stringify(m)));
+        const eClones = enemyModels.map(m => JSON.parse(JSON.stringify(m)));
+        const stateForReplay = createLab2Battle(mapId, fClones, eClones);
+        deployBandHeuristic(stateForReplay, 'friendly');
+        deployBandHeuristic(stateForReplay, 'enemy');
+        LAB2_LAST_REPLAY = buildBattleReplay(stateForReplay, {
+          maxTurns: maxT, rangeInches: 24,
+          useCanonEngine: useCanon, factionId: wb.factionId,
+        });
+        const replayBtn = document.getElementById('btn-lab-spatial-replay');
+        if (replayBtn) replayBtn.disabled = false;
+      } catch (eRep) {
+        // Replay opcional — un fallo aquí no rompe el flujo principal.
+        console.warn('[lab2] replay capture falló:', eRep && eRep.message);
+      }
     } catch (e) {
       if (statusEl) { statusEl.textContent = '✗ Error: ' + e.message; statusEl.style.color = '#c92424'; }
       if (resultsEl) resultsEl.textContent = '';
