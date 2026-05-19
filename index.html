@@ -36931,11 +36931,33 @@ function simulateBattleSpatial(state, opts) {
         // Verifica LoS justo antes (target puede haberse movido).
         if (!hasLineOfSightBetween(state, uid, action.targetUid)) continue;
         const result = rollSpatialAttack(state, uid, action.targetUid, { rng });
-        if (result.ko) markModelOut(state, action.targetUid);
+        if (opts.recorder && opts.recorder.onEvent) {
+          opts.recorder.onEvent({
+            type: 'shoot', attackerUid: uid, targetUid: action.targetUid,
+            hit: result.hit, ko: result.ko, hitChance: result.hitChance,
+          });
+        }
+        if (result.ko) {
+          markModelOut(state, action.targetUid);
+          if (opts.recorder && opts.recorder.onEvent) {
+            opts.recorder.onEvent({ type: 'ko', uid: action.targetUid });
+          }
+        }
       } else if (action.action === 'advance' && action.movePos) {
+        const from = getModelPosition(state, uid);
         moveModel(state, uid, action.movePos);
+        if (opts.recorder && opts.recorder.onEvent) {
+          opts.recorder.onEvent({
+            type: 'move', uid,
+            from: { x: from.x, y: from.y },
+            to: { x: action.movePos.x, y: action.movePos.y },
+          });
+        }
       }
       state.activated.add(uid);
+    }
+    if (opts.recorder && opts.recorder.onTurnEnd) {
+      opts.recorder.onTurnEnd(turn, state);
     }
     // Fin de turno: verifica wipeout.
     const aliveF = _lab2AliveModels(state, 'friendly').length;
@@ -37038,6 +37060,232 @@ function runBattleSeriesSpatial(opts) {
     friendlyCount:   friendlyModels.length,
     enemyCount:      enemyModels.length,
   };
+}
+
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 6 — Replay 2D Canvas (post-mortem visualization).
+   ----------------------------------------------------------------------
+ * Sobre Sprint 4+5: añade un recorder de eventos por turno + 2 renderers
+ * canvas 2D para visualizar batallas tipo XCOM-ASCII.
+ *
+ * Filosofía (roadmap sección 6): NO Tabletop Simulator. NO wargame digital.
+ * Solo replay visual de una batalla concreta para análisis táctico, con
+ * indicadores de movimiento + disparo + KO.
+ *
+ * Sin animación nativa — el caller decide tempo (setInterval o
+ * requestAnimationFrame con un frameIdx incrementado). Esto mantiene el
+ * código testeable y deja el control de tempo al consumidor.
+ */
+
+/** Corre una batalla con recorder activo y devuelve la transcripción
+ * completa para replay posterior.
+ *
+ * Returns: {
+ *   initial: { positions: { uid:{x,y} }, alive: { friendly:[uid], enemy:[uid] } },
+ *   frames: [{ turn, events:[...], positions:{...}, alive:{friendly,enemy} }],
+ *   result: { winner, turns, friendlyKO, enemyKO },
+ * }
+ *
+ * Cada frame captura el ESTADO DESPUÉS DEL TURNO (no antes), incluyendo
+ * los eventos generados durante esa activación. */
+function buildBattleReplay(state, opts) {
+  opts = opts || {};
+  // Snapshot inicial (pre-batalla) antes de cualquier movimiento.
+  const initialPositions = {};
+  for (const side of ['friendly', 'enemy']) {
+    for (const uid of Object.keys(state[side].positions)) {
+      initialPositions[uid] = Object.assign({}, state[side].positions[uid]);
+    }
+  }
+  const initialAlive = {
+    friendly: state.friendly.models.filter(m => !m.isOut).map(m => m.uid),
+    enemy:    state.enemy.models.filter(m => !m.isOut).map(m => m.uid),
+  };
+
+  const frames = [];
+  let currentEvents = [];
+
+  const recorder = {
+    onEvent(ev) { currentEvents.push(ev); },
+    onTurnEnd(turn, st) {
+      // Snapshot tras el turno completo.
+      const positions = {};
+      for (const side of ['friendly', 'enemy']) {
+        for (const uid of Object.keys(st[side].positions)) {
+          positions[uid] = Object.assign({}, st[side].positions[uid]);
+        }
+      }
+      const alive = {
+        friendly: st.friendly.models.filter(m => !m.isOut).map(m => m.uid),
+        enemy:    st.enemy.models.filter(m => !m.isOut).map(m => m.uid),
+      };
+      frames.push({ turn, events: currentEvents, positions, alive });
+      currentEvents = [];
+    },
+  };
+
+  const result = simulateBattleSpatial(state, Object.assign({}, opts, { recorder }));
+
+  return {
+    initial: { positions: initialPositions, alive: initialAlive },
+    frames,
+    result,
+    map: state.map,  // referencia para que renderReplayFrame no tenga que pasarlo por opts.
+    mapId: state.mapId,
+  };
+}
+
+/** Colores canon-aligned para los 2 sides + terreno. Se exportan para que
+ * el wire UI pueda reusarlos en otros widgets (tooltips, legends, etc.). */
+const LAB2_REPLAY_COLORS = {
+  friendlyFill:   '#c9a961',  // dorado (canon faithful)
+  friendlyStroke: '#7f6b43',
+  enemyFill:      '#9b1e1e',  // rojo sangre (canon fallen)
+  enemyStroke:    '#5c1212',
+  cellOpen:       '#d4c8a8',  // pergamino claro
+  cellLight:      '#a89668',  // pergamino-light cover medio
+  cellHeavy:      '#665540',  // marrón oscuro heavy cover
+  cellBlocked:    '#2a1f15',  // casi-negro escombros
+  gridLine:       '#7f6b43',
+  text:           '#1a1410',
+  textMuted:      '#5c4c3a',
+  hitLine:        '#c9a961',
+  koMark:         '#9b1e1e',
+};
+
+/** Pinta el mapa de fondo (sin modelos) en (ctx, opts.x0, opts.y0). Usado
+ * por renderReplayFrame y también como preview standalone.
+ * opts: { x0=0, y0=0, cellPx=16 }. */
+function renderBattleMap(ctx, map, opts) {
+  opts = opts || {};
+  const x0 = opts.x0 || 0;
+  const y0 = opts.y0 || 0;
+  const cellPx = opts.cellPx || 16;
+  const C = LAB2_REPLAY_COLORS;
+  // Cada celda: fillRect + strokeRect (border).
+  for (let y = 0; y < map.height; y++) {
+    for (let x = 0; x < map.width; x++) {
+      const cell = map.cells[y][x];
+      let fill = C.cellOpen;
+      if (cell.terrain === 'blocked') fill = C.cellBlocked;
+      else if (cell.cover === 'heavy') fill = C.cellHeavy;
+      else if (cell.cover === 'light') fill = C.cellLight;
+      ctx.fillStyle = fill;
+      ctx.fillRect(x0 + x * cellPx, y0 + y * cellPx, cellPx, cellPx);
+    }
+  }
+  // Líneas de cuadrícula (cada 4" para no saturar).
+  ctx.strokeStyle = C.gridLine;
+  ctx.lineWidth = 0.5;
+  for (let y = 0; y <= map.height; y += 4) {
+    ctx.beginPath();
+    ctx.moveTo(x0, y0 + y * cellPx);
+    ctx.lineTo(x0 + map.width * cellPx, y0 + y * cellPx);
+    ctx.stroke();
+  }
+  for (let x = 0; x <= map.width; x += 4) {
+    ctx.beginPath();
+    ctx.moveTo(x0 + x * cellPx, y0);
+    ctx.lineTo(x0 + x * cellPx, y0 + map.height * cellPx);
+    ctx.stroke();
+  }
+  // Border del mapa completo.
+  ctx.strokeStyle = C.text;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(x0, y0, map.width * cellPx, map.height * cellPx);
+}
+
+/** Pinta un círculo en el centro de la celda (x,y) del grid. */
+function _lab2DrawModelCircle(ctx, gridX, gridY, x0, y0, cellPx, fill, stroke) {
+  const cx = x0 + gridX * cellPx + cellPx / 2;
+  const cy = y0 + gridY * cellPx + cellPx / 2;
+  const r = cellPx * 0.4;
+  ctx.fillStyle = fill;
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = Math.max(1, cellPx * 0.08);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+/** Pinta un frame del replay en el canvas dado.
+ *
+ *   - Dibuja mapa de fondo (renderBattleMap).
+ *   - Pinta cada modelo vivo del frame como círculo de su side.
+ *   - Pinta líneas de disparo del frame (events tipo 'shoot') del attacker
+ *     al target con color hitLine + dashed si miss.
+ *   - Marca KOs con una × roja sobre la última posición conocida del target.
+ *
+ * Clampea frameIdx a bounds; valores fuera renderean el frame inicial
+ * (índice 0 conceptual) o el último, lo más cercano. */
+function renderReplayFrame(ctx, replay, frameIdx, opts) {
+  if (!ctx || !replay || !replay.frames) return;
+  opts = opts || {};
+  const x0 = opts.x0 || 0;
+  const y0 = opts.y0 || 0;
+  const cellPx = opts.cellPx || 16;
+  const C = LAB2_REPLAY_COLORS;
+
+  // Clamp frameIdx.
+  let idx = frameIdx | 0;
+  if (idx < 0) idx = 0;
+  if (idx >= replay.frames.length) idx = replay.frames.length - 1;
+
+  // Map de fondo: re-extrae del primer frame si conservamos referencia, o
+  // del estado embebido en replay. Para V1 asumimos que renderReplayFrame
+  // recibe el map en opts. Si no, intentamos buscarlo en replay.map.
+  const map = opts.map || replay.map || null;
+  if (map) renderBattleMap(ctx, map, { x0, y0, cellPx });
+
+  // Pinta modelos en posiciones de este frame.
+  const frame = replay.frames[idx];
+  if (!frame) return;
+  const aliveSet = {
+    friendly: new Set(frame.alive.friendly),
+    enemy:    new Set(frame.alive.enemy),
+  };
+  for (const uid of Object.keys(frame.positions)) {
+    const pos = frame.positions[uid];
+    const isFriendly = aliveSet.friendly.has(uid);
+    const isEnemy    = aliveSet.enemy.has(uid);
+    if (!isFriendly && !isEnemy) continue;  // dead skip.
+    const fill   = isFriendly ? C.friendlyFill   : C.enemyFill;
+    const stroke = isFriendly ? C.friendlyStroke : C.enemyStroke;
+    _lab2DrawModelCircle(ctx, pos.x, pos.y, x0, y0, cellPx, fill, stroke);
+  }
+
+  // Líneas de disparo + KO marks de este turno.
+  for (const ev of frame.events) {
+    if (ev.type === 'shoot') {
+      const aPos = frame.positions[ev.attackerUid];
+      const tPos = frame.positions[ev.targetUid];
+      if (!aPos || !tPos) continue;
+      ctx.strokeStyle = C.hitLine;
+      ctx.lineWidth = Math.max(1, cellPx * 0.1);
+      ctx.setLineDash(ev.hit ? [] : [4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x0 + aPos.x * cellPx + cellPx / 2, y0 + aPos.y * cellPx + cellPx / 2);
+      ctx.lineTo(x0 + tPos.x * cellPx + cellPx / 2, y0 + tPos.y * cellPx + cellPx / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (ev.type === 'ko') {
+      // KO mark: ya no está en positions del frame. Intenta encontrarlo
+      // en el frame anterior; fallback al initial.
+      const prevFrame = idx > 0 ? replay.frames[idx - 1] : replay.initial;
+      const lastPos = prevFrame.positions[ev.uid];
+      if (!lastPos) continue;
+      ctx.strokeStyle = C.koMark;
+      ctx.lineWidth = Math.max(2, cellPx * 0.15);
+      const cx = x0 + lastPos.x * cellPx + cellPx / 2;
+      const cy = y0 + lastPos.y * cellPx + cellPx / 2;
+      const r = cellPx * 0.35;
+      ctx.beginPath();
+      ctx.moveTo(cx - r, cy - r); ctx.lineTo(cx + r, cy + r);
+      ctx.moveTo(cx + r, cy - r); ctx.lineTo(cx - r, cy + r);
+      ctx.stroke();
+    }
+  }
 }
 
 /* ======================================================================
