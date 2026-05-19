@@ -36623,6 +36623,193 @@ function hasLineOfSightBetween(state, uidA, uidB) {
   return hasLineOfSight(state.map, a, b);
 }
 
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 3 — IA heurística (deployment + target + action).
+   ----------------------------------------------------------------------
+ * Construye sobre Sprint 1+2. Añade decisiones automáticas para el sim
+ * loop futuro (Sprint 4). Heurísticas simples — no minimax, no MCTS.
+ *
+ * Filosofía: la IA enemiga del Lab 2.0 debe ser lo bastante competente
+ * para que las stats agregadas tengan sentido, pero NO ser un jugador
+ * óptimo. El jugador humano de Trench Crusade tampoco juega perfecto.
+ */
+
+/** Zona de deployment canon: cada side ocupa 12 filas de su lado del
+ * tablero (canon TC ~12" deployment zone). Spans todo el ancho.
+ * Friendly = inferior (y bajo). Enemy = superior (y alto). */
+function getDeploymentZone(state, side) {
+  if (!state || !state.map) return null;
+  const zoneHeight = 12;
+  if (side === 'friendly') {
+    return { xMin: 0, xMax: state.map.width - 1, yMin: 0, yMax: zoneHeight - 1 };
+  }
+  return {
+    xMin: 0, xMax: state.map.width - 1,
+    yMin: state.map.height - zoneHeight, yMax: state.map.height - 1,
+  };
+}
+
+function _isEliteModel(model) {
+  if (!model) return false;
+  if (model.tier === 'elite') return true;
+  const kws = model.companionKeywords || [];
+  return kws.some(k => {
+    const name = typeof k === 'string' ? k : (k && k.name) || '';
+    return /^elite$/i.test(name);
+  });
+}
+
+/** Coloca todos los modelos del side en su zona de deployment.
+ *
+ * Estrategia V1:
+ *  1. Sort: ELITE primero, troops después. Esto es porque ELITE va a la
+ *     fila de vanguardia (más cerca de la centerline), troops al fondo.
+ *  2. Para cada modelo, escanea celdas válidas en orden semántico:
+ *     - Friendly: from-centerline-back (y descendente desde yMax) — los
+ *       primeros modelos (ELITE) quedan en y=yMax, los últimos atrás.
+ *     - Enemy: from-centerline-back (y ascendente desde yMin) — espejo.
+ *  3. Salta celdas blocked / ocupadas.
+ *  4. Dentro de cada y, escanea x desde el centro hacia los bordes para
+ *     concentrar la línea (mejor LoS canon-correct).
+ *
+ * No usa RNG: el deployment es determinístico para que la simulación
+ * sea reproducible turno a turno. */
+function deployBandHeuristic(state, side) {
+  if (!state || (side !== 'friendly' && side !== 'enemy')) return false;
+  const zone = getDeploymentZone(state, side);
+  const models = state[side].models.slice().sort((a, b) => {
+    const ae = _isEliteModel(a) ? 0 : 1;
+    const be = _isEliteModel(b) ? 0 : 1;
+    return ae - be;
+  });
+  // Orden de filas: vanguardia primero.
+  const ySeq = [];
+  if (side === 'friendly') {
+    for (let y = zone.yMax; y >= zone.yMin; y--) ySeq.push(y);
+  } else {
+    for (let y = zone.yMin; y <= zone.yMax; y++) ySeq.push(y);
+  }
+  // Orden de x: centro → bordes (concentra la línea).
+  const center = Math.floor(state.map.width / 2);
+  const xSeq = [];
+  xSeq.push(center);
+  for (let off = 1; off < state.map.width; off++) {
+    if (center - off >= 0) xSeq.push(center - off);
+    if (center + off < state.map.width) xSeq.push(center + off);
+  }
+  for (const model of models) {
+    let placed = false;
+    for (const y of ySeq) {
+      for (const x of xSeq) {
+        const pos = { x, y };
+        if (getCellTerrain(state.map, pos) === 'blocked') continue;
+        if (modelAt(state, pos)) continue;
+        placeModel(state, side, model.uid, pos);
+        placed = true;
+        break;
+      }
+      if (placed) break;
+    }
+    // Si todas las celdas de la zona están bloqueadas/ocupadas, el modelo
+    // se queda sin colocar — improbable con bandas <30 modelos en 48×12.
+  }
+  return true;
+}
+
+/** Devuelve el uid del enemigo "óptimo" para disparar — el más cercano
+ * con LoS limpia dentro del rango. Si ninguno cumple → null.
+ *
+ * V1: distancia pura. V2+ podría ponderar threat (HP bajo, ranged alto). */
+function chooseTargetHeuristic(state, attackerUid, rangeInches) {
+  if (!state || !attackerUid) return null;
+  const candidates = modelsInRange(state, attackerUid, rangeInches);
+  if (candidates.length === 0) return null;
+  const from = getModelPosition(state, attackerUid);
+  let bestUid = null, bestDist = Infinity;
+  for (const uid of candidates) {
+    if (!hasLineOfSightBetween(state, attackerUid, uid)) continue;
+    const p = getModelPosition(state, uid);
+    const d = inchesBetween(from, p);
+    if (d < bestDist) { bestDist = d; bestUid = uid; }
+  }
+  return bestUid;
+}
+
+/** Devuelve uid del enemigo más cercano sin filtrar por rango ni LoS.
+ * Útil para "advance hacia el más amenazante visible o no". */
+function _lab2NearestEnemy(state, attackerUid) {
+  if (!state || !attackerUid) return null;
+  const fromSide = _lab2GetSideForUid(state, attackerUid);
+  if (!fromSide) return null;
+  const enemySide = fromSide === 'friendly' ? 'enemy' : 'friendly';
+  const from = getModelPosition(state, attackerUid);
+  if (!from) return null;
+  let bestUid = null, bestDist = Infinity;
+  const positions = state[enemySide].positions;
+  for (const uid of Object.keys(positions)) {
+    const d = inchesBetween(from, positions[uid]);
+    if (d < bestDist) { bestDist = d; bestUid = uid; }
+  }
+  return bestUid;
+}
+
+/** Decide la acción del modelo en su turno.
+ *
+ * Returns: { action: 'shoot'|'advance'|'hold', targetUid?, movePos? }
+ *
+ *   - 'shoot': hay target en rango + LoS → ataca al elegido.
+ *   - 'advance': sin target en rango → muévete hacia el más cercano,
+ *      hasta el budget de movimiento (línea recta aproximada).
+ *   - 'hold': no hay enemigos en el tablero → quédate quieto.
+ *
+ * V1 no diferencia ranged/melee. Sprint 4 añade charge cuando el
+ * advance llega a 1" del enemigo. */
+function chooseActionHeuristic(state, modelUid, rangeInches) {
+  if (!state || !modelUid) return { action: 'hold' };
+  const tgt = chooseTargetHeuristic(state, modelUid, rangeInches);
+  if (tgt) return { action: 'shoot', targetUid: tgt };
+  // Sin target: advance hacia el enemigo más cercano.
+  const nearest = _lab2NearestEnemy(state, modelUid);
+  if (!nearest) return { action: 'hold' };
+  const model = _lab2GetModelByUid(state, modelUid);
+  const from = getModelPosition(state, modelUid);
+  const to = getModelPosition(state, nearest);
+  if (!from || !to) return { action: 'hold' };
+  const budget = getModelMoveBudget(model);
+  // Vector unitario from→to, escalado por budget.
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist === 0) return { action: 'hold' };
+  const step = Math.min(budget, dist);
+  let nx = Math.round(from.x + (dx / dist) * step);
+  let ny = Math.round(from.y + (dy / dist) * step);
+  // Clip a bounds del mapa.
+  nx = Math.max(0, Math.min(state.map.width - 1, nx));
+  ny = Math.max(0, Math.min(state.map.height - 1, ny));
+  // Si la celda está blocked o ocupada, intenta una celda cercana.
+  let movePos = { x: nx, y: ny };
+  if (getCellTerrain(state.map, movePos) === 'blocked' || modelAt(state, movePos)) {
+    // Fallback: escanea radio 2 en torno a la propuesta.
+    let found = null;
+    for (let r = 1; r <= 3 && !found; r++) {
+      for (let oy = -r; oy <= r && !found; oy++) {
+        for (let ox = -r; ox <= r && !found; ox++) {
+          const cand = { x: nx + ox, y: ny + oy };
+          if (cand.x < 0 || cand.y < 0 || cand.x >= state.map.width || cand.y >= state.map.height) continue;
+          if (inchesBetween(from, cand) > budget + 0.001) continue;
+          if (getCellTerrain(state.map, cand) === 'blocked') continue;
+          if (modelAt(state, cand)) continue;
+          found = cand;
+        }
+      }
+    }
+    if (found) movePos = found;
+    else return { action: 'hold' };  // no hay celda viable.
+  }
+  return { action: 'advance', movePos, targetUid: nearest };
+}
+
 /* ======================================================================
    BOOT
    ====================================================================== */
