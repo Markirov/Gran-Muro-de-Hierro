@@ -4698,6 +4698,18 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
                 <span style="font-size:0.8em;">Canon engine (lento, fidelidad TC)</span>
               </span>
             </label>
+            <label style="font-size:0.85em;">
+              Banda rival
+              <select id="lab-spatial-rival" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="mirror">Espejo (clon del wb)</option>
+                <option value="newAntioch">⚔ New Antioch (Yeomen)</option>
+                <option value="trenchPilgrims">✠ Trench Pilgrims (Pilgrims)</option>
+                <option value="ironSultanate">☾ Iron Sultanate (Azebs)</option>
+                <option value="hereticLegions">☩ Heretic Legions (Troopers)</option>
+                <option value="blackGrail">☠ Black Grail (Thralls)</option>
+                <option value="courtSerpent">🐍 Court of the Serpent (Yoke Fiends)</option>
+              </select>
+            </label>
           </div>
           <div style="display:flex;gap:0.5rem;margin-top:0.8rem;align-items:center;flex-wrap:wrap;">
             <button id="btn-lab-spatial-run" class="btn btn-primary">▶ Simular en mapa</button>
@@ -23254,9 +23266,12 @@ document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => 
   // setTimeout para que el DOM repinte el "⏳ Simulando" antes de bloquear.
   setTimeout(() => {
     try {
-      // V1: mirror match — friendly y enemy clonados del mismo wb.
+      // Sprint 9: rival configurable.
+      const rivalKey = (document.getElementById('lab-spatial-rival') || {}).value || 'mirror';
       const friendlyModels = wb.models.map(m => JSON.parse(JSON.stringify(m)));
-      const enemyModels    = wb.models.map(m => JSON.parse(JSON.stringify(m)));
+      const enemyModels = (rivalKey === 'mirror')
+        ? wb.models.map(m => JSON.parse(JSON.stringify(m)))
+        : _lab2SyntheticEnemyBand(rivalKey, wb.models.length);
       const r = runBattleSeriesSpatial({
         friendlyModels, enemyModels, mapId,
         nBattles: nB, maxTurns: maxT, rangeInches: 24,
@@ -37340,6 +37355,60 @@ function rollSpatialAttackCanon(state, attackerUid, targetUid, opts) {
   const ko = absT.isOut && !initOut;
   if (ko) markModelOut(state, targetUid);
   return { hit, ko };
+}
+
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 9 — Selector banda rival (arquetipos canon).
+   ----------------------------------------------------------------------
+ * Reemplaza el mirror match del Sprint 8 con un selector de banda rival.
+ * V1: mirror + 6 arquetipos canon (FILL_MODEL_PROFILES adaptados a
+ * companion-shape). Sprint 10+ podría añadir paste JSON Companion.
+ */
+
+/** Convierte una unit abstracta (FILL_MODEL_PROFILES) a companion-shape
+ * compatible con sim espacial. Stats en string canon "+N", keywords y
+ * equipment en arrays de objetos. */
+function _lab2AbstractToCompanion(absUnit, uidPrefix, idx) {
+  const sign = (n) => (n >= 0 ? '+' : '') + n;
+  const weapons = (absUnit.weapons || []).map(w => ({
+    name: w.name,
+    type: w.isRanged ? 'ranged weapon' : 'melee weapon',
+  }));
+  const kws = [];
+  if (absUnit.keywords && typeof absUnit.keywords.forEach === 'function') {
+    absUnit.keywords.forEach(k => kws.push({ name: k }));
+  }
+  return {
+    uid: uidPrefix + '_' + idx,
+    name: absUnit.name || ('Trooper ' + idx),
+    companionCost: absUnit.cost || 30,
+    companionStats: {
+      move: '6"/Infantry',
+      ranged: sign(absUnit.rangedDice || 0),
+      melee:  sign(absUnit.meleeDice || 0),
+      armour: sign(absUnit.armour || 0),
+    },
+    companionKeywords: kws,
+    companionAbilities: [],
+    companionEquipment: weapons,
+    tier: 'troops',
+    isOut: false,
+  };
+}
+
+/** Devuelve una banda sintética enemiga del arquetipo dado, con N modelos.
+ * Mirror el formato de FILL_MODEL_PROFILES adaptado a companion-shape para
+ * que el sim espacial pueda procesarla. */
+function _lab2SyntheticEnemyBand(archetypeKey, count) {
+  count = Math.max(1, count | 0);
+  const profile = (typeof FILL_MODEL_PROFILES !== 'undefined' && FILL_MODEL_PROFILES[archetypeKey])
+    || { name: 'Generic Trooper', cost: 30, meleeDice: 0, rangedDice: 0, armour: 0,
+         weapons: [{ name: 'Rifle', isRanged: true }], keywords: new Set() };
+  const band = [];
+  for (let i = 0; i < count; i++) {
+    band.push(_lab2AbstractToCompanion(profile, 'enemy_' + archetypeKey, i));
+  }
+  return band;
 }
 
 /* ----------------------------------------------------------------------
