@@ -36930,7 +36930,9 @@ function simulateBattleSpatial(state, opts) {
       if (action.action === 'shoot' && action.targetUid) {
         // Verifica LoS justo antes (target puede haberse movido).
         if (!hasLineOfSightBetween(state, uid, action.targetUid)) continue;
-        const result = rollSpatialAttack(state, uid, action.targetUid, { rng });
+        const result = opts.useCanonEngine
+          ? rollSpatialAttackCanon(state, uid, action.targetUid, { rng, factionId: opts.factionId })
+          : rollSpatialAttack(state, uid, action.targetUid, { rng });
         if (opts.recorder && opts.recorder.onEvent) {
           opts.recorder.onEvent({
             type: 'shoot', attackerUid: uid, targetUid: action.targetUid,
@@ -37060,6 +37062,186 @@ function runBattleSeriesSpatial(opts) {
     friendlyCount:   friendlyModels.length,
     enemyCount:      enemyModels.length,
   };
+}
+
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 7 — Integración canon engine (resolveRanged_lab).
+   ----------------------------------------------------------------------
+ * Sobre Sprints 1-6: opcionalmente reemplaza el modelo abstracto V1 de
+ * daño (hit = 0.55 + 0.10×dice + cover modifier) por el motor canon del
+ * Lab abstracto (resolveRanged_lab + applyInjury_lab), que ya implementa
+ * canon TC: armour saves, BLAST, FIRE, AUTOMATIC X, IGNORE COVER, Aim,
+ * Marksmanship, Siege Jezzail Teams, blessings, RISKY, etc.
+ *
+ * Toggle via opts.useCanonEngine en simulateBattleSpatial. Default false
+ * para back-compat (Sprints 4-6 siguen produciendo resultados idénticos).
+ *
+ * Cover en canon engine: en lugar de la probabilística applyTerrainCoverModifier
+ * (open=10%, mixed=30%, urban=50%) del Lab abstracto — útil cuando no hay
+ * posiciones — Lab 2.0 conoce la celda del target. Aplicamos cover
+ * deterministic baking -1/-2 dice en weapon.diceMod + IGNORE COVER en
+ * weapon.keywords para anular el aplicador probabilístico.
+ */
+
+function _lab2ParseDice(stat) {
+  if (stat == null) return 0;
+  const m = String(stat).match(/(-?\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/** Adapter companion-shape → abstract Lab shape.
+ * Genera id, dice stats parseados, keywords:Set, flags derivados desde
+ * keywords (tough, strong, negateFear, etc.), _pos del Lab espacial.
+ *
+ * weapons[] se inicializa vacío — el caller añade vía _lab2ToAbstractWeapon
+ * sólo el arma relevante al ataque actual (resolveRanged_lab no necesita
+ * todas las armas del modelo). */
+function _lab2ToAbstractModel(model, pos) {
+  if (!model) return null;
+  const stats = model.companionStats || {};
+  const kws = new Set();
+  for (const k of (model.companionKeywords || [])) {
+    const name = typeof k === 'string' ? k : (k && k.name) || '';
+    if (name) kws.add(name);
+  }
+  return {
+    id: model.uid,
+    name: model.name || 'X',
+    cost: model.companionCost || 0,
+    meleeDice:  _lab2ParseDice(stats.melee),
+    rangedDice: _lab2ParseDice(stats.ranged),
+    armour:     _lab2ParseDice(stats.armour),
+    weapons: [],
+    keywords: kws,
+    bloodMarkers: 0,
+    isDown: false,
+    isOut: !!model.isOut,
+    _pos: pos ? { x: pos.x, y: pos.y } : null,
+    _terrain: 'open',  // Cover lo aplicamos baked-in en weapon.
+    tough:       kws.has('TOUGH'),
+    strong:      kws.has('STRONG'),
+    negateFear:  kws.has('NEGATE FEAR'),
+    negateHeavy: kws.has('NEGATE HEAVY'),
+    elite:       kws.has('ELITE'),
+    leader:      kws.has('LEADER'),
+  };
+}
+
+/** Adapter companion equipment item → abstract Lab weapon shape.
+ * Mira DATA.factions[factionId].armoury.{ranged,melee,grenades} para
+ * pillar entry canónica. Parsea weaponKeywords típicos:
+ *   '+1 DICE' → diceMod += 1
+ *   '+N INJURY DICE' → injuryDice += N
+ *   '+N INJURY MODIFIER' → injuryMod += N
+ * Devuelve fallback minimal si no hay entry.  */
+function _lab2ToAbstractWeapon(eqItem, factionId) {
+  if (!eqItem) return null;
+  const name = eqItem.name || eqItem['equipment-name'] || '';
+  if (!name) return null;
+  const armoury = (typeof DATA !== 'undefined' && DATA.factions && DATA.factions[factionId] && DATA.factions[factionId].armoury) || {};
+  let entry = null;
+  for (const cat of ['ranged', 'melee', 'grenades']) {
+    const list = armoury[cat] || [];
+    const found = list.find(w => w.name === name);
+    if (found) { entry = found; break; }
+  }
+  if (!entry) {
+    return {
+      name, isRanged: true, range: 24, diceMod: 0,
+      injuryDice: 0, injuryMod: 0, keywords: new Set(),
+    };
+  }
+  const isRanged = !/Melee/i.test(entry.range || '');
+  const kws = new Set(entry.weaponKeywords || []);
+  let diceMod = 0, injuryDice = 0, injuryMod = 0;
+  for (const k of kws) {
+    let m = k.match(/^([+-]?\d+)\s+INJURY\s+DICE/i);
+    if (m) injuryDice += parseInt(m[1], 10);
+    m = k.match(/^([+-]?\d+)\s+INJURY\s+MODIFIER/i);
+    if (m) injuryMod += parseInt(m[1], 10);
+    m = k.match(/^([+-]?\d+)\s+DICE\s*$/i);
+    if (m) diceMod += parseInt(m[1], 10);
+  }
+  return {
+    name, isRanged,
+    range: entry.range || '24"',
+    diceMod, injuryDice, injuryMod,
+    keywords: kws,
+  };
+}
+
+/** Resuelve ranged attack usando el canon engine (resolveRanged_lab).
+ * Equivalente canon-correct de rollSpatialAttack del Sprint 4.
+ *
+ * Cover: aplica deterministic por celda del target (light -1 dice,
+ * heavy -2 dice) baking-in en weapon.diceMod + añade IGNORE COVER a
+ * weapon.keywords para anular la prob de applyTerrainCoverModifier
+ * (que es para Lab abstracto sin posiciones).
+ *
+ * Math.random swap: si opts.rng se provee, swap temporal durante la
+ * llamada a resolveRanged_lab para mantener tests deterministas.
+ *
+ * Returns: { hit, ko }. */
+function rollSpatialAttackCanon(state, attackerUid, targetUid, opts) {
+  opts = opts || {};
+  const aModel = _lab2GetModelByUid(state, attackerUid);
+  const tModel = _lab2GetModelByUid(state, targetUid);
+  if (!aModel || !tModel) return { hit: false, ko: false };
+  const aPos = getModelPosition(state, attackerUid);
+  const tPos = getModelPosition(state, targetUid);
+  if (!aPos || !tPos) return { hit: false, ko: false };
+
+  const factionId = opts.factionId || state.factionId
+    || (state.friendly.models[0] && state.friendly.models[0].factionId)
+    || 'new-antioch';
+
+  const absA = _lab2ToAbstractModel(aModel, aPos);
+  const absT = _lab2ToAbstractModel(tModel, tPos);
+
+  // Identifica arma ranged del attacker. V1 toma la primera ranged en
+  // companionEquipment; canon refinement futuro: elegir según range vs distancia.
+  const eq = aModel.companionEquipment || [];
+  const rangedItem = eq.find(e => {
+    const t = (e.type || e['equipment-type'] || '').toLowerCase();
+    return t.includes('ranged') || (t.includes('weapon') && !t.includes('melee'));
+  });
+  let weapon = rangedItem
+    ? _lab2ToAbstractWeapon(rangedItem, factionId)
+    : null;
+  if (!weapon) {
+    // Fallback: arma genérica con stats del modelo (sin equipment ranged).
+    weapon = {
+      name: 'Service Rifle', isRanged: true, range: 24, diceMod: 0,
+      injuryDice: 0, injuryMod: 0, keywords: new Set(),
+    };
+  }
+
+  // Cover deterministic: aplica diff de dice + IGNORE COVER para anular
+  // el aplicador probabilístico del canon engine.
+  const cover = getCellCover(state.map, tPos);
+  const coverDice = cover === 'heavy' ? -2 : cover === 'light' ? -1 : 0;
+  const weaponCopy = Object.assign({}, weapon, {
+    diceMod: weapon.diceMod + coverDice,
+    keywords: new Set(weapon.keywords),
+  });
+  weaponCopy.keywords.add('IGNORE COVER');
+
+  const initBlood = absT.bloodMarkers;
+  const initOut = absT.isOut;
+  const origRandom = Math.random;
+  if (opts.rng) Math.random = opts.rng;
+  try {
+    resolveRanged_lab(absA, absT, weaponCopy, [absT]);
+  } catch (e) {
+    Math.random = origRandom;
+    return { hit: false, ko: false, error: e.message };
+  }
+  Math.random = origRandom;
+
+  const hit = (absT.isOut !== initOut) || (absT.bloodMarkers !== initBlood);
+  const ko = absT.isOut && !initOut;
+  if (ko) markModelOut(state, targetUid);
+  return { hit, ko };
 }
 
 /* ----------------------------------------------------------------------
