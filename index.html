@@ -4537,6 +4537,9 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
             <button class="lab-mode-tab" data-mode="loadout" style="background:none;border:none;padding:0.6rem 1.2rem;color:var(--parchment-dim);font-family:var(--font-display);font-size:0.95rem;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;letter-spacing:0.05em;">
               ⚒ Loadout
             </button>
+            <button class="lab-mode-tab" data-mode="spatial" style="background:none;border:none;padding:0.6rem 1.2rem;color:var(--parchment-dim);font-family:var(--font-display);font-size:0.95rem;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;letter-spacing:0.05em;">
+              🗺 Espacial
+            </button>
           </div>
           <p style="font-size:0.78em;color:var(--parchment-dim);margin-top:0.5rem;margin-bottom:0;">
             <span class="lab-mode-hint" data-for="analyze" style="display:block;">
@@ -4551,6 +4554,9 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
             <span class="lab-mode-hint" data-for="loadout" style="display:none;">
               Compara variantes de equipo en un solo modelo de tu banda. Mide win rate de la banda, eficiencia (winRate/coste) y versatilidad (uniformidad entre matchups). Útil para decidir si vale la pena un Heavy Shotgun vs un Shotgun normal en un Yeoman.
             </span>
+            <span class="lab-mode-hint" data-for="spatial" style="display:none;">
+              Lab 2.0: simulador con conciencia espacial. Tu banda se enfrenta a un espejo en un mapa real con posiciones, LoS, cover y rango canon-medido. Útil para entender cómo el terreno cambia los matchups vs el modelo abstracto del Lab clásico.
+            </span>
           </p>
           <!-- Hidden select retained for backwards compatibility with the existing handler -->
           <select id="lab-mode" style="display:none;">
@@ -4558,6 +4564,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
             <option value="duel">Duelo</option>
             <option value="compare">Comparar</option>
             <option value="loadout">Loadout</option>
+            <option value="spatial">Espacial</option>
           </select>
         </div>
 
@@ -4658,6 +4665,45 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Spatial panel (Lab 2.0): mapa + nBattles + canon engine + run + results. -->
+        <div id="lab-spatial-panel" style="display:none;margin-bottom:1.5rem;padding:1rem;border:1px solid var(--gold);background:rgba(176,141,87,0.05);">
+          <h3 style="font-size:1rem;margin-bottom:0.5rem;color:var(--gold);">🗺 Simulación espacial (Lab 2.0)</h3>
+          <p style="font-size:0.85em;color:var(--parchment-dim);margin-bottom:0.8rem;">
+            Tu banda contra un espejo en un mapa con posiciones canon (48"×32"), LoS Bresenham, cover deterministic por celda y rango medido en pulgadas. Versión inicial: mirror match. Futuro: selector de banda rival.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;align-items:end;">
+            <label style="font-size:0.85em;">
+              Mapa
+              <select id="lab-spatial-map" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="open-ground">Open Ground (mesa limpia)</option>
+                <option value="ruined-village">Ruined Village (aldea bombardeada)</option>
+              </select>
+            </label>
+            <label style="font-size:0.85em;">
+              Batallas
+              <input type="number" id="lab-spatial-nbattles" value="50" min="1" max="500" step="1"
+                     style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);font-family:var(--font-mono);" />
+            </label>
+            <label style="font-size:0.85em;">
+              Max turnos
+              <input type="number" id="lab-spatial-max-turns" value="20" min="1" max="60" step="1"
+                     style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);font-family:var(--font-mono);" />
+            </label>
+            <label style="font-size:0.85em;display:flex;flex-direction:column;gap:0.2rem;">
+              <span>Motor de daño</span>
+              <span style="display:flex;align-items:center;gap:0.4rem;">
+                <input type="checkbox" id="lab-spatial-canon" />
+                <span style="font-size:0.8em;">Canon engine (lento, fidelidad TC)</span>
+              </span>
+            </label>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.8rem;align-items:center;flex-wrap:wrap;">
+            <button id="btn-lab-spatial-run" class="btn btn-primary">▶ Simular en mapa</button>
+            <span id="lab-spatial-status" style="font-size:0.85em;color:var(--parchment-dim);">Listo.</span>
+          </div>
+          <div id="lab-spatial-results" style="margin-top:1rem;font-family:var(--font-mono);font-size:0.85em;line-height:1.5;color:var(--parchment);white-space:pre-wrap;"></div>
         </div>
 
         <div id="lab-analyze-config" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
@@ -22479,13 +22525,15 @@ document.getElementById('lab-mode')?.addEventListener('change', (e) => {
   const duelPanel = document.getElementById('lab-duel-panel');
   const comparePanel = document.getElementById('lab-compare-panel');
   const loadoutPanel = document.getElementById('lab-loadout-panel');
+  const spatialPanel = document.getElementById('lab-spatial-panel');
   const analyzeConfig = document.getElementById('lab-analyze-config');
   if (duelPanel)    duelPanel.style.display    = (mode === 'duel')    ? 'block' : 'none';
   if (comparePanel) comparePanel.style.display = (mode === 'compare') ? 'block' : 'none';
   if (loadoutPanel) loadoutPanel.style.display = (mode === 'loadout') ? 'block' : 'none';
-  // Analyze config (enemy checkboxes + cost) is shown for analyze + compare;
-  // hidden for duel (uses rival band) and loadout (uses canonical 6 factions).
-  if (analyzeConfig) analyzeConfig.style.display = (mode === 'duel' || mode === 'loadout') ? 'none' : 'grid';
+  if (spatialPanel) spatialPanel.style.display = (mode === 'spatial') ? 'block' : 'none';
+  // Analyze config (enemy checkboxes + cost) shown for analyze + compare;
+  // ocultado para duel / loadout / spatial (cada uno usa su propio panel).
+  if (analyzeConfig) analyzeConfig.style.display = (mode === 'duel' || mode === 'loadout' || mode === 'spatial') ? 'none' : 'grid';
   // If switching to loadout, populate the model selector
   if (mode === 'loadout' && typeof _populateLoadoutModelSelector === 'function') {
     _populateLoadoutModelSelector();
@@ -23188,6 +23236,56 @@ document.getElementById('btn-loadout-add-variant')?.addEventListener('click', ()
 });
 
 // ─────────────────────────────────────────────────────────────────────
+
+/* Lab 2.0 Sprint 8 — Wire del botón "Simular en mapa" del panel Espacial. */
+document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => {
+  const wb = STATE.currentWarband;
+  const statusEl = document.getElementById('lab-spatial-status');
+  const resultsEl = document.getElementById('lab-spatial-results');
+  if (!wb || !wb.models || wb.models.length === 0) {
+    if (statusEl) { statusEl.textContent = '✗ Carga una banda primero (modo Banda).'; statusEl.style.color = '#c92424'; }
+    return;
+  }
+  const mapId = (document.getElementById('lab-spatial-map') || {}).value || 'open-ground';
+  const nB = parseInt((document.getElementById('lab-spatial-nbattles') || {}).value, 10) || 50;
+  const maxT = parseInt((document.getElementById('lab-spatial-max-turns') || {}).value, 10) || 20;
+  const useCanon = !!(document.getElementById('lab-spatial-canon') || {}).checked;
+  if (statusEl) { statusEl.textContent = '⏳ Simulando ' + nB + ' batallas...'; statusEl.style.color = ''; }
+  // setTimeout para que el DOM repinte el "⏳ Simulando" antes de bloquear.
+  setTimeout(() => {
+    try {
+      // V1: mirror match — friendly y enemy clonados del mismo wb.
+      const friendlyModels = wb.models.map(m => JSON.parse(JSON.stringify(m)));
+      const enemyModels    = wb.models.map(m => JSON.parse(JSON.stringify(m)));
+      const r = runBattleSeriesSpatial({
+        friendlyModels, enemyModels, mapId,
+        nBattles: nB, maxTurns: maxT, rangeInches: 24,
+        useCanonEngine: useCanon, factionId: wb.factionId,
+      });
+      const pct = (v) => (v * 100).toFixed(1) + '%';
+      const lines = [
+        '──── Resultado simulación espacial ────',
+        'Mapa:        ' + mapId,
+        'Batallas:    ' + r.nBattles,
+        'Motor daño:  ' + (useCanon ? 'Canon engine (TC)' : 'V1 abstracto'),
+        'Modelos:     ' + r.friendlyCount + ' vs ' + r.enemyCount + ' (mirror)',
+        '',
+        'Win rate friendly: ' + pct(r.winRateFriendly),
+        'Win rate enemy:    ' + pct(r.winRateEnemy),
+        'Draw rate:         ' + pct(r.drawRate),
+        '',
+        'Avg turnos:        ' + r.avgTurns.toFixed(1),
+        'Avg KO friendly:   ' + r.avgFriendlyKO.toFixed(2),
+        'Avg KO enemy:      ' + r.avgEnemyKO.toFixed(2),
+      ];
+      if (resultsEl) resultsEl.textContent = lines.join('\n');
+      if (statusEl) { statusEl.textContent = '✓ Listo.'; statusEl.style.color = '#7fb069'; }
+    } catch (e) {
+      if (statusEl) { statusEl.textContent = '✗ Error: ' + e.message; statusEl.style.color = '#c92424'; }
+      if (resultsEl) resultsEl.textContent = '';
+    }
+  }, 30);
+});
 
 document.getElementById('btn-lab-run')?.addEventListener('click', () => {
   const wb = STATE.currentWarband;
