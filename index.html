@@ -36963,6 +36963,83 @@ function simulateBattleSpatial(state, opts) {
            friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy - aliveE };
 }
 
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 5 — Estadísticas agregadas sobre N batallas.
+   ----------------------------------------------------------------------
+ * Construye sobre el sim loop (Sprint 4). Para análisis cuantitativo:
+ * corre N batallas con configuración idéntica y agrega resultados.
+ *
+ * Pattern equivalente a runBattleSeries_lab del Lab abstracto, pero
+ * con conciencia espacial: cada batalla incluye deployment heurístico,
+ * activación alternada, advance/shoot con LoS/cover/range.
+ *
+ * Los modelos de input NO se mutan: cada batalla parte de un clon
+ * profundo (vía structuredClone si está, fallback JSON parse).
+ */
+
+function _deepCloneModel(m) {
+  if (typeof structuredClone === 'function') {
+    try { return structuredClone(m); } catch (e) { /* fall through */ }
+  }
+  return JSON.parse(JSON.stringify(m));
+}
+
+/** Corre N batallas con la misma configuración de bandas + mapa, agrega
+ * resultados. Cada batalla:
+ *   1. Clone profundo de friendlyModels + enemyModels.
+ *   2. createLab2Battle con los clones.
+ *   3. deployBandHeuristic en ambos sides.
+ *   4. simulateBattleSpatial.
+ *   5. Acumula winner + turns + KOs.
+ *
+ * opts: {
+ *   friendlyModels: [...], enemyModels: [...], mapId,
+ *   nBattles=100, maxTurns=20, rangeInches=24, rng?
+ * }
+ *
+ * Returns: { nBattles, winRateFriendly, winRateEnemy, drawRate,
+ *            avgTurns, avgFriendlyKO, avgEnemyKO, mapId,
+ *            friendlyCount, enemyCount }. */
+function runBattleSeriesSpatial(opts) {
+  opts = opts || {};
+  const friendlyModels = opts.friendlyModels || [];
+  const enemyModels    = opts.enemyModels    || [];
+  const mapId          = opts.mapId || 'open-ground';
+  const nBattles       = opts.nBattles  || 100;
+  const maxTurns       = opts.maxTurns  || 20;
+  const rangeInches    = opts.rangeInches || 24;
+  const rng            = opts.rng || Math.random;
+
+  let winF = 0, winE = 0, draw = 0;
+  let sumTurns = 0, sumKoF = 0, sumKoE = 0;
+  for (let i = 0; i < nBattles; i++) {
+    const fClones = friendlyModels.map(_deepCloneModel);
+    const eClones = enemyModels.map(_deepCloneModel);
+    const state = createLab2Battle(mapId, fClones, eClones);
+    deployBandHeuristic(state, 'friendly');
+    deployBandHeuristic(state, 'enemy');
+    const r = simulateBattleSpatial(state, { rng, maxTurns, rangeInches });
+    if (r.winner === 'friendly') winF++;
+    else if (r.winner === 'enemy') winE++;
+    else draw++;
+    sumTurns += r.turns;
+    sumKoF += r.friendlyKO;
+    sumKoE += r.enemyKO;
+  }
+  return {
+    nBattles,
+    winRateFriendly: winF / nBattles,
+    winRateEnemy:    winE / nBattles,
+    drawRate:        draw / nBattles,
+    avgTurns:        sumTurns / nBattles,
+    avgFriendlyKO:   sumKoF / nBattles,
+    avgEnemyKO:      sumKoE / nBattles,
+    mapId,
+    friendlyCount:   friendlyModels.length,
+    enemyCount:      enemyModels.length,
+  };
+}
+
 /* ======================================================================
    BOOT
    ====================================================================== */
