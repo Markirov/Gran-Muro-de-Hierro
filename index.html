@@ -36879,6 +36879,29 @@ function _lab2NearestEnemy(state, attackerUid) {
  * advance llega a 1" del enemigo. */
 function chooseActionHeuristic(state, modelUid, rangeInches) {
   if (!state || !modelUid) return { action: 'hold' };
+  // Sprint 10: prioridad melee si nearest enemy ≤ charge range (canon ~3").
+  const nearestForMelee = _lab2NearestEnemy(state, modelUid);
+  if (nearestForMelee) {
+    const fromM = getModelPosition(state, modelUid);
+    const toM = getModelPosition(state, nearestForMelee);
+    if (fromM && toM) {
+      const dM = inchesBetween(fromM, toM);
+      if (dM <= 1.001) {
+        return { action: 'melee', targetUid: nearestForMelee };
+      }
+      if (dM <= 3.001) {
+        // Charge: mueve hasta 1" del target.
+        const dx = toM.x - fromM.x, dy = toM.y - fromM.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const step = Math.max(0, dist - 1);
+        let nx = Math.round(fromM.x + (dx/dist) * step);
+        let ny = Math.round(fromM.y + (dy/dist) * step);
+        nx = Math.max(0, Math.min(state.map.width - 1, nx));
+        ny = Math.max(0, Math.min(state.map.height - 1, ny));
+        return { action: 'charge', targetUid: nearestForMelee, movePos: { x: nx, y: ny } };
+      }
+    }
+  }
   const tgt = chooseTargetHeuristic(state, modelUid, rangeInches);
   if (tgt) return { action: 'shoot', targetUid: tgt };
   // Sin target: advance hacia el enemigo más cercano.
@@ -36995,6 +37018,30 @@ function rollSpatialAttack(state, attackerUid, targetUid, opts) {
   return { hit, ko, hitChance };
 }
 
+/** Resuelve melee abstracto V1. Análogo a rollSpatialAttack para ranged.
+ * hitChance = 0.55 + 0.10 × meleeDice + (charged ? 0.10 : 0). ko-per-hit
+ * 0.45 (canon melee suele resolver más letal que ranged). */
+function rollSpatialMelee(state, attackerUid, targetUid, opts) {
+  opts = opts || {};
+  const rng = opts.rng || Math.random;
+  const attacker = _lab2GetModelByUid(state, attackerUid);
+  const target = _lab2GetModelByUid(state, targetUid);
+  if (!attacker || !target) return { hit: false, ko: false, hitChance: 0 };
+  const meleeDice = _parseDiceStat(attacker.companionStats && attacker.companionStats.melee);
+  let hitChance = 0.55 + 0.10 * meleeDice;
+  if (opts.charged) hitChance += 0.10;  // Charge bonus canon.
+  if (hitChance < 0.05) hitChance = 0.05;
+  if (hitChance > 0.95) hitChance = 0.95;
+  const rollHit = rng();
+  const hit = rollHit < hitChance;
+  let ko = false;
+  if (hit) {
+    const rollKo = rng();
+    ko = rollKo < 0.45;
+  }
+  return { hit, ko, hitChance };
+}
+
 function _lab2AliveModels(state, side) {
   return state[side].models.filter(m => !m.isOut && state[side].positions[m.uid]);
 }
@@ -37067,6 +37114,36 @@ function simulateBattleSpatial(state, opts) {
             from: { x: from.x, y: from.y },
             to: { x: action.movePos.x, y: action.movePos.y },
           });
+        }
+      } else if (action.action === 'charge' && action.targetUid) {
+        // Sprint 10: charge = mover hasta 1" del target + melee con +bonus.
+        if (action.movePos) moveModel(state, uid, action.movePos);
+        const result = rollSpatialMelee(state, uid, action.targetUid, { rng, charged: true });
+        if (opts.recorder && opts.recorder.onEvent) {
+          opts.recorder.onEvent({
+            type: 'charge', attackerUid: uid, targetUid: action.targetUid,
+            hit: result.hit, ko: result.ko,
+          });
+        }
+        if (result.ko) {
+          markModelOut(state, action.targetUid);
+          if (opts.recorder && opts.recorder.onEvent) {
+            opts.recorder.onEvent({ type: 'ko', uid: action.targetUid });
+          }
+        }
+      } else if (action.action === 'melee' && action.targetUid) {
+        const result = rollSpatialMelee(state, uid, action.targetUid, { rng, charged: false });
+        if (opts.recorder && opts.recorder.onEvent) {
+          opts.recorder.onEvent({
+            type: 'melee', attackerUid: uid, targetUid: action.targetUid,
+            hit: result.hit, ko: result.ko,
+          });
+        }
+        if (result.ko) {
+          markModelOut(state, action.targetUid);
+          if (opts.recorder && opts.recorder.onEvent) {
+            opts.recorder.onEvent({ type: 'ko', uid: action.targetUid });
+          }
         }
       }
       state.activated.add(uid);
