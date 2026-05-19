@@ -36282,6 +36282,190 @@ function generateWarbandPDF() {
 }
 
 /* ======================================================================
+   LAB 2.0 — SIMULACIÓN ESPACIAL (Sprint 1: foundation)
+   ======================================================================
+ *
+ * Roadmap sección 6. Evolución del Lab abstracto actual hacia simulador
+ * con conciencia espacial. No reemplaza el Lab original — coexisten.
+ *
+ * Sprint 1 (este bloque): SOLO data model + helpers puros.
+ *  - LAB2_MAPS: catálogo de mapas canon (48"×32").
+ *  - Helpers geométricos sobre grid 1"×1": distancia, line drawing (LoS),
+ *    cobertura, elevación.
+ *
+ * Sprints futuros añadirán: posiciones de modelos, movimiento, IA,
+ * sim loop espacial, opción de replay 2D Canvas.
+ *
+ * Las funciones son puras (sin DOM, sin localStorage). El sim loop
+ * posterior consumirá estos helpers para resolver canon-aware LoS/range.
+ */
+
+/**
+ * Catálogo de mapas para Lab 2.0. Cada mapa:
+ *   { id, name, width, height, cells: cells[y][x] = { terrain, cover, elevation } }
+ *
+ * - width × height en pulgadas (1 celda = 1").
+ * - cells[y][x] (row-major, y=fila, x=columna).
+ * - terrain: 'open' | 'blocked' (blocked bloquea LoS y movimiento).
+ * - cover: 'none' | 'light' | 'heavy' (modificador ranged en canon TC).
+ * - elevation: integer (0 = ground; futuras versiones aplicarán bonus
+ *   ranged y LoS sobre obstáculos bajos).
+ *
+ * Canon TC: mesa estándar 48"×32" (= 6'×4'). Confirmado en escenarios
+ * IV/V/VI/IX y en el Concentrated Attack "real positioning" del Lab.
+ */
+function _buildLab2Map(id, name, blockedCells, lightCoverCells, heavyCoverCells, elevationCells) {
+  const width = 48, height = 32;
+  const cells = [];
+  for (let y = 0; y < height; y++) {
+    const row = [];
+    for (let x = 0; x < width; x++) {
+      row.push({ terrain: 'open', cover: 'none', elevation: 0 });
+    }
+    cells.push(row);
+  }
+  for (const [x, y] of (blockedCells || [])) {
+    if (cells[y] && cells[y][x]) cells[y][x].terrain = 'blocked';
+  }
+  for (const [x, y] of (lightCoverCells || [])) {
+    if (cells[y] && cells[y][x]) cells[y][x].cover = 'light';
+  }
+  for (const [x, y] of (heavyCoverCells || [])) {
+    if (cells[y] && cells[y][x]) cells[y][x].cover = 'heavy';
+  }
+  for (const [x, y, h] of (elevationCells || [])) {
+    if (cells[y] && cells[y][x]) cells[y][x].elevation = h;
+  }
+  return { id, name, width, height, cells };
+}
+
+const LAB2_MAPS = (() => {
+  const maps = {};
+
+  // Mapa 1: Open Ground — campo abierto, sin obstáculos. Caso baseline para
+  // comparar con el Lab abstracto (debería dar resultados similares).
+  maps['open-ground'] = _buildLab2Map(
+    'open-ground', 'Open Ground (mesa limpia)',
+    [], [], [], []
+  );
+
+  // Mapa 2: Ruined Village — aldea bombardeada con ruinas dispersas.
+  // 6 estructuras (ruinas) repartidas asimétricamente para forzar maniobra.
+  // Cada ruina: 3×3 celdas con anillo exterior 'light' cover + interior
+  // 1×1 'blocked' (escombros centrales). Total: 6 blocked + 48 light cover.
+  const ruins = [
+    [10, 6], [16, 10], [22, 7], [26, 18], [34, 12], [38, 22],
+  ];
+  const blockedRV = [];
+  const lightCoverRV = [];
+  for (const [cx, cy] of ruins) {
+    blockedRV.push([cx, cy]);  // núcleo escombros (bloquea LoS y move).
+    // anillo 3×3 light cover.
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) continue;
+        lightCoverRV.push([cx + dx, cy + dy]);
+      }
+    }
+  }
+  // Algunos cráteres de artillería (heavy cover sin bloquear LoS) para
+  // dar opciones tácticas defensivas.
+  const heavyCoverRV = [[14, 16], [20, 22], [30, 9], [42, 16], [8, 24]];
+  maps['ruined-village'] = _buildLab2Map(
+    'ruined-village', 'Ruined Village (aldea bombardeada)',
+    blockedRV, lightCoverRV, heavyCoverRV, []
+  );
+
+  return maps;
+})();
+
+/** Distancia Chebyshev (movimiento ortogonal + diagonal cuesta 1 celda).
+ * Usada para coste de movimiento en grid; NO para rangos canon (esa es
+ * inchesBetween). */
+function gridDistance(a, b) {
+  if (!a || !b) return Infinity;
+  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+}
+
+/** Distancia Euclídea en pulgadas. Trench Crusade mide rangos con regla
+ * recta de centro a centro. Cada celda es 1"×1". */
+function inchesBetween(a, b) {
+  if (!a || !b) return Infinity;
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/** Bresenham: lista de celdas atravesadas por la línea recta entre a y b
+ * (ambos inclusive). Útil para LoS y trazado visual. Si a == b devuelve
+ * [{a}]. Devuelve objetos {x, y} (no muta).
+ *
+ * Implementación clásica all-octants. */
+function lineCells(a, b) {
+  if (!a || !b) return [];
+  let x0 = a.x | 0, y0 = a.y | 0;
+  const x1 = b.x | 0, y1 = b.y | 0;
+  const dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  const out = [];
+  while (true) {
+    out.push({ x: x0, y: y0 });
+    if (x0 === x1 && y0 === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; x0 += sx; }
+    if (e2 <  dx) { err += dx; y0 += sy; }
+    // Guard anti-infinite loop (no debería dispararse con inputs sanos).
+    if (out.length > 200) break;
+  }
+  return out;
+}
+
+/** Devuelve la celda del mapa en (x,y), o null si fuera de bounds. */
+function _lab2CellAt(map, pos) {
+  if (!map || !map.cells || !pos) return null;
+  const x = pos.x | 0, y = pos.y | 0;
+  if (x < 0 || y < 0 || x >= map.width || y >= map.height) return null;
+  const row = map.cells[y];
+  return row ? row[x] || null : null;
+}
+
+/** Cobertura de la celda: 'none' | 'light' | 'heavy'. Fuera de mapa → 'none'. */
+function getCellCover(map, pos) {
+  const c = _lab2CellAt(map, pos);
+  return c ? (c.cover || 'none') : 'none';
+}
+
+/** Elevación de la celda. Fuera de mapa → 0. */
+function getCellElevation(map, pos) {
+  const c = _lab2CellAt(map, pos);
+  return c ? (c.elevation || 0) : 0;
+}
+
+/** Terreno de la celda: 'open' | 'blocked'. Fuera de mapa → 'blocked'
+ * (para que LoS y movimiento traten los bordes como pared). */
+function getCellTerrain(map, pos) {
+  const c = _lab2CellAt(map, pos);
+  return c ? (c.terrain || 'open') : 'blocked';
+}
+
+/** Hay línea de visión entre a y b si ninguna celda intermedia
+ * (excluyendo origen y destino) es 'blocked'. V1: ignora elevation;
+ * sprints futuros añadirán reglas canon de Elevated Position +
+ * "see over low obstacles". */
+function hasLineOfSight(map, a, b) {
+  if (!map) return false;
+  const cells = lineCells(a, b);
+  // Excluye origen y destino — el modelo está en su celda, no se bloquea
+  // a sí mismo, y un blocker JUSTO en el destino es el target en sí.
+  for (let i = 1; i < cells.length - 1; i++) {
+    if (getCellTerrain(map, cells[i]) === 'blocked') return false;
+  }
+  return true;
+}
+
+/* ======================================================================
    BOOT
    ====================================================================== */
 
