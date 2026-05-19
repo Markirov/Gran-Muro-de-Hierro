@@ -36465,6 +36465,164 @@ function hasLineOfSight(map, a, b) {
   return true;
 }
 
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 2 — Estado de batalla + posiciones + movimiento.
+   ----------------------------------------------------------------------
+ * Construye sobre Sprint 1 (mapas + helpers). Añade objeto de estado de
+ * batalla con posiciones por side, helpers de movimiento canon-aware
+ * (budget según stat MOV, terreno, overlap) y queries de rango + LoS
+ * entre modelos.
+ *
+ * Sin sim loop, sin AI todavía. Sprints 3-4 los añaden encima.
+ */
+
+/** Parsea el stat MOV companion (ej "6"/Infantry") a pulgadas integer.
+ * Fallback: 6" canon Infantry si stat ausente/inparseable. */
+function getModelMoveBudget(model) {
+  if (!model) return 6;
+  const stat = (model.companionStats && model.companionStats.move)
+    || (model.stats && model.stats.movement)
+    || (model.stats && model.stats.move)
+    || '6"/Infantry';
+  const m = String(stat).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 6;
+}
+
+/** Crea el estado inicial de batalla Lab 2.0.
+ *   mapId: clave en LAB2_MAPS.
+ *   friendlyModels, enemyModels: arrays de modelos (companion-aware).
+ *
+ * Returns: { mapId, map, friendly:{models,positions}, enemy:{...}, turn, activated }.
+ * Posiciones empiezan vacías — el caller las setea con placeModel. */
+function createLab2Battle(mapId, friendlyModels, enemyModels) {
+  const map = LAB2_MAPS[mapId];
+  if (!map) throw new Error('Mapa desconocido: ' + mapId);
+  return {
+    mapId,
+    map,
+    friendly: { models: (friendlyModels || []).slice(), positions: {} },
+    enemy:    { models: (enemyModels    || []).slice(), positions: {} },
+    turn: 1,
+    activated: new Set(),
+  };
+}
+
+function _lab2GetSideForUid(state, uid) {
+  if (!state || !uid) return null;
+  if (state.friendly.models.some(m => m.uid === uid)) return 'friendly';
+  if (state.enemy.models.some(m => m.uid === uid))    return 'enemy';
+  return null;
+}
+
+function _lab2GetModelByUid(state, uid) {
+  if (!state || !uid) return null;
+  return state.friendly.models.find(m => m.uid === uid)
+      || state.enemy.models.find(m => m.uid === uid)
+      || null;
+}
+
+/** Sitúa un modelo en (pos) sin validar (caller responsable). Útil
+ * en deployment inicial. Para movimiento durante batalla, usar moveModel. */
+function placeModel(state, side, modelUid, pos) {
+  if (!state || (side !== 'friendly' && side !== 'enemy')) return false;
+  state[side].positions[modelUid] = { x: pos.x | 0, y: pos.y | 0 };
+  return true;
+}
+
+/** Posición actual de un modelo, o null si no está colocado. */
+function getModelPosition(state, uid) {
+  if (!state) return null;
+  return state.friendly.positions[uid] || state.enemy.positions[uid] || null;
+}
+
+/** Devuelve { side, model } en (pos), o null si vacía. */
+function modelAt(state, pos) {
+  if (!state || !pos) return null;
+  const px = pos.x | 0, py = pos.y | 0;
+  for (const side of ['friendly', 'enemy']) {
+    const positions = state[side].positions;
+    for (const uid of Object.keys(positions)) {
+      const p = positions[uid];
+      if (p.x === px && p.y === py) {
+        const model = state[side].models.find(m => m.uid === uid);
+        return { side, model };
+      }
+    }
+  }
+  return null;
+}
+
+/** Valida si un modelo puede moverse a (pos). Chequea:
+ *  - Budget: distancia ≤ stat MOV en pulgadas.
+ *  - Terreno: celda destino no 'blocked'.
+ *  - Overlap: ninguna otra unidad en destino.
+ * Returns { ok, error? }. */
+function canMoveTo(state, uid, pos) {
+  if (!state) return { ok: false, error: 'Estado inválido.' };
+  const model = _lab2GetModelByUid(state, uid);
+  if (!model) return { ok: false, error: 'Modelo no encontrado: ' + uid };
+  const from = getModelPosition(state, uid);
+  if (!from) return { ok: false, error: 'Modelo sin posición inicial: ' + uid };
+  // Bounds.
+  if (pos.x < 0 || pos.y < 0 || pos.x >= state.map.width || pos.y >= state.map.height) {
+    return { ok: false, error: 'Destino fuera del mapa.' };
+  }
+  // Budget canon (en pulgadas).
+  const budget = getModelMoveBudget(model);
+  const dist = inchesBetween(from, pos);
+  if (dist > budget + 0.001) {
+    return { ok: false, error: 'Excede budget de movimiento ' + budget + '" (distancia ' + dist.toFixed(1) + '").' };
+  }
+  // Terreno.
+  if (getCellTerrain(state.map, pos) === 'blocked') {
+    return { ok: false, error: 'Celda destino tiene terreno bloqueado.' };
+  }
+  // Overlap (excepto si es la celda actual).
+  if (!(pos.x === from.x && pos.y === from.y)) {
+    const occ = modelAt(state, pos);
+    if (occ) return { ok: false, error: 'Celda ocupada por otro modelo.' };
+  }
+  return { ok: true };
+}
+
+/** Mueve un modelo si canMoveTo lo permite. Retorna { ok, error? }. */
+function moveModel(state, uid, pos) {
+  const check = canMoveTo(state, uid, pos);
+  if (!check.ok) return check;
+  const side = _lab2GetSideForUid(state, uid);
+  if (!side) return { ok: false, error: 'Side no resuelto.' };
+  state[side].positions[uid] = { x: pos.x | 0, y: pos.y | 0 };
+  return { ok: true };
+}
+
+/** UIDs de modelos enemigos dentro de rangeInches (Euclídea). Si el atacante
+ * es friendly, devuelve enemy uids; viceversa. */
+function modelsInRange(state, uid, rangeInches) {
+  if (!state) return [];
+  const fromSide = _lab2GetSideForUid(state, uid);
+  if (!fromSide) return [];
+  const enemySide = fromSide === 'friendly' ? 'enemy' : 'friendly';
+  const from = getModelPosition(state, uid);
+  if (!from) return [];
+  const out = [];
+  const positions = state[enemySide].positions;
+  for (const targetUid of Object.keys(positions)) {
+    const p = positions[targetUid];
+    if (inchesBetween(from, p) <= rangeInches + 0.001) out.push(targetUid);
+  }
+  return out;
+}
+
+/** LoS entre dos modelos por uid. Wrapper que recupera posiciones y delega
+ * en hasLineOfSight. */
+function hasLineOfSightBetween(state, uidA, uidB) {
+  if (!state) return false;
+  const a = getModelPosition(state, uidA);
+  const b = getModelPosition(state, uidB);
+  if (!a || !b) return false;
+  return hasLineOfSight(state.map, a, b);
+}
+
 /* ======================================================================
    BOOT
    ====================================================================== */
