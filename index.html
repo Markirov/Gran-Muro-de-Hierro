@@ -4679,6 +4679,8 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
               <select id="lab-spatial-map" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
                 <option value="open-ground">Open Ground (mesa limpia)</option>
                 <option value="ruined-village">Ruined Village (aldea bombardeada)</option>
+                <option value="trenchworks">Trenchworks (trincheras paralelas)</option>
+                <option value="highland-pass">Highland Pass (colinas + rocas)</option>
               </select>
             </label>
             <label style="font-size:0.85em;">
@@ -36487,6 +36489,51 @@ const LAB2_MAPS = (() => {
   maps['ruined-village'] = _buildLab2Map(
     'ruined-village', 'Ruined Village (aldea bombardeada)',
     blockedRV, lightCoverRV, heavyCoverRV, []
+  );
+
+  // Mapa 3: Trenchworks — 3 trincheras horizontales paralelas (y=8,16,24)
+  // con gaps periódicos cada 16" para que las bandas puedan avanzar entre
+  // ellas. Heavy cover lineal. Canon WWI: hold-the-line / assault-defense.
+  const heavyCoverTW = [];
+  for (const ty of [8, 16, 24]) {
+    for (let x = 0; x < 48; x++) {
+      // Gap cada 16" centrado en x=8, 24, 40.
+      if (x === 8 || x === 24 || x === 40) continue;
+      heavyCoverTW.push([x, ty]);
+    }
+  }
+  maps['trenchworks'] = _buildLab2Map(
+    'trenchworks', 'Trenchworks (trincheras paralelas)',
+    [], [], heavyCoverTW, []
+  );
+
+  // Mapa 4: Highland Pass — 3 colinas centrales elevated + 4 rocas
+  // dispersas. Tema Alba / Highland NA. Elevation reservado para
+  // futuros refinements (Marksmanship of the Iron Wall + see-over rules).
+  const blockedHL = [[6, 14], [42, 18], [12, 26], [36, 6]];  // rocas
+  const elevationHL = [];
+  for (const [cx, cy, h] of [[18, 12, 2], [28, 18, 2], [24, 24, 1]]) {
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        if (Math.abs(dx) + Math.abs(dy) <= 2) {
+          elevationHL.push([cx + dx, cy + dy, h]);
+        }
+      }
+    }
+  }
+  // Light cover en el perímetro de las colinas para diferenciar visualmente.
+  const lightCoverHL = [];
+  for (const [cx, cy] of [[18, 12], [28, 18], [24, 24]]) {
+    for (let dy = -3; dy <= 3; dy++) {
+      for (let dx = -3; dx <= 3; dx++) {
+        const adx = Math.abs(dx), ady = Math.abs(dy);
+        if (adx + ady === 3) lightCoverHL.push([cx + dx, cy + dy]);
+      }
+    }
+  }
+  maps['highland-pass'] = _buildLab2Map(
+    'highland-pass', 'Highland Pass (colinas + rocas)',
+    blockedHL, lightCoverHL, [], elevationHL
   );
 
   return maps;
