@@ -36810,6 +36810,159 @@ function chooseActionHeuristic(state, modelUid, rangeInches) {
   return { action: 'advance', movePos, targetUid: nearest };
 }
 
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 4 — Sim loop espacial completo.
+   ----------------------------------------------------------------------
+ * Sobre Sprints 1-3 (mapas, estado, IA), añade:
+ *  - markModelOut: KO tracking + limpieza de posición.
+ *  - rollSpatialAttack: resolver ranged abstracto con cover modifier.
+ *  - simulateBattleSpatial: bucle de activación alternada hasta OoA o maxTurns.
+ *
+ * V1 limitaciones documentadas (a refinar en Sprint 5):
+ *  - Solo ranged. No melee, no charge.
+ *  - Modelo de daño aproximado (no canon engine completo). Hit chance
+ *    ≈ 0.55 base + 0.10×rangedDice. Cover light -0.15, heavy -0.30.
+ *    KO-per-hit ≈ 0.40. Sprint 5 integrará resolveRanged_lab del Lab
+ *    abstracto para canon-completo.
+ *  - IA enemy idéntica a friendly (chooseActionHeuristic). No diferentes
+ *    perfiles tácticos por facción.
+ */
+
+/** Marca el modelo como OoA y limpia su posición del tablero. Idempotente. */
+function markModelOut(state, uid) {
+  if (!state || !uid) return false;
+  const model = _lab2GetModelByUid(state, uid);
+  if (!model) return false;
+  model.isOut = true;
+  if (state.friendly.positions[uid]) delete state.friendly.positions[uid];
+  if (state.enemy.positions[uid])    delete state.enemy.positions[uid];
+  return true;
+}
+
+function _parseDiceStat(stat) {
+  if (stat == null) return 0;
+  const m = String(stat).match(/(-?\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
+
+/** Resuelve un ataque ranged abstracto. NO usa el canon engine completo;
+ * V1 es aproximación para validar el sim loop. Sprint 5 hará la swap.
+ *
+ * Modelo:
+ *  - hitChance = 0.55 + 0.10 × rangedDice + coverModifier (clamp [0.05, 0.95]).
+ *  - cover modifier por celda del target: light -0.15, heavy -0.30, none 0.
+ *  - ko-per-hit ≈ 0.40 (canon ~equivalente tras armour saves típicas).
+ *
+ * Returns: { hit, ko, hitChance }. */
+function rollSpatialAttack(state, attackerUid, targetUid, opts) {
+  opts = opts || {};
+  const rng = opts.rng || Math.random;
+  const attacker = _lab2GetModelByUid(state, attackerUid);
+  const target = _lab2GetModelByUid(state, targetUid);
+  if (!attacker || !target) return { hit: false, ko: false, hitChance: 0 };
+  const targetPos = getModelPosition(state, targetUid);
+  if (!targetPos) return { hit: false, ko: false, hitChance: 0 };
+
+  const rangedDice = _parseDiceStat(attacker.companionStats && attacker.companionStats.ranged);
+  let hitChance = 0.55 + 0.10 * rangedDice;
+  const cover = getCellCover(state.map, targetPos);
+  if (cover === 'light') hitChance -= 0.15;
+  else if (cover === 'heavy') hitChance -= 0.30;
+  // Clamp.
+  if (hitChance < 0.05) hitChance = 0.05;
+  if (hitChance > 0.95) hitChance = 0.95;
+
+  const rollHit = rng();
+  const hit = rollHit < hitChance;
+  let ko = false;
+  if (hit) {
+    const rollKo = rng();
+    ko = rollKo < 0.40;
+  }
+  return { hit, ko, hitChance };
+}
+
+function _lab2AliveModels(state, side) {
+  return state[side].models.filter(m => !m.isOut && state[side].positions[m.uid]);
+}
+
+function _lab2BuildActivationOrder(state) {
+  // Alternancia canon TC: tras initiative roll, A activa 1 modelo, luego B,
+  // luego A, etc. V1 simplificación: friendly siempre arranca; la varianza
+  // estadística sale del rng y el deployment, no del initiative.
+  const friendly = _lab2AliveModels(state, 'friendly').map(m => ({ uid: m.uid, side: 'friendly' }));
+  const enemy    = _lab2AliveModels(state, 'enemy').map(m => ({ uid: m.uid, side: 'enemy' }));
+  const order = [];
+  const max = Math.max(friendly.length, enemy.length);
+  for (let i = 0; i < max; i++) {
+    if (i < friendly.length) order.push(friendly[i]);
+    if (i < enemy.length)    order.push(enemy[i]);
+  }
+  return order;
+}
+
+/** Bucle de simulación espacial. Cada turno:
+ *  1. Construye orden de activación alternado side A → B → A → B...
+ *  2. Para cada modelo vivo en orden: chooseActionHeuristic → ejecuta.
+ *  3. Verifica fin: side completo OoA → ese side pierde.
+ *  4. Si llega a maxTurns, winner por survivors (más vivos gana, empate → draw).
+ *
+ * opts: { rng?: ()=>number, maxTurns?: number=20, rangeInches?: number=24 }
+ *
+ * Returns: { winner:'friendly'|'enemy'|'draw', turns, friendlyKO, enemyKO }. */
+function simulateBattleSpatial(state, opts) {
+  opts = opts || {};
+  const rng = opts.rng || Math.random;
+  const maxTurns = opts.maxTurns || 20;
+  const rangeInches = opts.rangeInches || 24;
+  const totalFriendly = state.friendly.models.length;
+  const totalEnemy = state.enemy.models.length;
+  let turn = 0;
+  while (turn < maxTurns) {
+    turn++;
+    state.turn = turn;
+    state.activated = new Set();
+    const order = _lab2BuildActivationOrder(state);
+    for (const { uid } of order) {
+      const model = _lab2GetModelByUid(state, uid);
+      if (!model || model.isOut) continue;
+      const action = chooseActionHeuristic(state, uid, rangeInches);
+      if (action.action === 'shoot' && action.targetUid) {
+        // Verifica LoS justo antes (target puede haberse movido).
+        if (!hasLineOfSightBetween(state, uid, action.targetUid)) continue;
+        const result = rollSpatialAttack(state, uid, action.targetUid, { rng });
+        if (result.ko) markModelOut(state, action.targetUid);
+      } else if (action.action === 'advance' && action.movePos) {
+        moveModel(state, uid, action.movePos);
+      }
+      state.activated.add(uid);
+    }
+    // Fin de turno: verifica wipeout.
+    const aliveF = _lab2AliveModels(state, 'friendly').length;
+    const aliveE = _lab2AliveModels(state, 'enemy').length;
+    if (aliveF === 0 && aliveE === 0) {
+      return { winner: 'draw', turns: turn,
+               friendlyKO: totalFriendly, enemyKO: totalEnemy };
+    }
+    if (aliveF === 0) {
+      return { winner: 'enemy', turns: turn,
+               friendlyKO: totalFriendly, enemyKO: totalEnemy - aliveE };
+    }
+    if (aliveE === 0) {
+      return { winner: 'friendly', turns: turn,
+               friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy };
+    }
+  }
+  // maxTurns reach: winner por survivors.
+  const aliveF = _lab2AliveModels(state, 'friendly').length;
+  const aliveE = _lab2AliveModels(state, 'enemy').length;
+  let winner = 'draw';
+  if (aliveF > aliveE) winner = 'friendly';
+  else if (aliveE > aliveF) winner = 'enemy';
+  return { winner, turns: turn,
+           friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy - aliveE };
+}
+
 /* ======================================================================
    BOOT
    ====================================================================== */
