@@ -37333,6 +37333,10 @@ function _lab2ChooseAdvanceWithCover(state, modelUid, targetUid) {
  * advance llega a 1" del enemigo. */
 function chooseActionHeuristic(state, modelUid, rangeInches) {
   if (!state || !modelUid) return { action: 'hold' };
+  // Sprint 23: scenario-aware tweaks. state.scenarioId si presente.
+  const scenarioId = state.scenarioId || null;
+  const _scnSide = _lab2GetSideForUid(state, modelUid);
+  const _scnFrom = getModelPosition(state, modelUid);
   // Sprint 10: prioridad melee si nearest enemy ≤ charge range (canon ~3").
   const nearestForMelee = _lab2NearestEnemy(state, modelUid);
   if (nearestForMelee) {
@@ -37358,11 +37362,59 @@ function chooseActionHeuristic(state, modelUid, rangeInches) {
   }
   const tgt = chooseTargetHeuristic(state, modelUid, rangeInches);
   if (tgt) return { action: 'shoot', targetUid: tgt };
+  // Sprint 23: hold-the-line — si modelo está en su mitad defensiva
+  // y no hay enemy en rango, campa (hold) en vez de advance.
+  if (scenarioId === 'hold-the-line' && _scnFrom && state.map) {
+    const half = state.map.height / 2;
+    const inOwnHalf = (_scnSide === 'friendly') ? _scnFrom.y < half : _scnFrom.y >= half;
+    if (inOwnHalf) return { action: 'hold' };
+  }
   // Sprint 17: HEAVY weapons no pueden moverse Y disparar mismo turno.
   // Si el modelo es heavy y no hay target en rango, hold (no advance).
   const _heavyModel = _lab2GetModelByUid(state, modelUid);
   if (_heavyModel && isModelHeavyArmed(_heavyModel, state.factionId)) {
     return { action: 'hold' };
+  }
+  // Sprint 23: scenario-aware target geográfico para advance.
+  // breakthrough: advance hacia la zona de victoria (y profunda).
+  // capture-point: advance hacia el objetivo central (24,16).
+  let geoTarget = null;
+  if (scenarioId === 'breakthrough' && _scnFrom && state.map) {
+    const winY = (_scnSide === 'friendly') ? (state.map.height - 4) : 3;
+    geoTarget = { x: _scnFrom.x, y: winY };
+  } else if (scenarioId === 'capture-point') {
+    geoTarget = { x: 24, y: 16 };
+  }
+  if (geoTarget) {
+    // Crea un pseudo-target uid sintético usando _lab2ChooseAdvanceWithCover
+    // sería costoso. Usamos lógica inline: best cell scoring vs geoTarget.
+    const _gtModel = _lab2GetModelByUid(state, modelUid);
+    if (_scnFrom && _gtModel) {
+      const _gtBudget = getModelMoveBudget(_gtModel);
+      const _gtOldDist = inchesBetween(_scnFrom, geoTarget);
+      const _gtR = Math.ceil(_gtBudget);
+      let bestCell = null, bestScore = -Infinity;
+      for (let dy = -_gtR; dy <= _gtR; dy++) {
+        for (let dx = -_gtR; dx <= _gtR; dx++) {
+          if (dx === 0 && dy === 0) continue;
+          const cand = { x: _scnFrom.x + dx, y: _scnFrom.y + dy };
+          if (cand.x < 0 || cand.y < 0 ||
+              cand.x >= state.map.width || cand.y >= state.map.height) continue;
+          if (inchesBetween(_scnFrom, cand) > _gtBudget + 0.001) continue;
+          if (getCellTerrain(state.map, cand) === 'blocked') continue;
+          if (modelAt(state, cand)) continue;
+          const newDist = inchesBetween(cand, geoTarget);
+          const progress = _gtOldDist - newDist;
+          const cv = getCellCover(state.map, cand);
+          const coverBonus = cv === 'heavy' ? 2.5 : cv === 'light' ? 1 : 0;
+          const score = progress + coverBonus;
+          if (score > bestScore) { bestScore = score; bestCell = cand; }
+        }
+      }
+      if (bestCell) {
+        return { action: 'advance', movePos: bestCell };
+      }
+    }
   }
   // Sin target: advance hacia el enemigo más cercano.
   const nearest = _lab2NearestEnemy(state, modelUid);
@@ -37542,6 +37594,9 @@ function simulateBattleSpatial(state, opts) {
   const rangeInches = opts.rangeInches || 24;
   const totalFriendly = state.friendly.models.length;
   const totalEnemy = state.enemy.models.length;
+  // Sprint 23: copia scenarioId al state para que chooseActionHeuristic
+  // pueda consultarlo sin recibirlo cada call.
+  if (opts.scenarioId) state.scenarioId = opts.scenarioId;
   // Sprint 20: per-turn tracking opcional (también activado siempre si
   // viene de runBattleSeriesSpatial; el caller controla).
   const perTurn = { friendly: [totalFriendly], enemy: [totalEnemy] };
