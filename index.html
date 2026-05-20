@@ -37009,17 +37009,25 @@ function _isEliteModel(model) {
 function deployBandHeuristic(state, side) {
   if (!state || (side !== 'friendly' && side !== 'enemy')) return false;
   const zone = getDeploymentZone(state, side);
+  // Sprint 18: INFILTRATOR colocados primero en filas más avanzadas
+  // (4" más allá de yMax/yMin canon). Sort por: infiltrator > elite > troops.
   const models = state[side].models.slice().sort((a, b) => {
-    const ae = _isEliteModel(a) ? 0 : 1;
-    const be = _isEliteModel(b) ? 0 : 1;
-    return ae - be;
+    const aPrio = isModelInfiltrator(a) ? 0 : (_isEliteModel(a) ? 1 : 2);
+    const bPrio = isModelInfiltrator(b) ? 0 : (_isEliteModel(b) ? 1 : 2);
+    return aPrio - bPrio;
   });
-  // Orden de filas: vanguardia primero.
-  const ySeq = [];
-  if (side === 'friendly') {
-    for (let y = zone.yMax; y >= zone.yMin; y--) ySeq.push(y);
-  } else {
-    for (let y = zone.yMin; y <= zone.yMax; y++) ySeq.push(y);
+  // Orden de filas según side + INFILTRATOR flag.
+  function buildYSeq(model) {
+    const seq = [];
+    const infBoost = isModelInfiltrator(model) ? 4 : 0;
+    if (side === 'friendly') {
+      const yMax = Math.min(state.map.height - 1, zone.yMax + infBoost);
+      for (let y = yMax; y >= zone.yMin; y--) seq.push(y);
+    } else {
+      const yMin = Math.max(0, zone.yMin - infBoost);
+      for (let y = yMin; y <= zone.yMax; y++) seq.push(y);
+    }
+    return seq;
   }
   // Orden de x: centro → bordes (concentra la línea).
   const center = Math.floor(state.map.width / 2);
@@ -37030,6 +37038,7 @@ function deployBandHeuristic(state, side) {
     if (center + off < state.map.width) xSeq.push(center + off);
   }
   for (const model of models) {
+    const ySeq = buildYSeq(model);
     let placed = false;
     for (const y of ySeq) {
       for (const x of xSeq) {
@@ -37042,8 +37051,6 @@ function deployBandHeuristic(state, side) {
       }
       if (placed) break;
     }
-    // Si todas las celdas de la zona están bloqueadas/ocupadas, el modelo
-    // se queda sin colocar — improbable con bandas <30 modelos en 48×12.
   }
   return true;
 }
@@ -37084,6 +37091,22 @@ function _lab2NearestEnemy(state, attackerUid) {
   }
   return bestUid;
 }
+
+function _lab2HasKeyword(model, kw) {
+  if (!model || !Array.isArray(model.companionKeywords)) return false;
+  const kwU = String(kw).toUpperCase();
+  return model.companionKeywords.some(k => {
+    const name = typeof k === 'string' ? k : (k && k.name) || '';
+    return name.toUpperCase() === kwU;
+  });
+}
+
+/** Sprint 18: detecta keyword FLYING (puede pasar sobre obstáculos). */
+function isModelFlying(model) { return _lab2HasKeyword(model, 'FLYING'); }
+
+/** Sprint 18: detecta keyword INFILTRATOR (deploy avanzado, hasta
+ * 4" más allá del yMax/yMin canon de su zona). */
+function isModelInfiltrator(model) { return _lab2HasKeyword(model, 'INFILTRATOR'); }
 
 /** Sprint 17: detecta si un modelo va equipado con HEAVY weapon.
  * Canon TC: HEAVY weapon impide Move ACTION en el mismo turno que dispara.
