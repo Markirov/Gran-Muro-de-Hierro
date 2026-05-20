@@ -37238,6 +37238,40 @@ function _lab2NearestEnemy(state, attackerUid) {
   return bestUid;
 }
 
+/** Sprint 24: detecta si algún equipment del modelo tiene la keyword
+ * (inline en eq.weaponKeywords o vía DATA.armoury). Útil para CLEAVE,
+ * FIRE, IGNORE ARMOUR, etc. */
+function hasWeaponKeyword(model, kw, factionId) {
+  if (!model || !Array.isArray(model.companionEquipment)) return false;
+  const kwU = String(kw).toUpperCase();
+  for (const eq of model.companionEquipment) {
+    if (!eq) continue;
+    const inline = eq.weaponKeywords || eq['weapon-keywords'] || [];
+    if (Array.isArray(inline) && inline.some(k => String(k).toUpperCase() === kwU)) return true;
+    if (inline && typeof inline.has === 'function' && inline.has(kwU)) return true;
+    if (factionId && typeof DATA !== 'undefined' && DATA.factions && DATA.factions[factionId]) {
+      const armoury = DATA.factions[factionId].armoury || {};
+      const name = eq.name || eq['equipment-name'] || '';
+      if (!name) continue;
+      for (const cat of ['ranged', 'melee', 'grenades']) {
+        const list = armoury[cat] || [];
+        const entry = list.find(w => w.name === name);
+        if (entry && Array.isArray(entry.weaponKeywords) &&
+            entry.weaponKeywords.some(k => String(k).toUpperCase() === kwU)) return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Sprint 24: REGENERATE save proc. Si modelo tiene keyword REGENERATE,
+ * 25% chance de salvarse del KO. */
+function modelTriesRegenerate(model, rng) {
+  if (!model || !_lab2HasKeyword(model, 'REGENERATE')) return false;
+  const r = (rng || Math.random)();
+  return r < 0.25;
+}
+
 function _lab2HasKeyword(model, kw) {
   if (!model || !Array.isArray(model.companionKeywords)) return false;
   const kwU = String(kw).toUpperCase();
@@ -37531,6 +37565,8 @@ function rollSpatialAttack(state, attackerUid, targetUid, opts) {
   if (hit) {
     const rollKo = rng();
     ko = rollKo < 0.40;
+    // Sprint 24: REGENERATE save proc también en ranged.
+    if (ko && modelTriesRegenerate(target, rng)) ko = false;
   }
   return { hit, ko, hitChance };
 }
@@ -37552,11 +37588,41 @@ function rollSpatialMelee(state, attackerUid, targetUid, opts) {
   const rollHit = rng();
   const hit = rollHit < hitChance;
   let ko = false;
+  let cleaveKOs = [];
   if (hit) {
     const rollKo = rng();
     ko = rollKo < 0.45;
+    // Sprint 24: REGENERATE save proc.
+    if (ko && modelTriesRegenerate(target, rng)) {
+      ko = false;  // saved by REGENERATE.
+    }
+    // Sprint 24: CLEAVE secundario. Si attacker tiene CLEAVE en arma melee
+    // activa, 50% chance de afectar un enemy adyacente al target (≤2").
+    if (hasWeaponKeyword(attacker, 'CLEAVE', state.factionId) && rng() < 0.50) {
+      const targetPos = getModelPosition(state, targetUid);
+      const tSide = _lab2GetSideForUid(state, targetUid);
+      if (targetPos && tSide) {
+        const positions = state[tSide].positions;
+        for (const sUid of Object.keys(positions)) {
+          if (sUid === targetUid) continue;
+          const sPos = positions[sUid];
+          if (inchesBetween(targetPos, sPos) <= 2.001) {
+            // Aplica KO directo con 40% (canon CLEAVE más letal porque viene
+            // como secundario "free attack" del original).
+            if (rng() < 0.40) {
+              const sModel = _lab2GetModelByUid(state, sUid);
+              if (!modelTriesRegenerate(sModel, rng)) {
+                cleaveKOs.push(sUid);
+                markModelOut(state, sUid);
+              }
+            }
+            break;  // V1 solo 1 cleave secundario.
+          }
+        }
+      }
+    }
   }
-  return { hit, ko, hitChance };
+  return { hit, ko, hitChance, cleaveKOs };
 }
 
 function _lab2AliveModels(state, side) {
