@@ -37085,6 +37085,40 @@ function _lab2NearestEnemy(state, attackerUid) {
   return bestUid;
 }
 
+/** Sprint 16: cover-seeking advance. Devuelve la mejor celda destino
+ * para advance, ponderando progreso hacia el target + cover bonus.
+ * Score = (oldDist - newDist) + coverBonus(heavy=2.5, light=1, none=0).
+ * Iteración O(budget²) sobre vecindad — budget pequeño (6"), aceptable. */
+function _lab2ChooseAdvanceWithCover(state, modelUid, targetUid) {
+  if (!state) return null;
+  const from = getModelPosition(state, modelUid);
+  const to = getModelPosition(state, targetUid);
+  const model = _lab2GetModelByUid(state, modelUid);
+  if (!from || !to || !model) return null;
+  const budget = getModelMoveBudget(model);
+  const oldDist = inchesBetween(from, to);
+  let best = null, bestScore = -Infinity;
+  const r = Math.ceil(budget);
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const cand = { x: from.x + dx, y: from.y + dy };
+      if (cand.x < 0 || cand.y < 0 ||
+          cand.x >= state.map.width || cand.y >= state.map.height) continue;
+      if (inchesBetween(from, cand) > budget + 0.001) continue;
+      if (getCellTerrain(state.map, cand) === 'blocked') continue;
+      if (modelAt(state, cand)) continue;
+      const newDist = inchesBetween(cand, to);
+      const progress = oldDist - newDist;
+      const cv = getCellCover(state.map, cand);
+      const coverBonus = cv === 'heavy' ? 2.5 : cv === 'light' ? 1 : 0;
+      const score = progress + coverBonus;
+      if (score > bestScore) { bestScore = score; best = cand; }
+    }
+  }
+  return best;
+}
+
 /** Decide la acción del modelo en su turno.
  *
  * Returns: { action: 'shoot'|'advance'|'hold', targetUid?, movePos? }
@@ -37126,6 +37160,11 @@ function chooseActionHeuristic(state, modelUid, rangeInches) {
   // Sin target: advance hacia el enemigo más cercano.
   const nearest = _lab2NearestEnemy(state, modelUid);
   if (!nearest) return { action: 'hold' };
+  // Sprint 16: prefiere celda con cover en ruta si está disponible.
+  const coverCell = _lab2ChooseAdvanceWithCover(state, modelUid, nearest);
+  if (coverCell) {
+    return { action: 'advance', movePos: coverCell, targetUid: nearest };
+  }
   const model = _lab2GetModelByUid(state, modelUid);
   const from = getModelPosition(state, modelUid);
   const to = getModelPosition(state, nearest);
