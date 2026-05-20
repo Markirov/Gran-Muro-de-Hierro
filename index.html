@@ -37305,6 +37305,11 @@ function simulateBattleSpatial(state, opts) {
     for (const { uid } of order) {
       const model = _lab2GetModelByUid(state, uid);
       if (!model || model.isOut) continue;
+      if (opts.recorder && opts.recorder.onEvent) {
+        // Sprint 15: emite activation-start para que el replay pueda
+        // resaltar el modelo activo (orden alternado canon TC).
+        opts.recorder.onEvent({ type: 'activation-start', uid });
+      }
       const action = chooseActionHeuristic(state, uid, rangeInches);
       if (action.action === 'shoot' && action.targetUid) {
         // Verifica LoS justo antes (target puede haberse movido).
@@ -37910,6 +37915,7 @@ const LAB2_REPLAY_COLORS = {
   textMuted:      '#5c4c3a',
   hitLine:        '#c9a961',
   koMark:         '#9b1e1e',
+  activationHalo: '#e8c87a',  // amarillo claro: modelo activó este turno
 };
 
 /** Pinta el mapa de fondo (sin modelos) en (ctx, opts.x0, opts.y0). Usado
@@ -38004,11 +38010,27 @@ function renderReplayFrame(ctx, replay, frameIdx, opts) {
     friendly: new Set(frame.alive.friendly),
     enemy:    new Set(frame.alive.enemy),
   };
+  // Sprint 15: Set de uids que activaron en este turno (events 'activation-start').
+  const activatedUids = new Set();
+  for (const ev of frame.events) {
+    if (ev.type === 'activation-start' && ev.uid) activatedUids.add(ev.uid);
+  }
   for (const uid of Object.keys(frame.positions)) {
     const pos = frame.positions[uid];
     const isFriendly = aliveSet.friendly.has(uid);
     const isEnemy    = aliveSet.enemy.has(uid);
     if (!isFriendly && !isEnemy) continue;  // dead skip.
+    // Halo de activación: anillo extra dorado alrededor del modelo si
+    // activó este turno. Se pinta DEBAJO del círculo principal.
+    if (activatedUids.has(uid)) {
+      const cx = x0 + pos.x * cellPx + cellPx / 2;
+      const cy = y0 + pos.y * cellPx + cellPx / 2;
+      ctx.strokeStyle = C.activationHalo;
+      ctx.lineWidth = Math.max(1, cellPx * 0.06);
+      ctx.beginPath();
+      ctx.arc(cx, cy, cellPx * 0.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
     const fill   = isFriendly ? C.friendlyFill   : C.enemyFill;
     const stroke = isFriendly ? C.friendlyStroke : C.enemyStroke;
     _lab2DrawModelCircle(ctx, pos.x, pos.y, x0, y0, cellPx, fill, stroke);
