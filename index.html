@@ -37396,6 +37396,12 @@ function simulateBattleSpatial(state, opts) {
   const rangeInches = opts.rangeInches || 24;
   const totalFriendly = state.friendly.models.length;
   const totalEnemy = state.enemy.models.length;
+  // Sprint 19: scenario check inicial (turn 0) — si las posiciones de
+  // deploy ya satisfacen la condición de victoria, el side gana sin
+  // disparar un tiro.
+  const initialCheck = _lab2CheckScenarioEnd(state, opts.scenarioId, 0,
+                                              maxTurns, totalFriendly, totalEnemy);
+  if (initialCheck) return initialCheck;
   let turn = 0;
   while (turn < maxTurns) {
     turn++;
@@ -37479,7 +37485,10 @@ function simulateBattleSpatial(state, opts) {
     if (opts.recorder && opts.recorder.onTurnEnd) {
       opts.recorder.onTurnEnd(turn, state);
     }
-    // Fin de turno: verifica wipeout.
+    // Fin de turno: scenario objective primero (Sprint 19), luego wipeout.
+    const scenarioEnd = _lab2CheckScenarioEnd(state, opts.scenarioId, turn,
+                                              maxTurns, totalFriendly, totalEnemy);
+    if (scenarioEnd) return scenarioEnd;
     const aliveF = _lab2AliveModels(state, 'friendly').length;
     const aliveE = _lab2AliveModels(state, 'enemy').length;
     if (aliveF === 0 && aliveE === 0) {
@@ -37495,7 +37504,11 @@ function simulateBattleSpatial(state, opts) {
                friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy };
     }
   }
-  // maxTurns reach: winner por survivors.
+  // maxTurns reach: scenario-specific tiebreaker.
+  if (opts.scenarioId === 'hold-the-line') {
+    return _lab2HoldTheLineWinner(state, totalFriendly, totalEnemy, turn);
+  }
+  // Default: winner por survivors.
   const aliveF = _lab2AliveModels(state, 'friendly').length;
   const aliveE = _lab2AliveModels(state, 'enemy').length;
   let winner = 'draw';
@@ -37760,6 +37773,101 @@ function rollSpatialAttackCanon(state, attackerUid, targetUid, opts) {
   const ko = absT.isOut && !initOut;
   if (ko) markModelOut(state, targetUid);
   return { hit, ko };
+}
+
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 19 — Scenario objectives (alternative win conditions).
+   ----------------------------------------------------------------------
+ * Canon TC tiene escenarios con condiciones de victoria distintas a
+ * wipeout. V1 spatial añade 3 además del default:
+ *  - 'pitched-battle': wipeout. Comportamiento back-compat.
+ *  - 'breakthrough': friendly gana si CUALQUIER alive llega y ≥ height-4.
+ *  - 'hold-the-line': tras maxTurns, gana side con MÁS modelos en su mitad.
+ *  - 'capture-point': control de (24,16). Si UN side tiene modelos a ≤3"
+ *    del objetivo y el otro 0, gana al fin del turno.
+ */
+const LAB2_SCENARIOS = {
+  'pitched-battle': {
+    name: 'Pitched Battle',
+    description: 'Estándar: gana el último side con modelos vivos.',
+  },
+  'breakthrough': {
+    name: 'Breakthrough',
+    description: 'Friendly gana si llega a la zona profunda del enemy (y ≥ 28).',
+  },
+  'hold-the-line': {
+    name: 'Hold the Line',
+    description: 'Tras maxTurns, gana el side con más modelos en su mitad defensiva.',
+  },
+  'capture-point': {
+    name: 'Capture Point',
+    description: 'Objetivo en (24,16). Control exclusivo a 3" = victoria.',
+  },
+};
+
+function _lab2CheckScenarioEnd(state, scenarioId, turn, maxTurns, totalF, totalE) {
+  if (!scenarioId || scenarioId === 'pitched-battle') return null;
+  const aliveF = _lab2AliveModels(state, 'friendly');
+  const aliveE = _lab2AliveModels(state, 'enemy');
+  if (scenarioId === 'breakthrough') {
+    // Friendly gana si alguien llegó a zona profunda (y ≥ height-4).
+    const winY = state.map.height - 4;
+    for (const m of aliveF) {
+      const p = state.friendly.positions[m.uid];
+      if (p && p.y >= winY) {
+        return { winner: 'friendly', turns: turn,
+                 friendlyKO: totalF - aliveF.length, enemyKO: totalE - aliveE.length };
+      }
+    }
+    // Mirror enemy: y ≤ 3.
+    const enemyWinY = 3;
+    for (const m of aliveE) {
+      const p = state.enemy.positions[m.uid];
+      if (p && p.y <= enemyWinY) {
+        return { winner: 'enemy', turns: turn,
+                 friendlyKO: totalF - aliveF.length, enemyKO: totalE - aliveE.length };
+      }
+    }
+  } else if (scenarioId === 'capture-point') {
+    const obj = { x: 24, y: 16 };
+    const fNear = aliveF.filter(m => {
+      const p = state.friendly.positions[m.uid];
+      return p && inchesBetween(p, obj) <= 3.001;
+    }).length;
+    const eNear = aliveE.filter(m => {
+      const p = state.enemy.positions[m.uid];
+      return p && inchesBetween(p, obj) <= 3.001;
+    }).length;
+    if (fNear > 0 && eNear === 0) {
+      return { winner: 'friendly', turns: turn,
+               friendlyKO: totalF - aliveF.length, enemyKO: totalE - aliveE.length };
+    }
+    if (eNear > 0 && fNear === 0) {
+      return { winner: 'enemy', turns: turn,
+               friendlyKO: totalF - aliveF.length, enemyKO: totalE - aliveE.length };
+    }
+  }
+  // 'hold-the-line' se evalúa solo al hit maxTurns; no termina antes.
+  return null;
+}
+
+function _lab2HoldTheLineWinner(state, totalF, totalE, turn) {
+  const aliveF = _lab2AliveModels(state, 'friendly');
+  const aliveE = _lab2AliveModels(state, 'enemy');
+  const half = state.map.height / 2;
+  const fHoldCount = aliveF.filter(m => {
+    const p = state.friendly.positions[m.uid];
+    return p && p.y < half;
+  }).length;
+  const eHoldCount = aliveE.filter(m => {
+    const p = state.enemy.positions[m.uid];
+    return p && p.y >= half;
+  }).length;
+  let winner = 'draw';
+  if (fHoldCount > eHoldCount) winner = 'friendly';
+  else if (eHoldCount > fHoldCount) winner = 'enemy';
+  return { winner, turns: turn,
+           friendlyKO: totalF - aliveF.length, enemyKO: totalE - aliveE.length };
 }
 
 /* ----------------------------------------------------------------------
