@@ -4705,6 +4705,15 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
               </span>
             </label>
             <label style="font-size:0.85em;">
+              Escenario
+              <select id="lab-spatial-scenario" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="pitched-battle">⚔ Pitched Battle (wipeout)</option>
+                <option value="breakthrough">🏃 Breakthrough (cruza al otro lado)</option>
+                <option value="hold-the-line">🛡 Hold the Line (defender mitad)</option>
+                <option value="capture-point">🎯 Capture Point (objetivo (24,16))</option>
+              </select>
+            </label>
+            <label style="font-size:0.85em;">
               Banda rival
               <select id="lab-spatial-rival" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
                 <option value="mirror">Espejo (clon del wb)</option>
@@ -5197,6 +5206,13 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
       <input type="range" id="lab2-replay-slider" min="0" max="0" value="0" style="flex:1;min-width:200px;margin-left:0.6rem;" />
     </div>
     <div id="lab2-replay-result" style="margin-top:0.6rem;font-family:var(--font-mono);font-size:0.85em;color:var(--parchment);"></div>
+    <details style="margin-top:0.6rem;">
+      <summary style="cursor:pointer;font-size:0.85em;color:var(--gold);">📈 Curva de attrition (avg N batallas)</summary>
+      <canvas id="lab2-stats-canvas" width="780" height="220" style="display:block;background:#1a1410;border:1px solid var(--rust);margin:0.4rem auto;"></canvas>
+      <div style="font-size:0.75em;color:var(--parchment-dim);text-align:center;">
+        Dorado: friendly · Rojo: enemy · X: turno · Y: modelos vivos promedio
+      </div>
+    </details>
   </div>
 </div>
 
@@ -23316,6 +23332,9 @@ document.getElementById('btn-lab-spatial-rival-load')?.addEventListener('click',
   }
 });
 
+/* Lab 2.0 Sprint 22 — Stats graph cache. */
+let LAB2_LAST_STATS = null;
+
 /* Lab 2.0 Sprint 12 — Replay UI state + handlers (modal + play/pause/step). */
 let LAB2_LAST_REPLAY = null;
 let LAB2_REPLAY_FRAME = 0;
@@ -23387,6 +23406,14 @@ document.getElementById('btn-lab-spatial-replay')?.addEventListener('click', () 
   }
   openModal('modal-lab2-replay');
   _lab2RenderReplayCurrent();
+  // Sprint 22: pinta también el stats graph (avg attrition) si hay cache.
+  if (LAB2_LAST_STATS) {
+    const sc = document.getElementById('lab2-stats-canvas');
+    if (sc && sc.getContext) {
+      renderStatsGraph(sc.getContext('2d'), LAB2_LAST_STATS,
+                       { width: sc.width, height: sc.height });
+    }
+  }
 });
 
 document.getElementById('btn-lab2-replay-first')?.addEventListener('click', () => _lab2ReplaySetFrame(0));
@@ -23433,11 +23460,15 @@ document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => 
       } else {
         enemyModels = _lab2SyntheticEnemyBand(rivalKey, wb.models.length);
       }
+      const scenarioId = (document.getElementById('lab-spatial-scenario') || {}).value || 'pitched-battle';
       const r = runBattleSeriesSpatial({
         friendlyModels, enemyModels, mapId,
         nBattles: nB, maxTurns: maxT, rangeInches: 24,
         useCanonEngine: useCanon, factionId: wb.factionId,
+        scenarioId,
       });
+      // Sprint 22: cachea stats para que el modal de replay las pinte.
+      LAB2_LAST_STATS = r.avgAlivePerTurn;
       const pct = (v) => (v * 100).toFixed(1) + '%';
       const lines = [
         '──── Resultado simulación espacial ────',
@@ -23466,6 +23497,7 @@ document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => 
         LAB2_LAST_REPLAY = buildBattleReplay(stateForReplay, {
           maxTurns: maxT, rangeInches: 24,
           useCanonEngine: useCanon, factionId: wb.factionId,
+          scenarioId,
         });
         const replayBtn = document.getElementById('btn-lab-spatial-replay');
         if (replayBtn) replayBtn.disabled = false;
