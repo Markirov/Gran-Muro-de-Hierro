@@ -37335,9 +37335,11 @@ function simulateBattleSpatial(state, opts) {
           });
         }
       } else if (action.action === 'charge' && action.targetUid) {
-        // Sprint 10: charge = mover hasta 1" del target + melee con +bonus.
+        // Sprint 10 + 14: charge = mover hasta 1" del target + melee con +bonus.
         if (action.movePos) moveModel(state, uid, action.movePos);
-        const result = rollSpatialMelee(state, uid, action.targetUid, { rng, charged: true });
+        const result = opts.useCanonEngine
+          ? rollSpatialMeleeCanon(state, uid, action.targetUid, { rng, charged: true, factionId: opts.factionId })
+          : rollSpatialMelee(state, uid, action.targetUid, { rng, charged: true });
         if (opts.recorder && opts.recorder.onEvent) {
           opts.recorder.onEvent({
             type: 'charge', attackerUid: uid, targetUid: action.targetUid,
@@ -37351,7 +37353,9 @@ function simulateBattleSpatial(state, opts) {
           }
         }
       } else if (action.action === 'melee' && action.targetUid) {
-        const result = rollSpatialMelee(state, uid, action.targetUid, { rng, charged: false });
+        const result = opts.useCanonEngine
+          ? rollSpatialMeleeCanon(state, uid, action.targetUid, { rng, charged: false, factionId: opts.factionId })
+          : rollSpatialMelee(state, uid, action.targetUid, { rng, charged: false });
         if (opts.recorder && opts.recorder.onEvent) {
           opts.recorder.onEvent({
             type: 'melee', attackerUid: uid, targetUid: action.targetUid,
@@ -37641,6 +37645,63 @@ function rollSpatialAttackCanon(state, attackerUid, targetUid, opts) {
   if (opts.rng) Math.random = opts.rng;
   try {
     resolveRanged_lab(absA, absT, weaponCopy, [absT]);
+  } catch (e) {
+    Math.random = origRandom;
+    return { hit: false, ko: false, error: e.message };
+  }
+  Math.random = origRandom;
+
+  const hit = (absT.isOut !== initOut) || (absT.bloodMarkers !== initBlood);
+  const ko = absT.isOut && !initOut;
+  if (ko) markModelOut(state, targetUid);
+  return { hit, ko };
+}
+
+/* ----------------------------------------------------------------------
+   Lab 2.0 — Sprint 14 — Canon engine para melee (resolveMelee_lab).
+   ----------------------------------------------------------------------
+ * Análogo a Sprint 7 (rollSpatialAttackCanon ranged). Cuando opts.useCanonEngine
+ * y la action es 'charge' o 'melee', delega en resolveMelee_lab del Lab
+ * abstracto en vez del modelo aproximado rollSpatialMelee.
+ *
+ * Reaprovecha _lab2ToAbstractModel + _lab2ToAbstractWeapon del Sprint 7.
+ */
+function rollSpatialMeleeCanon(state, attackerUid, targetUid, opts) {
+  opts = opts || {};
+  const aModel = _lab2GetModelByUid(state, attackerUid);
+  const tModel = _lab2GetModelByUid(state, targetUid);
+  if (!aModel || !tModel) return { hit: false, ko: false };
+  const aPos = getModelPosition(state, attackerUid);
+  const tPos = getModelPosition(state, targetUid);
+  if (!aPos || !tPos) return { hit: false, ko: false };
+  const factionId = opts.factionId || state.factionId
+    || (state.friendly.models[0] && state.friendly.models[0].factionId)
+    || 'new-antioch';
+
+  const absA = _lab2ToAbstractModel(aModel, aPos);
+  const absT = _lab2ToAbstractModel(tModel, tPos);
+
+  // Identifica arma melee del attacker. V1 toma la primera en companionEquipment.
+  const eq = aModel.companionEquipment || [];
+  const meleeItem = eq.find(e => {
+    const t = (e.type || e['equipment-type'] || '').toLowerCase();
+    return t.includes('melee');
+  });
+  let weapon = meleeItem ? _lab2ToAbstractWeapon(meleeItem, factionId) : null;
+  if (!weapon) {
+    // Fallback: arma natural (unarmed melee 0 stats).
+    weapon = {
+      name: 'Unarmed', isRanged: false, range: 'Melee', diceMod: 0,
+      injuryDice: 0, injuryMod: 0, keywords: new Set(),
+    };
+  }
+
+  const initBlood = absT.bloodMarkers;
+  const initOut = absT.isOut;
+  const origRandom = Math.random;
+  if (opts.rng) Math.random = opts.rng;
+  try {
+    resolveMelee_lab(absA, absT, weapon, !!opts.charged);
   } catch (e) {
     Math.random = origRandom;
     return { hit: false, ko: false, error: e.message };
