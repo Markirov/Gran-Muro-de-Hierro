@@ -37396,6 +37396,13 @@ function simulateBattleSpatial(state, opts) {
   const rangeInches = opts.rangeInches || 24;
   const totalFriendly = state.friendly.models.length;
   const totalEnemy = state.enemy.models.length;
+  // Sprint 20: per-turn tracking opcional (también activado siempre si
+  // viene de runBattleSeriesSpatial; el caller controla).
+  const perTurn = { friendly: [totalFriendly], enemy: [totalEnemy] };
+  function _captureTurn() {
+    perTurn.friendly.push(_lab2AliveModels(state, 'friendly').length);
+    perTurn.enemy.push(_lab2AliveModels(state, 'enemy').length);
+  }
   // Sprint 19: scenario check inicial (turn 0) — si las posiciones de
   // deploy ya satisfacen la condición de victoria, el side gana sin
   // disparar un tiro.
@@ -37485,28 +37492,39 @@ function simulateBattleSpatial(state, opts) {
     if (opts.recorder && opts.recorder.onTurnEnd) {
       opts.recorder.onTurnEnd(turn, state);
     }
+    // Sprint 20: captura per-turn antes de devolver (asegura punto final
+    // incluso si el turno acabó por wipeout/scenario).
+    _captureTurn();
     // Fin de turno: scenario objective primero (Sprint 19), luego wipeout.
     const scenarioEnd = _lab2CheckScenarioEnd(state, opts.scenarioId, turn,
                                               maxTurns, totalFriendly, totalEnemy);
-    if (scenarioEnd) return scenarioEnd;
+    if (scenarioEnd) {
+      if (opts.trackPerTurn) scenarioEnd.perTurn = perTurn;
+      return scenarioEnd;
+    }
     const aliveF = _lab2AliveModels(state, 'friendly').length;
     const aliveE = _lab2AliveModels(state, 'enemy').length;
     if (aliveF === 0 && aliveE === 0) {
-      return { winner: 'draw', turns: turn,
-               friendlyKO: totalFriendly, enemyKO: totalEnemy };
+      return Object.assign({ winner: 'draw', turns: turn,
+                              friendlyKO: totalFriendly, enemyKO: totalEnemy },
+                            opts.trackPerTurn ? { perTurn } : {});
     }
     if (aliveF === 0) {
-      return { winner: 'enemy', turns: turn,
-               friendlyKO: totalFriendly, enemyKO: totalEnemy - aliveE };
+      return Object.assign({ winner: 'enemy', turns: turn,
+                              friendlyKO: totalFriendly, enemyKO: totalEnemy - aliveE },
+                            opts.trackPerTurn ? { perTurn } : {});
     }
     if (aliveE === 0) {
-      return { winner: 'friendly', turns: turn,
-               friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy };
+      return Object.assign({ winner: 'friendly', turns: turn,
+                              friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy },
+                            opts.trackPerTurn ? { perTurn } : {});
     }
   }
   // maxTurns reach: scenario-specific tiebreaker.
   if (opts.scenarioId === 'hold-the-line') {
-    return _lab2HoldTheLineWinner(state, totalFriendly, totalEnemy, turn);
+    const r = _lab2HoldTheLineWinner(state, totalFriendly, totalEnemy, turn);
+    if (opts.trackPerTurn) r.perTurn = perTurn;
+    return r;
   }
   // Default: winner por survivors.
   const aliveF = _lab2AliveModels(state, 'friendly').length;
@@ -37514,8 +37532,9 @@ function simulateBattleSpatial(state, opts) {
   let winner = 'draw';
   if (aliveF > aliveE) winner = 'friendly';
   else if (aliveE > aliveF) winner = 'enemy';
-  return { winner, turns: turn,
-           friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy - aliveE };
+  return Object.assign({ winner, turns: turn,
+                          friendlyKO: totalFriendly - aliveF, enemyKO: totalEnemy - aliveE },
+                        opts.trackPerTurn ? { perTurn } : {});
 }
 
 /* ----------------------------------------------------------------------
@@ -37567,20 +37586,38 @@ function runBattleSeriesSpatial(opts) {
 
   let winF = 0, winE = 0, draw = 0;
   let sumTurns = 0, sumKoF = 0, sumKoE = 0;
+  // Sprint 20: per-turn aggregate. Acumula sum per (turn, side) y count
+  // por turno (algunos batallas terminan antes que otras).
+  const perTurnSumF = [], perTurnSumE = [], perTurnCount = [];
   for (let i = 0; i < nBattles; i++) {
     const fClones = friendlyModels.map(_deepCloneModel);
     const eClones = enemyModels.map(_deepCloneModel);
     const state = createLab2Battle(mapId, fClones, eClones);
     deployBandHeuristic(state, 'friendly');
     deployBandHeuristic(state, 'enemy');
-    const r = simulateBattleSpatial(state, { rng, maxTurns, rangeInches });
+    const simOpts = Object.assign({}, opts, {
+      rng, maxTurns, rangeInches, trackPerTurn: true,
+    });
+    const r = simulateBattleSpatial(state, simOpts);
     if (r.winner === 'friendly') winF++;
     else if (r.winner === 'enemy') winE++;
     else draw++;
     sumTurns += r.turns;
     sumKoF += r.friendlyKO;
     sumKoE += r.enemyKO;
+    // Acumula perTurn de esta batalla. Length variable según wipeout.
+    if (r.perTurn) {
+      for (let t = 0; t < r.perTurn.friendly.length; t++) {
+        perTurnSumF[t] = (perTurnSumF[t] || 0) + r.perTurn.friendly[t];
+        perTurnSumE[t] = (perTurnSumE[t] || 0) + r.perTurn.enemy[t];
+        perTurnCount[t] = (perTurnCount[t] || 0) + 1;
+      }
+    }
   }
+  const avgAlivePerTurn = {
+    friendly: perTurnSumF.map((s, t) => s / Math.max(1, perTurnCount[t])),
+    enemy:    perTurnSumE.map((s, t) => s / Math.max(1, perTurnCount[t])),
+  };
   return {
     nBattles,
     winRateFriendly: winF / nBattles,
@@ -37589,10 +37626,78 @@ function runBattleSeriesSpatial(opts) {
     avgTurns:        sumTurns / nBattles,
     avgFriendlyKO:   sumKoF / nBattles,
     avgEnemyKO:      sumKoE / nBattles,
+    avgAlivePerTurn,
     mapId,
     friendlyCount:   friendlyModels.length,
     enemyCount:      enemyModels.length,
   };
+}
+
+/** Sprint 20: line chart simple en canvas 2D. Pinta 2 líneas (friendly
+ * dorado, enemy rojo) sobre eje X=turno, eje Y=alive count.
+ *
+ * opts: { width=400, height=250, padding=30 }. */
+function renderStatsGraph(ctx, perTurnStats, opts) {
+  if (!ctx || !perTurnStats) return;
+  opts = opts || {};
+  const W = opts.width || (ctx.canvas && ctx.canvas.width) || 400;
+  const H = opts.height || (ctx.canvas && ctx.canvas.height) || 250;
+  const PAD = opts.padding || 30;
+  const C = (typeof LAB2_REPLAY_COLORS !== 'undefined') ? LAB2_REPLAY_COLORS : {
+    friendlyFill:'#c9a961', enemyFill:'#9b1e1e', text:'#1a1410', gridLine:'#7f6b43',
+  };
+  // Background.
+  ctx.fillStyle = '#1a1410';
+  ctx.fillRect(0, 0, W, H);
+  // Bounds + axis.
+  const f = perTurnStats.friendly || [];
+  const e = perTurnStats.enemy || [];
+  if (f.length === 0 && e.length === 0) {
+    ctx.fillStyle = C.text;
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Sin datos.', PAD, H / 2);
+    return;
+  }
+  const nPoints = Math.max(f.length, e.length);
+  const maxY = Math.max(1, ...f, ...e);
+  const xScale = (W - 2 * PAD) / Math.max(1, nPoints - 1);
+  const yScale = (H - 2 * PAD) / maxY;
+  // Grid lines (eje X).
+  ctx.strokeStyle = C.gridLine;
+  ctx.lineWidth = 0.5;
+  for (let y = 0; y <= maxY; y++) {
+    const py = H - PAD - y * yScale;
+    ctx.beginPath();
+    ctx.moveTo(PAD, py);
+    ctx.lineTo(W - PAD, py);
+    ctx.stroke();
+  }
+  // Friendly line.
+  ctx.strokeStyle = C.friendlyFill;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < f.length; i++) {
+    const px = PAD + i * xScale;
+    const py = H - PAD - f[i] * yScale;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  // Enemy line.
+  ctx.strokeStyle = C.enemyFill;
+  ctx.beginPath();
+  for (let i = 0; i < e.length; i++) {
+    const px = PAD + i * xScale;
+    const py = H - PAD - e[i] * yScale;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  // Labels.
+  ctx.fillStyle = C.text || '#e8d4a8';
+  ctx.font = '11px sans-serif';
+  ctx.fillText('Turno', W / 2 - 20, H - 8);
+  ctx.fillText('Alive', 4, PAD - 8);
 }
 
 /* ----------------------------------------------------------------------
