@@ -37085,6 +37085,38 @@ function _lab2NearestEnemy(state, attackerUid) {
   return bestUid;
 }
 
+/** Sprint 17: detecta si un modelo va equipado con HEAVY weapon.
+ * Canon TC: HEAVY weapon impide Move ACTION en el mismo turno que dispara.
+ *
+ * Detección en orden de prioridad:
+ *   1. equipment[i].weaponKeywords incluye 'HEAVY' (inline canon).
+ *   2. Lookup en DATA.armoury por nombre del equipo → weaponKeywords HEAVY.
+ *   3. fallback false.
+ */
+function isModelHeavyArmed(model, factionId) {
+  if (!model || !Array.isArray(model.companionEquipment)) return false;
+  for (const eq of model.companionEquipment) {
+    if (!eq) continue;
+    // Inline keywords.
+    const inlineKw = eq.weaponKeywords || eq['weapon-keywords'] || [];
+    if (Array.isArray(inlineKw) && inlineKw.some(k => /^heavy$/i.test(String(k)))) return true;
+    if (inlineKw && typeof inlineKw.has === 'function' && inlineKw.has('HEAVY')) return true;
+    // Lookup armoury si tenemos factionId.
+    if (factionId && typeof DATA !== 'undefined' && DATA.factions && DATA.factions[factionId]) {
+      const armoury = DATA.factions[factionId].armoury || {};
+      const name = eq.name || eq['equipment-name'] || '';
+      if (!name) continue;
+      for (const cat of ['ranged', 'melee', 'grenades']) {
+        const list = armoury[cat] || [];
+        const entry = list.find(w => w.name === name);
+        if (entry && Array.isArray(entry.weaponKeywords) &&
+            entry.weaponKeywords.some(k => /^heavy$/i.test(String(k)))) return true;
+      }
+    }
+  }
+  return false;
+}
+
 /** Sprint 16: cover-seeking advance. Devuelve la mejor celda destino
  * para advance, ponderando progreso hacia el target + cover bonus.
  * Score = (oldDist - newDist) + coverBonus(heavy=2.5, light=1, none=0).
@@ -37157,6 +37189,12 @@ function chooseActionHeuristic(state, modelUid, rangeInches) {
   }
   const tgt = chooseTargetHeuristic(state, modelUid, rangeInches);
   if (tgt) return { action: 'shoot', targetUid: tgt };
+  // Sprint 17: HEAVY weapons no pueden moverse Y disparar mismo turno.
+  // Si el modelo es heavy y no hay target en rango, hold (no advance).
+  const _heavyModel = _lab2GetModelByUid(state, modelUid);
+  if (_heavyModel && isModelHeavyArmed(_heavyModel, state.factionId)) {
+    return { action: 'hold' };
+  }
   // Sin target: advance hacia el enemigo más cercano.
   const nearest = _lab2NearestEnemy(state, modelUid);
   if (!nearest) return { action: 'hold' };
