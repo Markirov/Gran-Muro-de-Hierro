@@ -4710,8 +4710,21 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
                 <option value="hereticLegions">☩ Heretic Legions (Troopers)</option>
                 <option value="blackGrail">☠ Black Grail (Thralls)</option>
                 <option value="courtSerpent">🐍 Court of the Serpent (Yoke Fiends)</option>
+                <option value="json">📋 Paste JSON Companion…</option>
               </select>
             </label>
+          </div>
+          <!-- Textarea + botón visibles solo cuando rival === 'json'. -->
+          <div id="lab-spatial-rival-json-row" style="display:none;margin-top:0.6rem;">
+            <label style="font-size:0.85em;">
+              JSON Companion del rival
+              <textarea id="lab-spatial-rival-json" rows="3" placeholder='{"warband-name":"…","models":[…]}'
+                        style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);font-family:var(--font-mono);font-size:0.78rem;"></textarea>
+            </label>
+            <div style="display:flex;gap:0.5rem;margin-top:0.3rem;align-items:center;flex-wrap:wrap;">
+              <button id="btn-lab-spatial-rival-load" class="btn">Cargar JSON rival</button>
+              <span id="lab-spatial-rival-status" style="font-size:0.78em;color:var(--parchment-dim);">Sin rival JSON.</span>
+            </div>
           </div>
           <div style="display:flex;gap:0.5rem;margin-top:0.8rem;align-items:center;flex-wrap:wrap;">
             <button id="btn-lab-spatial-run" class="btn btn-primary">▶ Simular en mapa</button>
@@ -23276,6 +23289,29 @@ document.getElementById('btn-loadout-add-variant')?.addEventListener('click', ()
 
 // ─────────────────────────────────────────────────────────────────────
 
+/* Lab 2.0 Sprint 13 — Rival JSON loader (paste Companion-format). */
+let LAB2_RIVAL_JSON = null;  // { models: [...] } o null
+document.getElementById('lab-spatial-rival')?.addEventListener('change', (e) => {
+  const row = document.getElementById('lab-spatial-rival-json-row');
+  if (row) row.style.display = (e.target.value === 'json') ? 'block' : 'none';
+});
+document.getElementById('btn-lab-spatial-rival-load')?.addEventListener('click', () => {
+  const ta = document.getElementById('lab-spatial-rival-json');
+  const status = document.getElementById('lab-spatial-rival-status');
+  const txt = (ta && ta.value) || '';
+  const r = _lab2ParseRivalJson(txt);
+  if (!r.ok) {
+    LAB2_RIVAL_JSON = null;
+    if (status) { status.textContent = '✗ ' + r.error; status.style.color = '#c92424'; }
+    return;
+  }
+  LAB2_RIVAL_JSON = { models: r.models };
+  if (status) {
+    status.textContent = '✓ ' + r.models.length + ' modelos cargados.';
+    status.style.color = '#7fb069';
+  }
+});
+
 /* Lab 2.0 Sprint 12 — Replay UI state + handlers (modal + play/pause/step). */
 let LAB2_LAST_REPLAY = null;
 let LAB2_REPLAY_FRAME = 0;
@@ -23378,12 +23414,21 @@ document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => 
   // setTimeout para que el DOM repinte el "⏳ Simulando" antes de bloquear.
   setTimeout(() => {
     try {
-      // Sprint 9: rival configurable.
+      // Sprint 9 + 13: rival configurable (mirror / arquetipos / JSON).
       const rivalKey = (document.getElementById('lab-spatial-rival') || {}).value || 'mirror';
       const friendlyModels = wb.models.map(m => JSON.parse(JSON.stringify(m)));
-      const enemyModels = (rivalKey === 'mirror')
-        ? wb.models.map(m => JSON.parse(JSON.stringify(m)))
-        : _lab2SyntheticEnemyBand(rivalKey, wb.models.length);
+      let enemyModels;
+      if (rivalKey === 'mirror') {
+        enemyModels = wb.models.map(m => JSON.parse(JSON.stringify(m)));
+      } else if (rivalKey === 'json') {
+        if (!LAB2_RIVAL_JSON || !LAB2_RIVAL_JSON.models.length) {
+          if (statusEl) { statusEl.textContent = '✗ Carga primero un JSON rival.'; statusEl.style.color = '#c92424'; }
+          return;
+        }
+        enemyModels = LAB2_RIVAL_JSON.models.map(m => JSON.parse(JSON.stringify(m)));
+      } else {
+        enemyModels = _lab2SyntheticEnemyBand(rivalKey, wb.models.length);
+      }
       const r = runBattleSeriesSpatial({
         friendlyModels, enemyModels, mapId,
         nBattles: nB, maxTurns: maxT, rangeInches: 24,
@@ -37645,6 +37690,59 @@ function _lab2AbstractToCompanion(absUnit, uidPrefix, idx) {
     tier: 'troops',
     isOut: false,
   };
+}
+
+/** Parsea un JSON Companion-format y devuelve sus models en companion-shape
+ * listos para sim espacial. Companion JSON ya trae model-name + stat-* + cost
+ * + equipment + abilities + keywords. Solo necesitamos remapearlos a
+ * companionStats / companionEquipment / companionKeywords / companionAbilities.
+ *
+ * Returns: { ok: true, models } | { ok: false, error }. */
+function _lab2ParseRivalJson(text) {
+  if (!text || typeof text !== 'string') return { ok: false, error: 'Texto vacío.' };
+  let parsed;
+  try { parsed = JSON.parse(text); }
+  catch (e) { return { ok: false, error: 'JSON inválido: ' + e.message }; }
+  if (!parsed || !Array.isArray(parsed.models)) {
+    return { ok: false, error: 'Falta array "models" en el JSON.' };
+  }
+  const out = [];
+  for (let i = 0; i < parsed.models.length; i++) {
+    const m = parsed.models[i];
+    if (!m) continue;
+    const name = m['model-name'] || m.name || ('Rival ' + i);
+    const stats = {
+      move:   m['stat-move']   || '6"/Infantry',
+      ranged: m['stat-ranged'] || '+0',
+      melee:  m['stat-melee']  || '+0',
+      armour: m['stat-armour'] || '0',
+    };
+    // Companion JSON usa shapes con kebab-case keys. Normaliza para Lab2.
+    const equipment = (m.equipment || []).map(e => ({
+      name: e['equipment-name'] || e.name || '',
+      type: e['equipment-type'] || e.type || 'equipment',
+    }));
+    const abilities = (m.abilities || []).map(a => ({
+      name: a['ability-name'] || a.name || '',
+    }));
+    const keywords = (m.keywords || []).map(k => ({
+      name: k['keyword-name'] || k.name || '',
+    }));
+    const cost = (m.cost && m.cost.ducats) || m.cost || 0;
+    out.push({
+      uid: 'rival_json_' + i + '_' + Date.now().toString(36),
+      name,
+      companionStats: stats,
+      companionCost: cost,
+      companionKeywords: keywords,
+      companionAbilities: abilities,
+      companionEquipment: equipment,
+      tier: 'troops',
+      isOut: false,
+    });
+  }
+  if (out.length === 0) return { ok: false, error: 'No hay modelos válidos.' };
+  return { ok: true, models: out };
 }
 
 /** Devuelve una banda sintética enemiga del arquetipo dado, con N modelos.
