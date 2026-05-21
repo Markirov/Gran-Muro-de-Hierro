@@ -4685,6 +4685,9 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
                 <option value="river-crossing">River Crossing (3 puentes)</option>
                 <option value="forest-edge">Forest Edge (claros y árboles)</option>
                 <option value="bunker-complex">Bunker Complex (defensivo WWI)</option>
+                <option value="mountain-pass-canyon">Mountain Pass Canyon (paredes + colinas)</option>
+                <option value="desert-convoy">Desert Convoy (caravana central)</option>
+                <option value="hellscape">Hellscape (demoníaco)</option>
               </select>
             </label>
             <label style="font-size:0.85em;">
@@ -36989,6 +36992,86 @@ const LAB2_MAPS = (() => {
   maps['bunker-complex'] = _buildLab2Map(
     'bunker-complex', 'Bunker Complex (defensivo WWI)',
     [], lightCoverBC, heavyCoverBC, []
+  );
+
+  // Mapa 9: Mountain Pass Canyon. Paredes blocked en bordes superior +
+  // inferior (4 filas cada uno). Centro abierto con colinas elevated +
+  // light cover de rocas dispersas.
+  const blockedMP = [];
+  for (let x = 0; x < 48; x++) {
+    for (let y = 0; y < 4; y++) blockedMP.push([x, y]);
+    for (let y = 28; y < 32; y++) blockedMP.push([x, y]);
+  }
+  const elevationMP = [];
+  for (const [cx, cy, h] of [[14, 14, 2], [24, 16, 3], [34, 14, 2]]) {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        elevationMP.push([cx + dx, cy + dy, h]);
+      }
+    }
+  }
+  const lightCoverMP = [];
+  for (const [rx, ry] of [
+    [8, 10], [12, 20], [20, 9], [28, 22], [36, 11], [42, 18],
+  ]) {
+    lightCoverMP.push([rx, ry], [rx + 1, ry]);
+  }
+  maps['mountain-pass-canyon'] = _buildLab2Map(
+    'mountain-pass-canyon', 'Mountain Pass Canyon (paredes + colinas)',
+    blockedMP, lightCoverMP, [], elevationMP
+  );
+
+  // Mapa 10: Desert Convoy. Mapa abierto con caravana de 4 camiones
+  // (3×2 cada uno) en línea central y=15-17. Dunas light cover dispersas.
+  const blockedDC = [];
+  for (const cx of [8, 18, 28, 38]) {
+    for (let dy = 15; dy <= 17; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        blockedDC.push([cx + dx, dy]);
+      }
+    }
+  }
+  const lightCoverDC = [];
+  for (const [dx, dy] of [
+    [4, 6], [13, 8], [22, 5], [31, 7], [40, 6],
+    [4, 25], [13, 27], [22, 24], [31, 26], [40, 25],
+  ]) {
+    for (let off = 0; off < 3; off++) lightCoverDC.push([dx + off, dy]);
+  }
+  maps['desert-convoy'] = _buildLab2Map(
+    'desert-convoy', 'Desert Convoy (caravana central)',
+    blockedDC, lightCoverDC, [], []
+  );
+
+  // Mapa 11: Hellscape. Terreno demoníaco con 8 cráteres heavy +
+  // "fire walls" light cover quemada + obstáculos infernales blocked.
+  const blockedHS = [];
+  for (const [bx, by] of [
+    [10, 8], [22, 6], [38, 10],
+    [8, 22], [26, 24], [40, 20],
+    [16, 16], [34, 16],
+  ]) {
+    blockedHS.push([bx, by], [bx + 1, by]);
+  }
+  const heavyCoverHS = [];
+  for (const [cx, cy] of [
+    [6, 14], [14, 6], [20, 22], [30, 8],
+    [36, 14], [42, 24], [10, 26], [32, 26],
+  ]) {
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        if (dx === 0 && dy === 0) heavyCoverHS.push([cx, cy]);
+        else if (Math.abs(dx) + Math.abs(dy) === 1) heavyCoverHS.push([cx + dx, cy + dy]);
+      }
+    }
+  }
+  const lightCoverHS = [];
+  for (let y = 12; y <= 20; y += 4) {
+    for (let x = 4; x < 44; x += 6) lightCoverHS.push([x, y], [x + 1, y]);
+  }
+  maps['hellscape'] = _buildLab2Map(
+    'hellscape', 'Hellscape (demoníaco)',
+    blockedHS, lightCoverHS, heavyCoverHS, []
   );
 
   return maps;
