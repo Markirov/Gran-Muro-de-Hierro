@@ -37418,6 +37418,35 @@ function hasWeaponKeyword(model, kw, factionId) {
   return false;
 }
 
+/** Sprint 29: parsea AUTOMATIC X de weaponKeywords. Devuelve X o 1. */
+function parseAutomaticCount(eqItem, factionId) {
+  if (!eqItem) return 1;
+  const _scan = (kws) => {
+    if (!kws) return 0;
+    const arr = Array.isArray(kws) ? kws : (typeof kws.values === 'function' ? Array.from(kws) : []);
+    for (const k of arr) {
+      const m = String(k).match(/AUTOMATIC\s+(\d+)/i);
+      if (m) return parseInt(m[1], 10);
+    }
+    return 0;
+  };
+  const inline = _scan(eqItem.weaponKeywords || eqItem['weapon-keywords']);
+  if (inline > 0) return inline;
+  if (factionId && typeof DATA !== 'undefined' && DATA.factions && DATA.factions[factionId]) {
+    const armoury = DATA.factions[factionId].armoury || {};
+    const name = eqItem.name || eqItem['equipment-name'] || '';
+    for (const cat of ['ranged', 'melee', 'grenades']) {
+      const list = armoury[cat] || [];
+      const entry = list.find(w => w.name === name);
+      if (entry) {
+        const r = _scan(entry.weaponKeywords);
+        if (r > 0) return r;
+      }
+    }
+  }
+  return 1;
+}
+
 /** Sprint 27: parsea BLAST radius de las weaponKeywords del item.
  *
  * Returns: número (pulgadas) o 0 si no hay BLAST. */
@@ -37978,9 +38007,24 @@ function simulateBattleSpatial(state, opts) {
       if (action.action === 'shoot' && action.targetUid) {
         // Verifica LoS justo antes (target puede haberse movido).
         if (!hasLineOfSightBetween(state, uid, action.targetUid)) continue;
-        const result = opts.useCanonEngine
-          ? rollSpatialAttackCanon(state, uid, action.targetUid, { rng, factionId: opts.factionId })
-          : rollSpatialAttack(state, uid, action.targetUid, { rng });
+        // Sprint 29: AUTOMATIC X — múltiples ataques por activación.
+        const attackerModel = _lab2GetModelByUid(state, uid);
+        let autoCount = 1;
+        if (attackerModel && attackerModel.companionEquipment) {
+          for (const item of attackerModel.companionEquipment) {
+            const c = parseAutomaticCount(item, state.factionId);
+            if (c > autoCount) autoCount = c;
+          }
+        }
+        let result = null;
+        for (let ai = 0; ai < autoCount; ai++) {
+          const tgtModel = _lab2GetModelByUid(state, action.targetUid);
+          if (!tgtModel || tgtModel.isOut) break;
+          result = opts.useCanonEngine
+            ? rollSpatialAttackCanon(state, uid, action.targetUid, { rng, factionId: opts.factionId })
+            : rollSpatialAttack(state, uid, action.targetUid, { rng });
+          if (result.ko) break;  // target down, stop more attacks.
+        }
         if (opts.recorder && opts.recorder.onEvent) {
           opts.recorder.onEvent({
             type: 'shoot', attackerUid: uid, targetUid: action.targetUid,
