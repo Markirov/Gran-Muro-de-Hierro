@@ -37062,7 +37062,54 @@ function createLab2Battle(mapId, friendlyModels, enemyModels, opts) {
     },
     turn: 1,
     activated: new Set(),
+    // Sprint 28: fireCells Map<"x,y", {turnsRemaining}> para fire persistente.
+    fireCells: new Map(),
   };
+}
+
+/** Sprint 28: NEGATE FIRE keyword detection. */
+function hasNegateFire(model) {
+  return _lab2HasKeyword(model, 'NEGATE FIRE');
+}
+
+/** Sprint 28: marca celda con fire persistente. Si ya hay fire, refresca
+ * turnsRemaining al máximo de los dos valores (no apila daño, solo tiempo). */
+function markFireCell(state, pos, turns) {
+  if (!state || !state.fireCells || !pos) return;
+  const key = (pos.x | 0) + ',' + (pos.y | 0);
+  const existing = state.fireCells.get(key);
+  const newTurns = Math.max(existing ? existing.turnsRemaining : 0, turns | 0 || 2);
+  state.fireCells.set(key, { turnsRemaining: newTurns });
+}
+
+/** Sprint 28: aplica daño FIRE a modelos en fire cells. Retorna uids KO. */
+function processFireDamage(state, rng) {
+  if (!state || !state.fireCells) return [];
+  const _rng = rng || Math.random;
+  const kos = [];
+  for (const [key] of state.fireCells.entries()) {
+    const [xs, ys] = key.split(',');
+    const x = parseInt(xs, 10), y = parseInt(ys, 10);
+    const occ = modelAt(state, { x, y });
+    if (!occ) continue;
+    if (hasNegateFire(occ.model)) continue;
+    if (_rng() < 0.35) {
+      if (!modelTriesRegenerate(occ.model, _rng)) {
+        kos.push(occ.model.uid);
+        markModelOut(state, occ.model.uid);
+      }
+    }
+  }
+  return kos;
+}
+
+/** Sprint 28: decrementa turnsRemaining + elimina celdas expiradas. */
+function tickFireCells(state) {
+  if (!state || !state.fireCells) return;
+  for (const [key, val] of Array.from(state.fireCells.entries())) {
+    val.turnsRemaining -= 1;
+    if (val.turnsRemaining <= 0) state.fireCells.delete(key);
+  }
 }
 
 /** Sprint 26: NEGATE MINED keyword detection. */
@@ -37784,6 +37831,14 @@ function rollSpatialAttack(state, attackerUid, targetUid, opts) {
         break;
       }
     }
+    // Sprint 28: FIRE persistente. Si weapon tiene FIRE keyword, marca
+    // la celda del target con fire durante 2 turnos.
+    for (const item of eq) {
+      if (hasWeaponKeyword({ companionEquipment: [item] }, 'FIRE', state.factionId)) {
+        markFireCell(state, targetPos, 2);
+        break;
+      }
+    }
   }
   return { hit, ko, hitChance, splashKOs };
 }
@@ -37900,6 +37955,16 @@ function simulateBattleSpatial(state, opts) {
     turn++;
     state.turn = turn;
     state.activated = new Set();
+    // Sprint 28: FIRE damage al inicio del turno (modelos en fire cells).
+    if (state.fireCells && state.fireCells.size > 0) {
+      const fireKOs = processFireDamage(state, rng);
+      if (fireKOs.length > 0 && opts.recorder && opts.recorder.onEvent) {
+        for (const koUid of fireKOs) {
+          opts.recorder.onEvent({ type: 'fire-ko', uid: koUid });
+        }
+      }
+      tickFireCells(state);
+    }
     const order = _lab2BuildActivationOrder(state);
     for (const { uid } of order) {
       const model = _lab2GetModelByUid(state, uid);
