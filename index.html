@@ -20150,6 +20150,77 @@ function reorderWarbandModelByUid(wb, draggedUid, targetUid, position) {
     draggedUid = null;
     lastTarget = null;
   });
+
+  /* Touch drag&drop (mobile). Mirror la lógica de HTML5 drag&drop pero
+   * usando touchstart/touchmove/touchend + elementFromPoint para hit-test.
+   *
+   * Mecánica:
+   *  - touchstart en roster-card: marca draggedUid + clase dragging. NO
+   *    preventDefault para permitir el scroll por defecto SI el usuario
+   *    no acaba arrastrando — solo bloqueamos scroll en touchmove cuando
+   *    el touch realmente cambia de card.
+   *  - touchmove: usa elementFromPoint para detectar la card bajo el dedo.
+   *    Calcula posición before/after por midpoint Y. Aplica clase
+   *    drop-target-before/after. preventDefault() para evitar scroll
+   *    accidental mientras se reordena.
+   *  - touchend: invoca reorderWarbandModelByUid (reuso desktop) y limpia.
+   */
+  let touchActive = false;
+  document.addEventListener('touchstart', (e) => {
+    if (!e.target.closest) return;
+    const card = e.target.closest('.roster-card');
+    if (!card || !card.dataset.uid) return;
+    draggedUid = card.dataset.uid;
+    card.classList.add('dragging');
+    touchActive = true;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!touchActive || !draggedUid) return;
+    const t = e.touches && e.touches[0];
+    if (!t) return;
+    const elUnder = document.elementFromPoint(t.clientX, t.clientY);
+    if (!elUnder || !elUnder.closest) return;
+    const card = elUnder.closest('.roster-card');
+    if (!card || card.dataset.uid === draggedUid) return;
+    e.preventDefault();
+    const rect = card.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const position = (t.clientY < midY) ? 'before' : 'after';
+    if (lastTarget !== card) {
+      clearTargets();
+      lastTarget = card;
+    }
+    card.classList.remove('drop-target-before', 'drop-target-after');
+    card.classList.add(position === 'before' ? 'drop-target-before' : 'drop-target-after');
+    card._dropPosition = position;
+  }, { passive: false });
+
+  document.addEventListener('touchend', (e) => {
+    if (!touchActive) return;
+    touchActive = false;
+    if (!draggedUid) return;
+    if (lastTarget && lastTarget.dataset.uid && lastTarget.dataset.uid !== draggedUid) {
+      const wb = STATE.currentWarband;
+      const position = lastTarget._dropPosition || 'after';
+      if (wb && reorderWarbandModelByUid(wb, draggedUid, lastTarget.dataset.uid, position)) {
+        persistWarband(wb);
+        if (typeof renderAll === 'function') renderAll();
+      }
+    }
+    document.querySelectorAll('.roster-card.dragging').forEach(c => c.classList.remove('dragging'));
+    clearTargets();
+    draggedUid = null;
+    lastTarget = null;
+  }, { passive: true });
+
+  document.addEventListener('touchcancel', () => {
+    touchActive = false;
+    document.querySelectorAll('.roster-card.dragging').forEach(c => c.classList.remove('dragging'));
+    clearTargets();
+    draggedUid = null;
+    lastTarget = null;
+  }, { passive: true });
 })();
 
 /* SPEC-rediseno-ui Sub-E — Modal "Añadir a wishlist" con categorías.
