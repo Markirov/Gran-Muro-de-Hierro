@@ -37335,6 +37335,42 @@ function hasWeaponKeyword(model, kw, factionId) {
   return false;
 }
 
+/** Sprint 25: detecta si un equipment item es Glory (currency='☼').
+ * Lookup en DATA.armoury — items sin entry → false (no se asume nada).
+ */
+function isGloryItem(eqItem, factionId) {
+  if (!eqItem || !factionId) return false;
+  if (typeof DATA === 'undefined' || !DATA.factions || !DATA.factions[factionId]) return false;
+  const armoury = DATA.factions[factionId].armoury || {};
+  const name = eqItem.name || eqItem['equipment-name'] || '';
+  if (!name) return false;
+  for (const cat of ['ranged', 'melee', 'grenades', 'shields', 'armour', 'equipment']) {
+    const list = armoury[cat] || [];
+    const entry = list.find(w => w.name === name);
+    if (entry && entry.currency === '☼') return true;
+  }
+  return false;
+}
+
+/** Sprint 25: cuenta glory items en companionEquipment. */
+function countGloryItems(model, factionId) {
+  if (!model || !Array.isArray(model.companionEquipment)) return 0;
+  let n = 0;
+  for (const eq of model.companionEquipment) {
+    if (isGloryItem(eq, factionId)) n++;
+  }
+  return n;
+}
+
+/** Sprint 25: bonus de hit chance por glory items. V1 abstracto:
+ * 0.05 × min(count, 3) → cap +0.15. Proxy para los buffs que aportan
+ * en mesa (Troop Flag morale aura, Field Shrine, etc.) sin modelar
+ * cada uno individualmente. */
+function gloryHitBonus(model, factionId) {
+  const n = countGloryItems(model, factionId);
+  return Math.min(n, 3) * 0.05;
+}
+
 /** Sprint 24: REGENERATE save proc. Si modelo tiene keyword REGENERATE,
  * 25% chance de salvarse del KO. */
 function modelTriesRegenerate(model, rng) {
@@ -37626,6 +37662,8 @@ function rollSpatialAttack(state, attackerUid, targetUid, opts) {
   const cover = getCellCover(state.map, targetPos);
   if (cover === 'light') hitChance -= 0.15;
   else if (cover === 'heavy') hitChance -= 0.30;
+  // Sprint 25: bonus por glory items (proxy buffs en mesa).
+  hitChance += gloryHitBonus(attacker, state.factionId);
   // Clamp.
   if (hitChance < 0.05) hitChance = 0.05;
   if (hitChance > 0.95) hitChance = 0.95;
@@ -37654,6 +37692,8 @@ function rollSpatialMelee(state, attackerUid, targetUid, opts) {
   const meleeDice = _parseDiceStat(attacker.companionStats && attacker.companionStats.melee);
   let hitChance = 0.55 + 0.10 * meleeDice;
   if (opts.charged) hitChance += 0.10;  // Charge bonus canon.
+  // Sprint 25: bonus por glory items (proxy buffs en mesa).
+  hitChance += gloryHitBonus(attacker, state.factionId);
   if (hitChance < 0.05) hitChance = 0.05;
   if (hitChance > 0.95) hitChance = 0.95;
   const rollHit = rng();
