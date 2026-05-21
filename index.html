@@ -37043,17 +37043,53 @@ function getModelMoveBudget(model) {
  *
  * Returns: { mapId, map, friendly:{models,positions}, enemy:{...}, turn, activated }.
  * Posiciones empiezan vacías — el caller las setea con placeModel. */
-function createLab2Battle(mapId, friendlyModels, enemyModels) {
+function createLab2Battle(mapId, friendlyModels, enemyModels, opts) {
+  opts = opts || {};
   const map = LAB2_MAPS[mapId];
   if (!map) throw new Error('Mapa desconocido: ' + mapId);
   return {
     mapId,
     map,
-    friendly: { models: (friendlyModels || []).slice(), positions: {} },
-    enemy:    { models: (enemyModels    || []).slice(), positions: {} },
+    friendly: {
+      models: (friendlyModels || []).slice(),
+      positions: {},
+      minesRemaining: opts.friendlyMines | 0,
+    },
+    enemy: {
+      models: (enemyModels || []).slice(),
+      positions: {},
+      minesRemaining: opts.enemyMines | 0,
+    },
     turn: 1,
     activated: new Set(),
   };
+}
+
+/** Sprint 26: NEGATE MINED keyword detection. */
+function hasNegateMined(model) {
+  return _lab2HasKeyword(model, 'NEGATE MINED');
+}
+
+/** Sprint 26: trigger MINED en charge canon. 25% chance de proc si
+ * defender tiene minas y attacker NO tiene NEGATE MINED. Decrementa
+ * minesRemaining si proc.
+ * Returns: { triggered, ko } */
+function triggerMinedCharge(state, attackerUid, targetUid, rng) {
+  if (!state) return { triggered: false, ko: false };
+  const attacker = _lab2GetModelByUid(state, attackerUid);
+  const targetSide = _lab2GetSideForUid(state, targetUid);
+  if (!attacker || !targetSide) return { triggered: false, ko: false };
+  if (hasNegateMined(attacker)) return { triggered: false, ko: false };
+  const minesRem = state[targetSide].minesRemaining | 0;
+  if (minesRem <= 0) return { triggered: false, ko: false };
+  const r = (rng || Math.random)();
+  if (r >= 0.25) return { triggered: false, ko: false };
+  state[targetSide].minesRemaining = minesRem - 1;
+  // 50% del proc resulta en KO del charger (canon: injury roll separado).
+  const koRoll = (rng || Math.random)();
+  const ko = koRoll < 0.50;
+  if (ko) markModelOut(state, attackerUid);
+  return { triggered: true, ko };
 }
 
 function _lab2GetSideForUid(state, uid) {
