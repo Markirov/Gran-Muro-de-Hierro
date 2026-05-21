@@ -4705,6 +4705,13 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
               </span>
             </label>
             <label style="font-size:0.85em;">
+              Loadout friendly
+              <select id="lab-spatial-loadout" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="canon">Canon (banda original)</option>
+                <!-- Las variantes experimentales se inyectan dinámicamente al abrir el modo -->
+              </select>
+            </label>
+            <label style="font-size:0.85em;">
               Escenario
               <select id="lab-spatial-scenario" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
                 <option value="pitched-battle">⚔ Pitched Battle (wipeout)</option>
@@ -22673,7 +22680,25 @@ document.getElementById('lab-mode')?.addEventListener('change', (e) => {
   if (duelPanel)    duelPanel.style.display    = (mode === 'duel')    ? 'block' : 'none';
   if (comparePanel) comparePanel.style.display = (mode === 'compare') ? 'block' : 'none';
   if (loadoutPanel) loadoutPanel.style.display = (mode === 'loadout') ? 'block' : 'none';
-  if (spatialPanel) spatialPanel.style.display = (mode === 'spatial') ? 'block' : 'none';
+  if (spatialPanel) {
+    spatialPanel.style.display = (mode === 'spatial') ? 'block' : 'none';
+    // Sprint 31: populate loadout dropdown con variantes del wb actual.
+    if (mode === 'spatial') {
+      const loadoutSel = document.getElementById('lab-spatial-loadout');
+      if (loadoutSel && STATE.currentWarband) {
+        const wb = STATE.currentWarband;
+        const variants = Array.isArray(wb.experimentalVariants) ? wb.experimentalVariants : [];
+        // Reset opciones manteniendo canon como primera.
+        loadoutSel.innerHTML = '<option value="canon">Canon (banda original)</option>';
+        for (const v of variants) {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = '🧪 ' + (v.name || 'Variante');
+          loadoutSel.appendChild(opt);
+        }
+      }
+    }
+  }
   // Analyze config (enemy checkboxes + cost) shown for analyze + compare;
   // ocultado para duel / loadout / spatial (cada uno usa su propio panel).
   if (analyzeConfig) analyzeConfig.style.display = (mode === 'duel' || mode === 'loadout' || mode === 'spatial') ? 'none' : 'grid';
@@ -23518,7 +23543,9 @@ document.getElementById('btn-lab-spatial-run')?.addEventListener('click', () => 
     try {
       // Sprint 9 + 13: rival configurable (mirror / arquetipos / JSON).
       const rivalKey = (document.getElementById('lab-spatial-rival') || {}).value || 'mirror';
-      const friendlyModels = wb.models.map(m => JSON.parse(JSON.stringify(m)));
+      // Sprint 31: loadout friendly (canon o variante experimental).
+      const loadoutKey = (document.getElementById('lab-spatial-loadout') || {}).value || 'canon';
+      const friendlyModels = _lab2BandFromVariant(wb, loadoutKey);
       let enemyModels;
       if (rivalKey === 'mirror') {
         enemyModels = wb.models.map(m => JSON.parse(JSON.stringify(m)));
@@ -37508,6 +37535,21 @@ function applyBlastSplash(state, attackerUid, radius, targetUid, rng) {
     }
   }
   return kos;
+}
+
+/** Sprint 31: devuelve models de la banda con overrides de variante
+ * aplicados. Usado por Lab 2.0 para simular sandbox loadouts.
+ * Fallback al wb.models canon si variantId no existe. */
+function _lab2BandFromVariant(wb, variantId) {
+  if (!wb || !Array.isArray(wb.models)) return [];
+  if (!variantId || variantId === 'canon') {
+    return wb.models.map(m => JSON.parse(JSON.stringify(m)));
+  }
+  if (typeof applyVariantOverrides !== 'function') {
+    return wb.models.map(m => JSON.parse(JSON.stringify(m)));
+  }
+  const clone = applyVariantOverrides(wb, variantId);
+  return (clone && Array.isArray(clone.models)) ? clone.models : [];
 }
 
 /** Sprint 25: detecta si un equipment item es Glory (currency='☼').
