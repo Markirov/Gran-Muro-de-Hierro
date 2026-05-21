@@ -37064,6 +37064,8 @@ function createLab2Battle(mapId, friendlyModels, enemyModels, opts) {
     activated: new Set(),
     // Sprint 28: fireCells Map<"x,y", {turnsRemaining}> para fire persistente.
     fireCells: new Map(),
+    // Sprint 30: AI style del enemy ('balanced'|'aggressive'|'defensive').
+    enemyAIStyle: opts.enemyAIStyle || 'balanced',
   };
 }
 
@@ -37651,6 +37653,15 @@ function chooseActionHeuristic(state, modelUid, rangeInches) {
   const scenarioId = state.scenarioId || null;
   const _scnSide = _lab2GetSideForUid(state, modelUid);
   const _scnFrom = getModelPosition(state, modelUid);
+  // Sprint 30: AI bias enemy. Solo aplica si el modelo es enemy side.
+  const _aiStyle = (_scnSide === 'enemy') ? (state.enemyAIStyle || 'balanced') : 'balanced';
+  const chargeRange = (_aiStyle === 'aggressive') ? 4.001 : 3.001;
+  // Sprint 30 defensive: si shoot está disponible (en rango+LoS), saltar
+  // melee/charge en favor de shoot. Calculamos shoot target temprano.
+  if (_aiStyle === 'defensive') {
+    const _defTgt = chooseTargetHeuristic(state, modelUid, rangeInches);
+    if (_defTgt) return { action: 'shoot', targetUid: _defTgt };
+  }
   // Sprint 10: prioridad melee si nearest enemy ≤ charge range (canon ~3").
   const nearestForMelee = _lab2NearestEnemy(state, modelUid);
   if (nearestForMelee) {
@@ -37661,7 +37672,7 @@ function chooseActionHeuristic(state, modelUid, rangeInches) {
       if (dM <= 1.001) {
         return { action: 'melee', targetUid: nearestForMelee };
       }
-      if (dM <= 3.001) {
+      if (dM <= chargeRange) {
         // Charge: mueve hasta 1" del target.
         const dx = toM.x - fromM.x, dy = toM.y - fromM.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
