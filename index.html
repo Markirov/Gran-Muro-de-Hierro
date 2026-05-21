@@ -5211,6 +5211,8 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
         Frame <span id="lab2-replay-frame-idx">0</span> / <span id="lab2-replay-frame-total">0</span>
       </span>
       <input type="range" id="lab2-replay-slider" min="0" max="0" value="0" style="flex:1;min-width:200px;margin-left:0.6rem;" />
+      <button id="btn-lab2-replay-export-png" class="btn btn-sm" title="Descarga PNG del frame actual">📥 PNG</button>
+      <button id="btn-lab2-replay-export-json" class="btn btn-sm" title="Descarga JSON del replay completo">📥 JSON</button>
     </div>
     <div id="lab2-replay-result" style="margin-top:0.6rem;font-family:var(--font-mono);font-size:0.85em;color:var(--parchment);"></div>
     <details style="margin-top:0.6rem;">
@@ -23522,6 +23524,43 @@ document.getElementById('btn-lab2-replay-last')?.addEventListener('click', () =>
 document.getElementById('btn-lab2-replay-play')?.addEventListener('click', () => _lab2ReplayPlayToggle());
 document.getElementById('lab2-replay-slider')?.addEventListener('input', (e) => {
   _lab2ReplaySetFrame(parseInt(e.target.value, 10) || 0);
+});
+
+/* Sprint 32: export PNG del frame actual + JSON del replay completo. */
+document.getElementById('btn-lab2-replay-export-png')?.addEventListener('click', () => {
+  const cnv = document.getElementById('lab2-replay-canvas');
+  if (!cnv || !LAB2_LAST_REPLAY) { alert('No hay replay.'); return; }
+  try {
+    const dataURL = cnv.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'lab2-frame-' + LAB2_REPLAY_FRAME + '.png';
+    a.click();
+  } catch (e) {
+    alert('Error exportando PNG: ' + e.message);
+  }
+});
+
+document.getElementById('btn-lab2-replay-export-json')?.addEventListener('click', () => {
+  if (!LAB2_LAST_REPLAY) { alert('No hay replay.'); return; }
+  try {
+    // Excluye .map (referencia circular) — solo el data del replay.
+    const replayJson = {
+      mapId: LAB2_LAST_REPLAY.mapId,
+      initial: LAB2_LAST_REPLAY.initial,
+      frames: LAB2_LAST_REPLAY.frames,
+      result: LAB2_LAST_REPLAY.result,
+    };
+    const blob = new Blob([JSON.stringify(replayJson, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lab2-replay.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('Error exportando JSON: ' + e.message);
+  }
 });
 
 /* Lab 2.0 Sprint 8 — Wire del botón "Simular en mapa" del panel Espacial. */
