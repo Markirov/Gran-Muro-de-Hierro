@@ -37422,7 +37422,14 @@ function hasLineOfSightBetween(state, uidA, uidB) {
  * Friendly = inferior (y bajo). Enemy = superior (y alto). */
 function getDeploymentZone(state, side) {
   if (!state || !state.map) return null;
-  const zoneHeight = 12;
+  // Zonas canon TC ~6" cada lado del tablero. Resultado: ~21" gap
+  // entre deployments (y=0-5 friendly, y=26-31 enemy). Esto fuerza
+  // que weapons cortas (≤16") tengan que avanzar para enganchar →
+  // sim más realista con mix de shoot/advance/charge/melee en vez
+  // de disparos estáticos desde turn 1.
+  // (Antes Sprint 33 era 12" — todos disparaban desde deploy sin
+  // advance, ningún melee.)
+  const zoneHeight = 6;
   if (side === 'friendly') {
     return { xMin: 0, xMax: state.map.width - 1, yMin: 0, yMax: zoneHeight - 1 };
   }

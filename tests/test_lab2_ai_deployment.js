@@ -74,7 +74,7 @@ function mkModel(uid, name, opts = {}) {
 group('Group 1: getDeploymentZone bounds canon', () => {
   const state = createLab2Battle('open-ground', [mkModel('f1','A')], [mkModel('e1','B')]);
   const fz = getDeploymentZone(state, 'friendly');
-  ok(fz.yMin === 0 && fz.yMax >= 8, 'friendly zona inferior (yMin=0)');
+  ok(fz.yMin === 0 && fz.yMax >= 4, 'friendly zona inferior (yMin=0, yMax≥4)');
   ok(fz.yMax < state.map.height / 2,
      'friendly zona < mitad mapa (yMax=' + fz.yMax + ')');
   ok(fz.xMin === 0 && fz.xMax === state.map.width - 1,

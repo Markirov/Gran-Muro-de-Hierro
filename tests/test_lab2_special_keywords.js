@@ -114,8 +114,9 @@ group('Group 3: INFILTRATOR deploy avanzado (más cerca centerline)', () => {
   // mayor (INFILTRATOR avanza más).
   ok(posInfil.y >= posNormal.y,
      'INFILTRATOR ≥ normal en y (más cerca centerline). normal=' + posNormal.y + ', infil=' + posInfil.y);
-  // Y debería poder estar más allá de yMax estándar.
-  ok(posInfil.y >= 11,
+  // Y debería poder estar más allá de yMax estándar (5 canon TC tras
+  // ajuste deployment a 6 filas).
+  ok(posInfil.y >= 5,
      'INFILTRATOR en o por encima de yMax canon estándar (got ' + posInfil.y + ')');
 });
 
