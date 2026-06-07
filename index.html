@@ -6119,6 +6119,10 @@ const DATA = {
             type:'2-Handed', range:'30"', weaponKeywords:['+1 INJURY DICE','HEAVY'] },
           { id:'sniper-is',       name:'Sniper Rifle',         cost:35, currency:'👑', restriction:'ELITE & Janissaries only · Limit: 2',
             type:'2-Handed', range:'48\"', weaponKeywords:['+1 DICE','CRITICAL','RISKY'] },
+          // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
+          { id:'grand-cannon-iw', name:'Sultanate Grand Cannon', cost:60, currency:'👑',
+            variantOnly:'iron-wall-def', restriction:'Brazen Bull or stationary only · Limit: 2',
+            type:'1-Handed', range:'48"', weaponKeywords:['+2 INJURY DICE','IGNORE ARMOUR','HEAVY'] },
         ],
         melee: [
           { id:'assassin-dagger-is',name:'Assassin\'s Dagger', cost:15, currency:'👑', restriction:'Unique · Sultanate Assassins only',
@@ -6151,6 +6155,11 @@ const DATA = {
         shields: [
           { id:'trench-shield-is',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
             type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+          // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
+          { id:'iron-shield-iw',  name:'Iron Shield',          cost:30, currency:'👑',
+            variantOnly:'iron-wall-def', restriction:'Brazen Bull only · Limit: 1',
+            type:'Shield', range:'-', weaponKeywords:[],
+            note:'Ocupa siempre una mano (melee y ranged) y no puede cambiarse. El portador cuenta siempre como en Cover al ser disparado y como tras obstáculo defendido al ser cargado. Además permite al Brazen Bull empujar a un oponente en base ≤40mm al moverse.' },
         ],
         armour: [
           { id:'alchemist-armour-is',name:'Alchemist Armour',  cost:50, currency:'👑', restriction:'Unique · ELITE only · Limit: 1',
@@ -6189,6 +6198,19 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'wind-amulet-is',  name:'Wind Amulet',          cost:10, currency:'👑', restriction:'Unique · Limit: 2',
             type:'Equipment', range:'-', weaponKeywords:[] },
+          // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
+          { id:'banner-desert-wind-iw', name:'Banner of Desert Wind', cost:30, currency:'👑',
+            variantOnly:'iron-wall-def', restriction:'Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:[],
+            note:'Ocupa una mano siempre. Mientras el portador no esté Down ni OoA, los enemigos Flying quedan limitados a movimiento de infantería normal (Movement 6", salvo que ya fueran más lentos).' },
+          { id:'explosive-charges-iw', name:'Explosive Charges', cost:35, currency:'👑',
+            variantOnly:'iron-wall-def', restriction:'Sappers only · Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:['SHRAPNEL'],
+            note:'Tras despliegue, marca en secreto una pieza de terreno (≤8"x8") sin modelos tocándola. Al activar un modelo puedes detonar revelando la pieza: cualquier modelo tocándola o encima tira en la Injury Chart (keyword SHRAPNEL). Luego se retira la pieza del juego.' },
+          { id:'anq-guard-iw',    name:'Anq Guard',            cost:10, currency:'👑',
+            variantOnly:'iron-wall-def', restriction:'Sappers only',
+            type:'Equipment', range:'-', weaponKeywords:['HEAVY'],
+            note:'Fortificación transportable (escudo de 1" en base 25mm). Se despliega en tu zona tras el resto de modelos, o un Sapper la lleva a la espalda y la despliega con una ACCIÓN RISKY +2 DICE a 1" de sí mismo. Cuenta como Cover y obstáculo defendido.' },
         ],
       },
       units: [
@@ -17412,6 +17434,13 @@ function classifyBattlekitItem(item, model, unit, wb) {
   const r = parseRestriction(item.restriction);
   const category = getArmouryCategory(wb.factionId, item.id);
   const access = unit.battlekitAccess || {};
+
+  // Variant-only armoury (e.g. Iron Wall special items): hidden unless the
+  // warband runs that variant. findBattlekitItem still resolves them so
+  // already-equipped items survive a variant switch in the data layer.
+  if (item.variantOnly && item.variantOnly !== (wb.variantId || null)) {
+    return { state: 'hidden', reason: 'Solo variante específica' };
+  }
 
   const ownedCount = countItemUsageOnModel(model, item.id);
   // If item allows only 1 per model (default) and is already equipped → "equipped"

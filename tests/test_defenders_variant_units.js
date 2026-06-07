@@ -27,6 +27,7 @@ const moduleCode = js.slice(0, bootIdx) + `
 module.exports = {
   DATA, getUnit, unitsAvailableForWarband, variantUnitOverride,
   getActiveVariant, unitForbiddenByVariant,
+  classifyBattlekitItem, findBattlekitItem,
 };
 `;
 const stub = `
@@ -40,16 +41,17 @@ fs.writeFileSync(TMP, stub + moduleCode);
 
 const lib = require(TMP);
 const { DATA, getUnit, unitsAvailableForWarband, variantUnitOverride,
-        getActiveVariant, unitForbiddenByVariant } = lib;
+        getActiveVariant, unitForbiddenByVariant,
+        classifyBattlekitItem, findBattlekitItem } = lib;
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
 function group(name, fn) { console.log('\n' + name); fn(); }
 
 const IS = DATA.factions['iron-sultanate'];
-const defendersWb = { factionId:'iron-sultanate', variantId:'iron-wall-def' };
-const genericWb   = { factionId:'iron-sultanate', variantId:null };
-const wisdomWb    = { factionId:'iron-sultanate', variantId:'house-wisdom' };
+const defendersWb = { factionId:'iron-sultanate', variantId:'iron-wall-def', models:[] };
+const genericWb   = { factionId:'iron-sultanate', variantId:null, models:[] };
+const wisdomWb    = { factionId:'iron-sultanate', variantId:'house-wisdom', models:[] };
 
 /* ------------------------------------------------------------------ */
 group('Group 1: variant units present in DATA', () => {
@@ -113,6 +115,40 @@ group('Group 5: variantUnitOverride raises Sappers limit', () => {
   const ov = variantUnitOverride(defendersWb, 'sappers');
   ok(ov && ov.limit === '0-4', 'Defenders: Sappers limit override 0-4');
   ok(variantUnitOverride(genericWb, 'sappers') === null, 'generic: no Sappers override');
+});
+
+/* ------------------------------------------------------------------ */
+group('Group 6: Iron Wall special armoury present', () => {
+  const byId = {};
+  for (const cat of Object.values(IS.armoury)) for (const it of cat) byId[it.id] = it;
+  const expect = ['grand-cannon-iw','iron-shield-iw','banner-desert-wind-iw',
+                  'explosive-charges-iw','anq-guard-iw'];
+  for (const id of expect) {
+    ok(!!byId[id], `${id} defined`);
+    ok(byId[id] && byId[id].variantOnly === 'iron-wall-def', `${id} gated to iron-wall-def`);
+  }
+  ok(byId['grand-cannon-iw'].cost === 60, 'Grand Cannon 60👑');
+  ok(byId['grand-cannon-iw'].weaponKeywords.includes('IGNORE ARMOUR'), 'Grand Cannon IGNORE ARMOUR');
+  ok(byId['iron-shield-iw'].cost === 30, 'Iron Shield 30👑');
+  ok(byId['anq-guard-iw'].weaponKeywords.includes('HEAVY'), 'Anq Guard HEAVY');
+  // findBattlekitItem resolves them regardless of variant (for equipped lookups).
+  ok(findBattlekitItem('iron-sultanate','iron-shield-iw').name === 'Iron Shield',
+     'findBattlekitItem resolves Iron Shield');
+});
+
+group('Group 7: classifyBattlekitItem hides variant armoury off-variant', () => {
+  const ironShield = findBattlekitItem('iron-sultanate','iron-shield-iw');
+  const bull = getUnit('iron-sultanate','brazen-bull');
+  const bullModel = { unitId:'brazen-bull', battlekit:[], upgrades:[], baseProgression:{} };
+
+  // Generic Sultanate band → variant armoury hidden.
+  const genCls = classifyBattlekitItem(ironShield, bullModel, bull, genericWb);
+  ok(genCls.state === 'hidden', 'generic band: Iron Shield hidden');
+
+  // Defenders band → passes the variant gate (not hidden by variantOnly).
+  const defCls = classifyBattlekitItem(ironShield, bullModel, bull, defendersWb);
+  ok(defCls.state !== 'hidden' || defCls.reason !== 'Solo variante específica',
+     'Defenders band: Iron Shield not hidden by variant gate');
 });
 
 console.log(`\n${pass} passed · ${fail} failed`);
