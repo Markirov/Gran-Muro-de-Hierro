@@ -1,13 +1,16 @@
-/* Test for Fase 4.4: Promotions/XP step — helpers + free-context XP source
+/* Test for Fase 4.4 + canon-fidelity pass (XP wizard):
  *
- * The existing renderWizardAdvancements assumed campaign context (read
- * current XP from c.warbandStates). 4.4 extracts the pure XP math into
- * helpers and adds a free-context XP source that reads from each model's
- * baseProgression.xp directly on the warband.
+ * Canon (Digital Rulebook p.103-104):
+ *   - Each ELITE model that took part and survived gains +1 XP
+ *     (even if Out of Action — only Dead in Trauma excludes them).
+ *   - Each ELITE that performed ≥1 Glorious Deed gains +1 extra XP,
+ *     capped at +1 regardless of the number of Deeds.
+ *   - Troops do NOT gain XP through this mechanism (Promotion Pool).
+ *   - Kills don't grant XP (no per-kill bonus exists in canon).
  *
- * Out of scope for 4.4: cannotGainXp (Head Wound) — the existing logic
- * already omits it; fixing here is a separate canon-fidelity task and
- * shouldn't ride along with the structural pass.
+ * The previous fixture encoded a buggy implementation (+kills stacking,
+ * survival bonus only when !OoA, no ELITE gate). This file replaces it
+ * with the canon-correct expectations.
  */
 
 const fs = require('fs');
@@ -60,34 +63,68 @@ function group(name, fn) { console.log('\n' + name); fn(); }
 
 const FIRST_SCENARIO = Object.keys(SCENARIOS_CATALOG)[0];
 
+// Helper: ELITE model fixture flagged via promotedToElite (no wb required).
+function eliteModel(uid, xp) {
+  return { uid, baseProgression: { xp: xp || 0, advancements: [], scars: [], promotedToElite: true } };
+}
+function troopModel(uid, xp) {
+  return { uid, baseProgression: { xp: xp || 0, advancements: [], scars: [] } };
+}
+
 /* ------------------------------------------------------------------ */
-group('Group 1: computeModelXPGain — survival baseline', () => {
-  ok(computeModelXPGain({ participated:true, outOfAction:false }) === 1,
-     'survived participation → +1 XP');
-  ok(computeModelXPGain({ participated:true, outOfAction:true }) === 0,
-     'OoA cancels survival bonus → 0 XP');
-  ok(computeModelXPGain({ participated:false, outOfAction:false }) === 0,
+group('Group 1: computeModelXPGain — ELITE survival baseline', () => {
+  const m = eliteModel('m1');
+  ok(computeModelXPGain({ participated:true, outOfAction:false }, m) === 1,
+     'ELITE survived not-OoA → +1 XP');
+  ok(computeModelXPGain({ participated:true, outOfAction:true }, m) === 1,
+     'ELITE OoA still gains +1 (canon p.103: even if OoA)');
+  ok(computeModelXPGain({ participated:false }, m) === 0,
      'did not participate → 0 XP');
 });
 
-group('Group 2: computeModelXPGain — kills + feats', () => {
-  ok(computeModelXPGain({ participated:true, outOfAction:false, kills:3 }) === 4,
-     '+1 survival + 3 kills = 4');
-  ok(computeModelXPGain({ participated:true, outOfAction:false, kills:2, feats:1 }) === 4,
-     '+1 + 2 kills + 1 feat = 4');
-  ok(computeModelXPGain({ participated:true, outOfAction:true, kills:5, feats:2 }) === 7,
-     'OoA: 0 survival + 5 kills + 2 feats = 7');
+group('Group 2: computeModelXPGain — Glorious Deed cap', () => {
+  const m = eliteModel('m1');
+  ok(computeModelXPGain({ participated:true, outOfAction:false, feats:1 }, m) === 2,
+     '+1 survival + 1 Deed → 2');
+  ok(computeModelXPGain({ participated:true, outOfAction:false, feats:3 }, m) === 2,
+     '3 Deeds capped at +1 → 2');
+  ok(computeModelXPGain({ participated:true, outOfAction:true, feats:2 }, m) === 2,
+     'OoA + 2 Deeds → +1 survival + 1 cap = 2');
 });
 
-group('Group 3: computeModelXPGain — injury bitter-exp grants +1', () => {
-  ok(computeModelXPGain({ participated:true, outOfAction:true, injury:{id:'bitter-exp'} }) === 1,
-     'OoA with bitter-exp injury → +1');
-  ok(computeModelXPGain({ participated:true, outOfAction:true, injury:{id:'old-wound'} }) === 0,
-     'OoA with non-bitter injury → 0');
+group('Group 3: computeModelXPGain — kills grant 0 (canon)', () => {
+  const m = eliteModel('m1');
+  ok(computeModelXPGain({ participated:true, outOfAction:false, kills:5 }, m) === 1,
+     '5 kills, no Deed → +1 survival only');
+  ok(computeModelXPGain({ participated:true, outOfAction:false, kills:5, feats:1 }, m) === 2,
+     '5 kills + 1 Deed → +1 +1 cap (kills ignored)');
+});
+
+group('Group 4: computeModelXPGain — Troops gain 0', () => {
+  const t = troopModel('t1');
+  ok(computeModelXPGain({ participated:true, outOfAction:false, feats:1 }, t) === 0,
+     'Troop with Deed → 0 (canon: Promotion Pool, not XP)');
+});
+
+group('Group 5: computeModelXPGain — Trauma gate', () => {
+  const m = eliteModel('m1');
+  ok(computeModelXPGain({ participated:true, outOfAction:true, injury:{id:'dead'} }, m) === 0,
+     'Trauma id=dead → 0 (gated post-trauma)');
+  ok(computeModelXPGain({ participated:true, outOfAction:true, injury:{id:'captured'} }, m) === 0,
+     'Trauma id=captured → 0 (ransom ambiguous, default safe)');
+  ok(computeModelXPGain({ participated:true, outOfAction:true, injury:{id:'leg-wound'} }, m) === 1,
+     'Trauma id=leg-wound (survived) → +1');
+});
+
+group('Group 6: computeModelXPGain — Head Wound flag honoured', () => {
+  const m = eliteModel('m1');
+  m.baseProgression.cannotGainXp = true;
+  ok(computeModelXPGain({ participated:true, outOfAction:false, feats:1 }, m) === 0,
+     'cannotGainXp=true → 0 regardless of outcome');
 });
 
 /* ------------------------------------------------------------------ */
-group('Group 4: getCurrentModelXP — free context reads baseProgression', () => {
+group('Group 7: getCurrentModelXP — free context reads baseProgression', () => {
   const wb = {
     id:'wb_x',
     models: [
@@ -102,7 +139,7 @@ group('Group 4: getCurrentModelXP — free context reads baseProgression', () =>
   ok(getCurrentModelXP(wb, 'nope', { context:'free' }) === 0,'unknown model → 0');
 });
 
-group('Group 5: getCurrentModelXP — campaign reads warbandStates', () => {
+group('Group 8: getCurrentModelXP — campaign reads warbandStates', () => {
   const wb = { id:'wb_x', models:[{ uid:'m1' }] };
   const ctx = {
     context: 'campaign',
@@ -113,31 +150,26 @@ group('Group 5: getCurrentModelXP — campaign reads warbandStates', () => {
   ok(getCurrentModelXP(wb, 'm1', ctx) === 9, 'campaign ctx reads warbandStates xp');
   ok(getCurrentModelXP(wb, 'unknown', ctx) === 0, 'unknown model in campaign → 0');
 
-  // Missing warbandStates entry → 0
   const ctx2 = { context:'campaign', warbandStates: {} };
   ok(getCurrentModelXP(wb, 'm1', ctx2) === 0, 'campaign ctx without state → 0');
 });
 
 /* ------------------------------------------------------------------ */
-group('Group 6: wizardHasAdvancements — threshold crossings', () => {
-  // Canon thresholds are [2,4,7,10,13,16,19,22,25,28] — we don't hardcode
-  // the exact values, just verify the boundary behaviour through the API.
+group('Group 9: wizardHasAdvancements — threshold crossings', () => {
   ok(advancementsEarned(0) === 0, 'baseline: XP 0 → 0 advancements earned');
   ok(advancementsEarned(2) >= 1, 'XP 2 reaches at least the first threshold');
 
-  // Wizard with one participant whose model goes 1 → 2 XP this battle.
-  // Crosses the first threshold, so wizardHasAdvancements must be true.
-  const wb = { id:'wb_x', models:[{ uid:'m1', baseProgression:{ xp:1 } }] };
+  // ELITE m1 at 1 XP. Survival = +1 → 2. Crosses first threshold.
+  const wb = { id:'wb_x', models:[eliteModel('m1', 1)] };
   const wActive = {
     context: 'free',
     battle: { participants: [
-      { warbandId:'wb_x', modelOutcomes:[{ modelUid:'m1', participated:true, outOfAction:false, kills:0 }] },
+      { warbandId:'wb_x', modelOutcomes:[{ modelUid:'m1', participated:true, outOfAction:false }] },
     ]},
   };
   ok(wizardHasAdvancements(wActive, { getWarband: (id) => id === 'wb_x' ? wb : null }) === true,
      'XP 1 + 1 survival = 2 → crosses first threshold');
 
-  // Same setup but model already at 1 with 0 gain (didn't participate)
   const wIdle = {
     context: 'free',
     battle: { participants: [
@@ -147,8 +179,7 @@ group('Group 6: wizardHasAdvancements — threshold crossings', () => {
   ok(wizardHasAdvancements(wIdle, { getWarband: () => wb }) === false,
      'no XP gained → no threshold crossed');
 
-  // Gain but already past the next threshold (e.g., 2 → 3, still 1 advancement)
-  const wbMid = { id:'wb_x', models:[{ uid:'m1', baseProgression:{ xp:2 } }] };
+  const wbMid = { id:'wb_x', models:[eliteModel('m1', 2)] };
   const wMid = {
     context: 'free',
     battle: { participants: [
@@ -160,7 +191,7 @@ group('Group 6: wizardHasAdvancements — threshold crossings', () => {
 });
 
 /* ------------------------------------------------------------------ */
-group('Group 7: wizardHasAdvancements — degenerate inputs', () => {
+group('Group 10: wizardHasAdvancements — degenerate inputs', () => {
   ok(wizardHasAdvancements(null, {}) === false, 'null wizard → false');
   ok(wizardHasAdvancements({}, {}) === false, 'empty wizard → false');
   ok(wizardHasAdvancements({ battle:{ participants:[] } }, {}) === false, 'no participants → false');

@@ -100,13 +100,15 @@ group('Group 1: wizardBattleToFreeBattle — basic conversion', () => {
 });
 
 /* ------------------------------------------------------------------ */
-group('Group 2: wizardBattleToFreeBattle — xpAwarded map', () => {
+group('Group 2: wizardBattleToFreeBattle — xpAwarded map (canon)', () => {
   const w = makeWizardFree();
   const fb = wizardBattleToFreeBattle(w);
-  // m1: participated + survived + 2 kills + 1 feat = 4 XP
-  // m2: participated + OoA (0) + 0 kills + 0 feats = 0 XP → not in map
-  ok(fb.xpAwarded.m1 === 4, 'm1 awarded 4 XP');
-  ok(!('m2' in fb.xpAwarded), 'm2 not in xpAwarded (0 XP)');
+  // No wb resolution here (mock stub returns null from loadWarband), so the
+  // ELITE gate falls through. Canon math applies regardless:
+  //   m1: participated + survived + 1 Deed cap = 2 XP. Kills ignored.
+  //   m2: participated + OoA + survived old-wound = +1 (canon p.103: even if OoA).
+  ok(fb.xpAwarded.m1 === 2, 'm1 awarded 2 XP (1 survival + 1 Deed cap)');
+  ok(fb.xpAwarded.m2 === 1, 'm2 OoA but survived → +1 XP');
 });
 
 /* ------------------------------------------------------------------ */
@@ -135,7 +137,7 @@ group('Group 4: wizardBattleToFreeBattle — discoveries captured', () => {
 });
 
 /* ------------------------------------------------------------------ */
-group('Group 5: applyWizardOutcomesToWarband — XP applied', () => {
+group('Group 5: applyWizardOutcomesToWarband — XP applied (canon)', () => {
   const w = makeWizardFree();
   const fb = wizardBattleToFreeBattle(w);
   const wb = {
@@ -148,10 +150,11 @@ group('Group 5: applyWizardOutcomesToWarband — XP applied', () => {
     discoveredLocations: [],
   };
   applyWizardOutcomesToWarband(wb, w, fb);
-  ok(wb.models[0].baseProgression.xp === 5, 'm1 XP 1 + 4 = 5');
-  // m2 had 0 XP gain (OoA, no kills/feats) — baseProgression initialized but xp=0
+  // m1: starts 1, gains 2 (survival + Deed cap) = 3
+  ok(wb.models[0].baseProgression.xp === 3, 'm1 XP 1 + 2 = 3');
+  // m2: bp created; gains +1 (canon: OoA survivor still gets +1)
   ok(!!wb.models[1].baseProgression, 'm2 baseProgression created');
-  ok((wb.models[1].baseProgression.xp || 0) === 0, 'm2 XP stays 0');
+  ok((wb.models[1].baseProgression.xp || 0) === 1, 'm2 OoA survived → +1');
 });
 
 /* ------------------------------------------------------------------ */

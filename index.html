@@ -18290,7 +18290,7 @@ function rosterCard(model, unit, wb) {
   const cannotPromote = !canBePromoted(wb.factionId, unit.id) && unit.tier === 'troops';
   // Battle scar warning: 3 scars = Unfit for Duty
   const scarCount = (bp && bp.scars || []).filter(s => s.source === 'trauma').length;
-  const unfit = scarCount >= 3;
+  const unfit = scarCount >= unfitScarThreshold(model);
 
   let progSummary = '';
   if (hasProg) {
@@ -19180,7 +19180,7 @@ function renderProgressionEditor(container, model, wb) {
   const cannotPromote = !canBePromoted(wb.factionId, model.unitId);
   const overCap = hasXpCap && (bp.xp || 0) > xpCap;
   const scarCount = (bp.scars || []).filter(s => s.source === 'trauma').length;
-  const unfit = scarCount >= 3;
+  const unfit = scarCount >= unfitScarThreshold(model);
 
   // Build a constraint banner if relevant
   let banner = '';
@@ -26534,6 +26534,9 @@ function computeWarbandState(campaign, warbandId) {
     if (part.result === 'loss') state.losses++;
     if (part.result === 'draw') state.draws++;
     state.glory += part.gloryEarned || 0;
+    // Glory Hound (Wildcard 10) — +1 ☼ per model with the skill that
+    // was on the battlefield this game.
+    state.glory += gloryHoundBonus(wb, part.modelOutcomes || []);
 
     // Decrement recovery counters at battle start (a "missing next battle" model
     // returns to alive after one battle).
@@ -26552,17 +26555,27 @@ function computeWarbandState(campaign, warbandId) {
     for (const out of (part.modelOutcomes || [])) {
       const ms = state.modelStates[out.modelUid];
       if (!ms) continue;
-      // Skip dead models
-      if (ms.status === 'dead') continue;
+      // Skip dead/captured models — gate XP after Trauma (canon p.103).
+      if (ms.status === 'dead' || ms.status === 'captured') continue;
 
       if (out.participated === false) continue;
 
-      // XP awards
-      let xpDelta = 0;
-      if (!out.outOfAction) xpDelta += 1;            // survival
-      xpDelta += (out.kills || 0);                    // kills
-      xpDelta += (out.feats || 0);                    // notable feats (each +1)
+      // Always track kill stats for the model (display only).
       ms.kills += (out.kills || 0);
+
+      // XP awards (canon Digital Rulebook p.103-104):
+      //   Only ELITE; +1 if survived (even if OoA); +1 cap if ≥1 Deed.
+      let xpDelta = 0;
+      const model = wb.models.find(x => x.uid === out.modelUid);
+      const isElite = model ? _outcomeModelIsElite(model, wb) : false;
+      const killedByTrauma = out.injury && (out.injury.id === 'dead' || out.injury.id === 'captured');
+      if (isElite && !killedByTrauma) {
+        xpDelta = 1;
+        if ((out.feats || 0) >= 1) xpDelta += 1;
+        // War Stories (Wildcard 11) — +1 to each ELITE without the skill
+        // when the warband has a bearer.
+        if (model) xpDelta += warStoriesBonusFor(model, wb);
+      }
 
       // Apply chosen advancements (these were picked at battle entry time)
       for (const adv of (out.advancementsChosen || [])) {
@@ -26572,7 +26585,7 @@ function computeWarbandState(campaign, warbandId) {
       // Apply injury roll
       if (out.outOfAction && out.injury) {
         const inj = out.injury;
-        if (inj.id === 'bitter-exp')   xpDelta += 1;
+        if (inj.id === 'bitter-exp' && isElite) xpDelta += 1;
         if (inj.id === 'light-wound')  { ms.status = 'recovering'; ms.recoversNextBattles = 1; }
         if (inj.id === 'old-wound')    {
           ms.scars.push({ name: inj.statDownLabel || 'Old Battle Wound',
@@ -27151,26 +27164,145 @@ function computeConcentratedAttackDice(leadDice, contributors, opts) {
    canon-fidelity pass tracked in BACKLOG.md.
    ====================================================================== */
 
-function computeModelXPGain(out, model) {
+/* Canon-correct XP per ELITE per battle (Digital Rulebook p.103-104):
+ *   - Only ELITE models gain XP through this mechanism. Troops use the
+ *     Promotion Pool instead and get 0 here.
+ *   - ELITE that took part and survived: +1 XP (even if Out of Action).
+ *     "Survived" means not killed in Trauma — captured is treated as
+ *     not-surviving by default since the ransom decision is ambiguous
+ *     at compute time; the player can manually adjust if ransom paid.
+ *   - ELITE that performed ≥1 Glorious Deed: +1 extra (cap, no matter
+ *     how many Deeds). Kills do NOT grant XP per canon.
+ *   - Bitter Lessons (D66 65) is D3 XP applied at trauma resolution
+ *     time, not here. The legacy 'bitter-exp' id is kept as +1 fallback
+ *     for pre-D66 fixtures.
+ *
+ * When called without a model (legacy archival path in
+ * convertCampaignBattlesToFreeBattles), the ELITE gate is skipped —
+ * the caller has no way to resolve the model and the function is only
+ * used for display metadata at that point.
+ */
+function _outcomeModelIsElite(model, wb) {
+  if (!model) return false;
+  if (model.baseProgression && model.baseProgression.promotedToElite) return true;
+  if (Array.isArray(model.companionKeywords)) {
+    for (const k of model.companionKeywords) {
+      const name = (typeof k === 'string' ? k : (k && k.name) || '').toUpperCase();
+      if (name === 'ELITE') return true;
+    }
+  }
+  if (wb && typeof isModelElite === 'function') {
+    try { if (isModelElite(model, wb)) return true; } catch (e) {}
+  }
+  return false;
+}
+
+/* ======================================================================
+   Skill lookup helpers — used by the Wildcard Skill integrations
+   (War Stories, Show Off, Glory Hound, War-Luck, 'Tis But a Scratch).
+
+   Skills are stored as `advancements` entries on the model with the
+   canonical name from CAMPAIGN_TABLES.skillTables. The Trauma table's
+   'Hardened' positive entry also lands in advancements; the helper
+   matches by name so it doesn't matter which path added the skill.
+   ====================================================================== */
+
+function modelHasSkill(model, skillName) {
+  if (!model || !model.baseProgression || !skillName) return false;
+  const advs = model.baseProgression.advancements || [];
+  for (const a of advs) {
+    if (a && a.name === skillName) return true;
+  }
+  return false;
+}
+
+function countWarbandSkill(wb, skillName) {
+  if (!wb || !Array.isArray(wb.models)) return 0;
+  let n = 0;
+  for (const m of wb.models) if (modelHasSkill(m, skillName)) n++;
+  return n;
+}
+
+/* War Stories (Wildcard 11): +1 XP to each ELITE in the warband that does
+ * NOT have War Stories itself, provided at least one model in the band
+ * has the skill. Returns the bonus amount for this specific model. */
+function warStoriesBonusFor(model, wb) {
+  if (!model || !wb) return 0;
+  if (modelHasSkill(model, 'War Stories')) return 0;
+  for (const m of wb.models || []) {
+    if (m !== model && modelHasSkill(m, 'War Stories')) return 1;
+  }
+  return 0;
+}
+
+/* Show Off (Wildcard 8): +1 D6 to the Promotion Pool per model with the
+ * skill. Pure count. */
+function showOffPoolBonus(wb) {
+  return countWarbandSkill(wb, 'Show Off');
+}
+
+/* Glory Hound (Wildcard 10): +1 ☼ per model with the skill that was on
+ * the battlefield. Counts modelOutcomes with participated=true whose
+ * model has Glory Hound. */
+function gloryHoundBonus(wb, modelOutcomes) {
+  if (!wb || !Array.isArray(wb.models) || !Array.isArray(modelOutcomes)) return 0;
+  let n = 0;
+  for (const out of modelOutcomes) {
+    if (!out || out.participated === false) continue;
+    const m = wb.models.find(x => x.uid === out.modelUid);
+    if (m && modelHasSkill(m, 'Glory Hound')) n++;
+  }
+  return n;
+}
+
+/* War-Luck (Wildcard 3): +1 extra Battle Scar before Unfit for Duty.
+ * Canon Unfit threshold = 3 scars. War-Luck pushes it to 4. */
+function unfitScarThreshold(model) {
+  const base = 3;
+  if (!model) return base;
+  return modelHasSkill(model, 'War-Luck') ? base + 1 : base;
+}
+
+function isModelUnfitForDuty(model) {
+  if (!model || !model.baseProgression) return false;
+  const scars = (model.baseProgression.scars || []).filter(s => s && s.source === 'trauma');
+  return scars.length >= unfitScarThreshold(model);
+}
+
+/* 'Tis But a Scratch (Wildcard 4): re-roll the D66 Trauma roll once.
+ * Tracked on the outcome via out.scratchRerollUsed. */
+function canUseScratchReroll(model, out) {
+  if (!model || !out) return false;
+  if (!modelHasSkill(model, "'Tis But a Scratch")) return false;
+  return out.scratchRerollUsed !== true;
+}
+
+function computeModelXPGain(out, model, wb) {
   if (!out || out.participated === false) return 0;
-  // Canon p.117 — Head Wound prevents further XP. When the caller has
-  // resolved the model we honour the flag here, short-circuiting before
-  // any kill/feat tally. Old callers that don't pass a model retain the
-  // pre-P1/2 behaviour (no flag check) — safe because no model means we
-  // can't know either way.
+  // Canon p.117 — Head Wound prevents further XP.
   if (model && model.baseProgression && model.baseProgression.cannotGainXp === true) {
     return 0;
   }
-  let xp = 0;
-  if (!out.outOfAction) xp += 1;            // survival bonus
-  xp += (out.kills || 0);
-  xp += (out.feats || 0);
-  // T1 — Bitter Lessons (D66 65) gives +1 XP. Legacy id 'bitter-exp'
-  // from the pre-D66 simplified table is kept for back-compat.
+  // Canon p.103 — only ELITE models gain XP through this mechanism.
+  // Skip the gate when no model is provided (legacy archival callers).
+  if (model && !_outcomeModelIsElite(model, wb)) return 0;
+  // Step C — gate XP after Trauma. Dead/captured don't gain XP.
   if (out.injury) {
-    const id = out.injury.id;
-    if (id === 'bitter-exp' || id === 'bitter-lessons') xp += 1;
+    const iid = out.injury.id;
+    if (iid === 'dead' || iid === 'captured') return 0;
   }
+  if (model && model.baseProgression) {
+    const st = model.baseProgression.status;
+    if (st === 'dead' || st === 'captured') return 0;
+  }
+  let xp = 1;                            // survival bonus (canon: even if OoA)
+  if ((out.feats || 0) >= 1) xp += 1;    // ≥1 Glorious Deed → +1 cap
+  // Pre-D66 'bitter-exp' fallback — modern D66 65 'bitter-lessons'
+  // grants D3 XP at trauma roll time (BACKLOG: surface D3 in wizard).
+  if (out.injury && out.injury.id === 'bitter-exp') xp += 1;
+  // War Stories (Wildcard 11): +1 XP to each ELITE that doesn't carry
+  // the skill, provided the warband has a War Stories bearer.
+  if (model && wb) xp += warStoriesBonusFor(model, wb);
   return xp;
 }
 
@@ -27208,7 +27340,7 @@ function wizardHasAdvancements(w, opts) {
       if (!out || out.participated === false) continue;
       const before = getCurrentModelXP(wb, out.modelUid, ctx);
       const model = (Array.isArray(wb.models) ? wb.models.find(m => m.uid === out.modelUid) : null);
-      const gain = computeModelXPGain(out, model);
+      const gain = computeModelXPGain(out, model, wb);
       if (gain <= 0) continue;
       if (advancementsEarned(before + gain) > advancementsEarned(before)) return true;
     }
@@ -27357,6 +27489,9 @@ function wizardBattleToFreeBattle(w, opts) {
   if (!resolvedWb && typeof loadWarband === 'function' && part.warbandId) {
     resolvedWb = loadWarband(part.warbandId);
   }
+
+  // Glory Hound (Wildcard 10) — +1 ☼ per skill-bearer on the field.
+  if (resolvedWb) fb.glory += gloryHoundBonus(resolvedWb, part.modelOutcomes || []);
   const findModel = (uid) => {
     if (!resolvedWb || !Array.isArray(resolvedWb.models)) return null;
     return resolvedWb.models.find(m => m.uid === uid) || null;
@@ -27366,7 +27501,7 @@ function wizardBattleToFreeBattle(w, opts) {
   fb.xpAwarded = {};
   if (Array.isArray(part.modelOutcomes)) {
     for (const out of part.modelOutcomes) {
-      const gain = computeModelXPGain(out, findModel(out.modelUid));
+      const gain = computeModelXPGain(out, findModel(out.modelUid), resolvedWb);
       if (gain > 0) fb.xpAwarded[out.modelUid] = gain;
     }
   }
@@ -28051,10 +28186,12 @@ function warbandThresholdForGame(gameNumber) {
 /**
  * Returns the Promotion Pool dice count for the upcoming Promotion Step.
  * Canon: 1D6 base + 1D6 per Glorious Deed performed in the game.
+ * Show Off (Wildcard 8): +1 D6 per model in the warband with the skill.
  */
-function promotionPoolSize(gloriousDeedsPerformed) {
+function promotionPoolSize(gloriousDeedsPerformed, wb) {
   const r = CAMPAIGN_TABLES.promotionRules;
-  return r.baseDice + r.diePerGloriousDeed * (gloriousDeedsPerformed || 0);
+  const showOff = wb ? showOffPoolBonus(wb) : 0;
+  return r.baseDice + r.diePerGloriousDeed * (gloriousDeedsPerformed || 0) + showOff;
 }
 
 /**
@@ -29079,7 +29216,7 @@ function openPromotionModal(wb, onApply) {
   };
   // Recompute pool based on inputs
   const recomputePool = () => {
-    state.poolSize = promotionPoolSize(state.gloriousDeeds) + state.extraDice;
+    state.poolSize = promotionPoolSize(state.gloriousDeeds, wb) + state.extraDice;
   };
   recomputePool();
 
@@ -30328,7 +30465,7 @@ function renderWizardModels(body) {
   // Desktop: original table-style layout
   body.innerHTML = `<h4>Resultados por Modelo</h4>
     <p style="font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);">
-      XP: +1 por sobrevivir · +1 por kill · +1 por hazaña destacada
+      XP (ELITE, canon p.103): +1 por participar y sobrevivir · +1 si hizo ≥1 Glorious Deed (cap). Kills se anotan pero no dan XP.
     </p>`;
   // Group by warband
   const byWarband = {};
@@ -30443,11 +30580,8 @@ function renderWizardModelsMobile(body, rows) {
       </div>
 
       <div class="wiz-xp-preview">
-        XP esperado: <strong>${
-          isDead ? 0 :
-          ((out.participated && !out.outOfAction ? 1 : 0) + (out.kills || 0) + (out.feats || 0))
-        }</strong>
-        <span class="wiz-xp-formula">(superv. + kills + hazañas)</span>
+        XP esperado: <strong>${computeModelXPGain(out, m, wb)}</strong>
+        <span class="wiz-xp-formula">(ELITE: +1 superv. + 1 si Deed)</span>
       </div>
     </div>
   `;
@@ -30556,15 +30690,20 @@ function renderWizardInjuries(body) {
       const selectedId = out.injury ? out.injury.id : null;
       const rolledVal = out.injury && typeof out.injury.roll === 'number' ? out.injury.roll : null;
       const traumaTable = CAMPAIGN_TABLES.traumaTable || [];
+      const scratchAvailable = canUseScratchReroll(m, out);
+      const scratchUsed = modelHasSkill(m, "'Tis But a Scratch") && out.scratchRerollUsed === true;
       card.innerHTML = `
         <div class="injury-card-row">
           <div>
             <div class="outcome-name">${m.customName || (u?u.name:'?')}</div>
-            <div class="outcome-meta">${wb.name||'?'} · ${u?u.name:'?'}</div>
+            <div class="outcome-meta">${wb.name||'?'} · ${u?u.name:'?'}${scratchUsed ? ' · 🎲 Scratch usado' : ''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:0.4rem;">
             ${rolledVal !== null ? `<span class="d6-roll" style="font-family:var(--font-mono);font-size:0.85rem;">D66 ${rolledVal}</span>` : ''}
             <button class="d6-btn" data-roll-uid="${out.modelUid}" data-roll-wid="${part.warbandId}" title="Tirar D66">🎲 D66</button>
+            ${scratchAvailable && rolledVal !== null ? `
+              <button class="d6-btn" data-scratch-uid="${out.modelUid}" data-scratch-wid="${part.warbandId}" title="'Tis But a Scratch — re-roll D66 (1 vez)">🔄 Scratch</button>
+            ` : ''}
           </div>
         </div>
         ${out.injury ? `<div style="margin-top:0.5rem;padding:0.4rem;background:rgba(127,107,67,0.1);">
@@ -30586,12 +30725,20 @@ function renderWizardInjuries(body) {
 
   body.querySelectorAll('.d6-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      const isScratch = !!btn.dataset.scratchUid;
+      const wid = isScratch ? btn.dataset.scratchWid : btn.dataset.rollWid;
+      const uid_ = isScratch ? btn.dataset.scratchUid : btn.dataset.rollUid;
+      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
+      const outo = part.modelOutcomes.find(o => o.modelUid === uid_);
+      if (isScratch) {
+        const wbHere = loadWarband(wid);
+        const modelHere = wbHere && wbHere.models.find(x => x.uid === uid_);
+        if (!canUseScratchReroll(modelHere, outo)) return;
+        outo.scratchRerollUsed = true;
+      }
       const roll = rollD66();
       const entry = lookupTraumaEntry(roll.value);
       if (!entry) return;
-      const wid = btn.dataset.rollWid, uid_ = btn.dataset.rollUid;
-      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
-      const outo = part.modelOutcomes.find(o => o.modelUid === uid_);
       outo.injury = {
         id: entry.id || (typeof entry.roll === 'number' ? 'r' + entry.roll : 'r' + roll.value),
         name: entry.name,
@@ -30666,7 +30813,7 @@ function renderWizardAdvancements(body) {
       if (out.participated === false) continue;
       const before = getCurrentModelXP(wb, out.modelUid, ctx);
       const modelObj = wb.models.find(x => x.uid === out.modelUid);
-      const xpGain = computeModelXPGain(out, modelObj);
+      const xpGain = computeModelXPGain(out, modelObj, wb);
       const after = before + xpGain;
       const earnedBefore = advancementsEarned(before);
       const earnedAfter  = advancementsEarned(after);
@@ -31194,7 +31341,10 @@ function renderWizardSummary(body) {
 
     const traumas = (part.modelOutcomes || []).filter(o => o.outOfAction && o.injury);
     const xpRows  = (part.modelOutcomes || [])
-      .map(o => ({ uid: o.modelUid, gain: computeModelXPGain(o) }))
+      .map(o => {
+        const mObj = wb && wb.models ? wb.models.find(x => x.uid === o.modelUid) : null;
+        return { uid: o.modelUid, gain: computeModelXPGain(o, mObj, wb) };
+      })
       .filter(r => r.gain > 0);
     const advs = [];
     for (const o of (part.modelOutcomes || [])) {
@@ -32377,7 +32527,7 @@ function renderQMStatus() {
     if (bp.status === 'dead') dead.push({ name, m });
     else if (bp.status === 'captured') captured.push({ name, m });
     const traumaScars = (bp.scars || []).filter(s => s.source === 'trauma').length;
-    if (traumaScars >= 3) unfit.push({ name, count: traumaScars, m });
+    if (traumaScars >= unfitScarThreshold(m)) unfit.push({ name, count: traumaScars, m });
     const cap = xpCapFor(wb.factionId, m.unitId);
     if (cap !== Infinity && (bp.xp || 0) >= cap) limitedAtCap.push({ name, cap, m });
   }
@@ -32434,7 +32584,7 @@ function renderQMStatus() {
       </div>
       <div class="qm-status-row">
         <span class="qm-status-label">Glorious Deeds</span>
-        <span class="qm-status-value">${gloriousDeeds} (Pool ${promotionPoolSize(gloriousDeeds)} dado${promotionPoolSize(gloriousDeeds)===1?'':'s'})</span>
+        <span class="qm-status-value">${gloriousDeeds} (Pool ${promotionPoolSize(gloriousDeeds, wb)} dado${promotionPoolSize(gloriousDeeds, wb)===1?'':'s'})</span>
       </div>
       ${(elig.length > 0 && slotsLeft > 0) ? `
         <button class="qm-status-action" id="qm-promote-step">🎲 Iniciar Promotion Step</button>
@@ -35536,7 +35686,7 @@ function pdfRenderModel(td, model) {
     const detailParts = [];
     if (killCount > 0) detailParts.push(`${killCount} kills`);
     if (deedCount > 0) detailParts.push(`${deedCount} ☼ glorious deed${deedCount===1?'':'s'}`);
-    if (scarCount > 0) detailParts.push(`${scarCount} cicatrices${traumaScars >= 3 ? ' (UNFIT FOR DUTY)' : ''}`);
+    if (scarCount > 0) detailParts.push(`${scarCount} cicatrices${traumaScars >= unfitScarThreshold(model) ? ' (UNFIT FOR DUTY)' : ''}`);
     if (status !== 'alive') detailParts.push(status);
     if (detailParts.length) {
       td.doc.setFont('helvetica', 'italic');
@@ -35815,7 +35965,7 @@ function pdfRenderCampaignStatus(td) {
     else if (bp.status === 'captured') captured.push({ name, m });
     const scars = (bp.scars || []);
     const traumaScars = scars.filter(s => s.source === 'trauma');
-    if (traumaScars.length >= 3) unfit.push({ name, m, count: traumaScars.length });
+    if (traumaScars.length >= unfitScarThreshold(m)) unfit.push({ name, m, count: traumaScars.length });
     if (scars.length > 0) allScars.push({ name, m, scars });
     // At Limited Potential cap?
     const cap = xpCapFor(wb.factionId, m.unitId);

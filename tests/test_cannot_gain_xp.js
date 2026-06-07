@@ -1,17 +1,14 @@
 /* Test for P1/2: cannotGainXp (Head Wound) honoured on read
  *
  * Canon p.117: a model that suffered Head Wound trauma can no longer
- * gain XP. applyWizardOutcomesToWarband already SETS the flag (Fase
- * 4.7); the read side (computeModelXPGain) didn't HONOUR it. A
- * head-wounded model kept accruing XP from kills/feats/survival.
+ * gain XP. applyWizardOutcomesToWarband sets the flag (Fase 4.7);
+ * computeModelXPGain must honour it on the read side.
  *
- * Fix: computeModelXPGain accepts an optional model param. When the
- * model is present and m.baseProgression.cannotGainXp === true, the
- * function returns 0 regardless of the outcome.
- *
- * Back-compat: existing callers without a model arg keep getting the
- * old (uncapped) behaviour, which is what the test fixtures from
- * Fase 4.4 expect.
+ * Also exercises the canon-fidelity invariants:
+ *   - Only ELITE models gain XP (Troops use Promotion Pool).
+ *   - +1 XP per ELITE survivor, even if OoA.
+ *   - +1 XP cap from Glorious Deeds, regardless of count.
+ *   - Kills don't grant XP.
  */
 
 const fs = require('fs');
@@ -52,30 +49,39 @@ let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
 function group(name, fn) { console.log('\n' + name); fn(); }
 
+function eliteModel(uid, xp, extra) {
+  return Object.assign(
+    { uid, baseProgression: Object.assign(
+      { xp: xp || 0, advancements: [], scars: [], promotedToElite: true },
+      extra || {}
+    )},
+  );
+}
+
 /* ------------------------------------------------------------------ */
-group('Group 1: computeModelXPGain — flag short-circuits to 0', () => {
+group('Group 1: computeModelXPGain — cannotGainXp short-circuits to 0', () => {
   const out = { participated:true, outOfAction:false, kills:3, feats:1 };
-  const model = { uid:'m1', baseProgression:{ xp:5, cannotGainXp:true } };
+  const model = eliteModel('m1', 5, { cannotGainXp: true });
   ok(computeModelXPGain(out, model) === 0, 'flag=true → 0 XP regardless of outcome');
-  // Sanity: same outcome without model returns +1 survival + 3 kills + 1 feat = 5
-  ok(computeModelXPGain(out) === 5, 'no model arg: legacy behaviour (5 XP)');
 });
 
-group('Group 2: computeModelXPGain — flag false / missing leaves behaviour intact', () => {
-  const out = { participated:true, outOfAction:false, kills:2 };
-  const model = { uid:'m1', baseProgression:{ xp:5, cannotGainXp:false } };
-  ok(computeModelXPGain(out, model) === 3, 'flag=false: +1 +2 = 3');
+group('Group 2: computeModelXPGain — flag false / missing leaves canon path intact', () => {
+  const out = { participated:true, outOfAction:false, feats:1 };
+  const m1 = eliteModel('m1', 5, { cannotGainXp: false });
+  ok(computeModelXPGain(out, m1) === 2, 'flag=false: +1 survival + 1 Deed cap = 2');
 
-  const model2 = { uid:'m2', baseProgression:{ xp:5 } };  // no flag
-  ok(computeModelXPGain(out, model2) === 3, 'flag absent: same as legacy');
+  const m2 = eliteModel('m2', 5);  // no flag
+  ok(computeModelXPGain(out, m2) === 2, 'flag absent: same canon math');
 
-  const model3 = { uid:'m3' };  // no baseProgression
-  ok(computeModelXPGain(out, model3) === 3, 'no baseProgression: same as legacy');
+  // Kills don't matter — canon doesn't grant per-kill XP.
+  const outKills = { participated:true, outOfAction:false, kills:5 };
+  ok(computeModelXPGain(outKills, eliteModel('m3', 0)) === 1,
+     '5 kills, no Deed → +1 survival only');
 });
 
 /* ------------------------------------------------------------------ */
 group('Group 3: end-to-end via applyWizardOutcomesToWarband', () => {
-  // Setup: m1 already head-wounded from a prior save, m2 is healthy.
+  // m1 head-wounded from a prior battle, m2 healthy. Both ELITE.
   const lfb = startLiveFreeBattle({id:'wb_x'}, { scenarioId: Object.keys(SCENARIOS_CATALOG)[0] });
   const W = {
     context:'free', lfb,
@@ -91,31 +97,26 @@ group('Group 3: end-to-end via applyWizardOutcomesToWarband', () => {
       discoveries:[],
     },
   };
-  // Wizard-to-FreeBattle conversion: xpAwarded should already exclude m1
-  // because the conversion happens with model context (see fix below).
-  // For now we test the end-to-end mutation: m1.xp must NOT increase.
   const wb = {
     id:'wb_x', factionId:'new-antioch',
     models:[
-      { uid:'m1', baseProgression:{ xp:5, advancements:[], scars:[], cannotGainXp:true } },
-      { uid:'m2', baseProgression:{ xp:3, advancements:[], scars:[] } },
+      eliteModel('m1', 5, { cannotGainXp: true }),
+      eliteModel('m2', 3),
     ],
     discoveredLocations:[],
   };
   const fb = wizardBattleToFreeBattle(W, { wb });
   applyWizardOutcomesToWarband(wb, W, fb);
   ok(wb.models[0].baseProgression.xp === 5, 'm1 (head-wounded) XP stays 5');
-  // m2 outcome: participated + survived + 1 kill = +2; starts at 3, ends at 5
-  ok(wb.models[1].baseProgression.xp === 5, 'm2 (healthy) +1 survival +1 kill = 5');
+  // m2: +1 survival + 0 deed = 1; starts at 3, ends at 4
+  ok(wb.models[1].baseProgression.xp === 4, 'm2 (healthy) +1 survival = 4');
 });
 
 /* ------------------------------------------------------------------ */
 group('Group 4: wizardHasAdvancements respects flag in free context', () => {
-  // m1 is head-wounded at XP just below threshold. Without flag honour,
-  // this would falsely report an advancement crossing.
   const wb = {
     id:'wb_x',
-    models:[{ uid:'m1', baseProgression:{ xp:1, cannotGainXp:true } }],
+    models:[eliteModel('m1', 1, { cannotGainXp: true })],
   };
   const W = {
     context:'free',

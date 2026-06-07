@@ -120,14 +120,15 @@ group('Group 3: FreeBattle shape preserved', () => {
 });
 
 /* ------------------------------------------------------------------ */
-group('Group 4: XP preserved per model outcome', () => {
+group('Group 4: XP preserved per model outcome (canon)', () => {
   const c = mockCampaign();
   const map = convertCampaignBattlesToFreeBattles(c);
   const fb = map['wb_a'][0];
-  // m1: survived + 2 kills = 3 XP
-  ok(fb.xpAwarded.m1 === 3, 'm1 XP=3');
-  // m2: OoA, no kills = 0 → not in map
-  ok(!('m2' in fb.xpAwarded), 'm2 (no XP) absent from xpAwarded');
+  // Legacy archival path (no model resolution) — canon math falls through
+  // the ELITE gate. Every participating non-dead model gets +1 survival.
+  // Kills don't grant XP per canon p.103.
+  ok(fb.xpAwarded.m1 === 1, 'm1 +1 survival (kills no longer grant XP)');
+  ok(fb.xpAwarded.m2 === 1, 'm2 OoA with old-wound → +1 survival (canon: even if OoA)');
 });
 
 /* ------------------------------------------------------------------ */
