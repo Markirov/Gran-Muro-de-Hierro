@@ -6242,6 +6242,29 @@ const DATA = {
           battlekitAccess:{ weaponsMustHaveKeyword:'HEAVY' },
           battlekitNote:'Solo armas con HEAVY · No puede llevar Shovel (excepto Marid Shovel)',
           abilities:['Artificial Life','Trample ACTION'] },
+        // ── Unidades exclusivas de la variante Defenders of the Iron Wall ──
+        // Solo aparecen en el catálogo cuando la variante 'iron-wall-def' está
+        // activa (campo `variantOnly`). getUnit() las sigue resolviendo para
+        // lookups de modelos ya en banda.
+        { id:'silahdar-iw', name:'Silahdar', tier:'elite', limit:'1', cost:70, currency:'👑',
+          variantOnly:'iron-wall-def',
+          stats:{ movement:'6"/Infantry', ranged:'+2 DICE', melee:'+2 DICE', armour:'0', base:'32mm' },
+          keywords:['SULTANATE','ELITE','LEADER','NEGATE FEAR','TOUGH','STRONG'],
+          abilities:[],
+          note:'Comandante del Iron Wall (guardia personal del Sultán). Usa las características del Yüzbaşı pero SIN Mubarizun; en su lugar tiene STRONG y puede usar las opciones "Sappers Only" de la Armería. Obligatorio: cada banda Defenders incluye 1 Silahdar.' },
+        { id:'sipahi-iw', name:'Sipahi', tier:'elite', limit:'0-1', cost:110, currency:'👑',
+          variantOnly:'iron-wall-def',
+          stats:{ movement:'10"/Cavalry', ranged:'+0 DICE', melee:'+2 DICE', armour:'0', base:'40mm' },
+          keywords:['SULTANATE','CAVALRY'],
+          abilities:['Automaton Destrier','Martial Prowess','Sworn Brethren'],
+          equipmentLocked:true,
+          note:'Caballería autómata Sipahi sirviendo como infantería en el Iron Wall. Usa las características del Mamluk Faris. No puedes modificar su equipo de ninguna forma. Máximo 1. No impide reclutar además un Mamluk Faris como mercenario.' },
+        { id:'janofficer-iw', name:'Janissary Officer', tier:'elite', limit:'0-2', cost:55, currency:'👑',
+          variantOnly:'iron-wall-def',
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'25mm' },
+          keywords:['SULTANATE','STRONG','ELITE'],
+          abilities:['Counter-Charge'],
+          note:'Janissaries actuando como oficiales (ganan ELITE). Máximo 2. La banda no puede incluir ningún otro Janissary.' },
       ],
       variants: [
         {
@@ -6280,7 +6303,17 @@ const DATA = {
           name:'Defenders of the Iron Wall',
           summary:'Guarnición permanente del Iron Wall. Tiradores expertos, sapper corps reforzado y comandantes Silahdar.',
           specialRule:'Defenders of the Iron Wall',
-          forbiddenUnitIds:['lions','yuzbasi','sult-assassin'],
+          // "Far from the Sublime Gate": sin Lions of Jabir, Yüzbaşí ni
+          // Assassins. (Además no pueden comprar Cloak of Alamut ni Wind
+          // Amulet — restricción de armería, no modelada como forbidden unit.)
+          forbiddenUnitIds:['lions','yuzbasi','sult-assassin','janissaries'],
+          // Silahdar obligatorio (1 por banda).
+          mandatoryUnits:[{ unitId:'silahdar-iw', count:1, max:1 }],
+          // Sappers Corps: detachment de doble fuerza → hasta 4 (en vez de 0-2).
+          unitOverrides:[
+            { unitId:'sappers', overrides:{ limit:'0-4' } },
+          ],
+          // Janissaries normales prohibidos: solo Janissary Officers (janofficer-iw).
         },
       ],
     },
@@ -16405,6 +16438,25 @@ function getActiveVariant(wb) {
 }
 
 /**
+ * Returns the faction units that should appear in the recruit catalogue for
+ * this warband, applying the `variantOnly` gate: a unit tagged
+ * `variantOnly:'<variantId>'` is shown only when that variant is active.
+ * Base units (no variantOnly tag) always appear. Forbidden units are NOT
+ * filtered here — the catalogue still renders them disabled with a reason.
+ *
+ * Pure: returns a filtered slice of f.units, never mutates the catalogue.
+ */
+function unitsAvailableForWarband(wb) {
+  const f = wb && DATA.factions[wb.factionId];
+  if (!f || !Array.isArray(f.units)) return [];
+  const activeVariantId = wb.variantId || null;
+  return f.units.filter(u => {
+    if (u.variantOnly && u.variantOnly !== activeVariantId) return false;
+    return true;
+  });
+}
+
+/**
  * Checks if a given unit is forbidden by the warband's active variant.
  * Returns the variant name if forbidden, else null.
  */
@@ -17884,9 +17936,10 @@ function renderUnitCatalogue() {
     return;
   }
   const f = DATA.factions[wb.factionId];
-  // Group by tier
+  // Group by tier. Variant-only units (e.g. Defenders' Sipahi/Silahdar)
+  // appear only under their variant via unitsAvailableForWarband.
   const tiers = { elite: [], troops: [] };
-  f.units.forEach(u => tiers[u.tier].push(u));
+  unitsAvailableForWarband(wb).forEach(u => { if (tiers[u.tier]) tiers[u.tier].push(u); });
 
   ['elite', 'troops'].forEach(tier => {
     if (!tiers[tier].length) return;
