@@ -25,6 +25,7 @@ const TMP = path.join(require('os').tmpdir(), 'warband_forge_adv_patron.js');
 const moduleCode = js.slice(0, bootIdx) + `
 module.exports = {
   PATRON_CATALOG, patronsForFaction, patronById, CAMPAIGN_TABLES,
+  resolveAdvancementSkill,
   newWarband: typeof newWarband === 'function' ? newWarband : null,
 };
 `;
@@ -38,7 +39,8 @@ const document = { addEventListener(){}, querySelectorAll(){return [];}, querySe
 fs.writeFileSync(TMP, stub + moduleCode);
 
 const lib = require(TMP);
-const { PATRON_CATALOG, patronsForFaction, patronById, CAMPAIGN_TABLES, newWarband } = lib;
+const { PATRON_CATALOG, patronsForFaction, patronById, CAMPAIGN_TABLES,
+        resolveAdvancementSkill, newWarband } = lib;
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
@@ -124,7 +126,36 @@ group('Group 7: canonical skill names spot-check', () => {
 });
 
 /* ------------------------------------------------------------------ */
-group('Group 8: newWarband carries patronId', () => {
+group('Group 8: resolveAdvancementSkill — skip-rule + Patron gating', () => {
+  // Normal roll, nothing known → returns the rolled skill.
+  ok(resolveAdvancementSkill('melee', 7, [], true).name === 'Melee Proficiency',
+     'roll 7 melee → Melee Proficiency');
+
+  // Known skill → skips to next lower non-Patron.
+  const r = resolveAdvancementSkill('melee', 7, ['Melee Proficiency'], true);
+  ok(r.name !== 'Melee Proficiency' && r.name !== 'Patron Skill', 'known → skips to another skill');
+
+  // Patron allowed: roll 2/12 returns the Patron Skill entry.
+  ok(resolveAdvancementSkill('ranged', 2, [], true).name === 'Patron Skill',
+     'roll 2, patron allowed → Patron Skill');
+  ok(resolveAdvancementSkill('ranged', 12, [], true).name === 'Patron Skill',
+     'roll 12, patron allowed → Patron Skill');
+
+  // Patron blocked (free): roll 2/12 skips to a non-Patron skill.
+  const lo = resolveAdvancementSkill('ranged', 2, [], false);
+  ok(lo && lo.name !== 'Patron Skill', 'roll 2, free → skipped to non-Patron skill');
+  const hi = resolveAdvancementSkill('ranged', 12, [], false);
+  ok(hi && hi.name !== 'Patron Skill', 'roll 12, free → skipped to non-Patron skill');
+
+  // Default (no flag) allows Patron.
+  ok(resolveAdvancementSkill('stealth', 2, []).name === 'Patron Skill',
+     'default → Patron allowed');
+
+  // Unknown table → null.
+  ok(resolveAdvancementSkill('nope', 7, [], true) === null, 'unknown table → null');
+});
+
+group('Group 9: newWarband carries patronId', () => {
   if (!newWarband) { ok(false, 'newWarband exported'); return; }
   const wb = newWarband('new-antioch');
   ok(wb.patronId === null, 'new warband patronId = null');

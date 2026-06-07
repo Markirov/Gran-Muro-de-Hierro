@@ -28882,14 +28882,55 @@ function openCanonicalDeedsPicker(model, wb, container, onPick) {
 }
 
 /**
+ * Resolve the Skill granted by a 2D6 Advancement Roll, applying the canon
+ * skip rule for skills the model already knows (next lower, then next
+ * higher non-Patron entry — Digital Rulebook p.104).
+ *
+ * When patronAllowed is false (free context, canon-extended Fase 9), a
+ * Patron Skill result (2/12) is treated as blocked and skipped to the
+ * next non-Patron entry instead of returning the Patron Skill.
+ *
+ * Pure: no DOM, no state. Returns the resolved skill entry or null.
+ */
+function resolveAdvancementSkill(tableId, rolledValue, alreadyKnown, patronAllowed) {
+  const table = CAMPAIGN_TABLES.skillTables[tableId];
+  if (!table) return null;
+  const known = new Set(alreadyKnown || []);
+  const get = (r) => table.entries.find(e => e.roll === r);
+  const allow = patronAllowed !== false;  // default: allow Patron
+  const entry = get(rolledValue);
+  if (!entry) return null;
+  if (entry.name === 'Patron Skill' && allow) return entry;  // user picks from Patron list
+  const blocked = (entry.name === 'Patron Skill' && !allow) || known.has(entry.name);
+  if (!blocked) return entry;
+  // Blocked (known, or Patron in free): try next lower, then next higher.
+  for (let r = rolledValue - 1; r >= 3; r--) {
+    const e = get(r);
+    if (e && e.name !== 'Patron Skill' && !known.has(e.name)) return e;
+  }
+  for (let r = rolledValue + 1; r <= 11; r++) {
+    const e = get(r);
+    if (e && e.name !== 'Patron Skill' && !known.has(e.name)) return e;
+  }
+  return entry;  // all blocked: fall back to the rolled entry
+}
+
+/**
  * Open the Advancement Roll modal for a model.
  * Workflow (canon page 105-106):
  *   1. Pick 2 of the 4 Skill Tables.
  *   2. Roll 2D6 on each → get a Skill on each table.
  *   3. Pick one of the 2 Skills to learn.
  * The chosen Skill is added as an advancement on the model.
+ *
+ * opts.context: 'free' disables Patron Skill results (canon-extended
+ * Fase 9 — in free battles the Patron does not intervene). A rolled
+ * Patron Skill (2/12) then falls through the skip-rule to the next
+ * non-Patron skill instead of opening the Patron picker.
  */
-function openAdvancementRollModal(model, wb, onApply) {
+function openAdvancementRollModal(model, wb, onApply, opts) {
+  opts = opts || {};
+  const patronAllowed = opts.context !== 'free';
   const state = {
     pickedTables: [],   // up to 2 of: melee, ranged, stealth, wildcard
     rolls: {},          // { tableId: {d1,d2,sum} }
@@ -28903,28 +28944,8 @@ function openAdvancementRollModal(model, wb, onApply) {
   }
   const content = document.getElementById('adv-roll-content');
 
-  // Resolve the actual skill granted from a 2D6 roll, applying the canon
-  // skip rules for already-known skills.
-  function resolveSkill(tableId, rolledValue, alreadyKnown) {
-    const table = CAMPAIGN_TABLES.skillTables[tableId];
-    if (!table) return null;
-    const known = new Set(alreadyKnown);
-    const get = (r) => table.entries.find(e => e.roll === r);
-    let entry = get(rolledValue);
-    if (!entry) return null;
-    if (entry.name === 'Patron Skill') return entry; // user picks from Patron list
-    if (!known.has(entry.name)) return entry;
-    // Skill known: try next lower, then next higher
-    for (let r = rolledValue - 1; r >= 3; r--) {
-      const e = get(r);
-      if (e && e.name !== 'Patron Skill' && !known.has(e.name)) return e;
-    }
-    for (let r = rolledValue + 1; r <= 11; r++) {
-      const e = get(r);
-      if (e && e.name !== 'Patron Skill' && !known.has(e.name)) return e;
-    }
-    return entry; // all known: fall back to the rolled entry
-  }
+  const resolveSkill = (tableId, rolledValue, alreadyKnown) =>
+    resolveAdvancementSkill(tableId, rolledValue, alreadyKnown, patronAllowed);
 
   function renderStep1() {
     const tables = Object.entries(CAMPAIGN_TABLES.skillTables);
@@ -29023,7 +29044,7 @@ function openAdvancementRollModal(model, wb, onApply) {
       if (!skill) return;
       // Patron Skill (2D6 = 2 or 12): branch into the Patron picker
       // (canon p.86-93) instead of applying the generic "Patron Skill".
-      if (skill.name === 'Patron Skill') {
+      if (skill.name === 'Patron Skill' && patronAllowed) {
         renderPatronStep(tableId);
         return;
       }
@@ -31219,7 +31240,7 @@ function renderWizardAdvancements(body) {
         const out = part.modelOutcomes.find(o => o.modelUid === uid_);
         out.advancementsChosen[idx] = entry;
         renderWizardStep();
-      });
+      }, { context: WIZARD.context || 'campaign' });
     });
   });
 }
