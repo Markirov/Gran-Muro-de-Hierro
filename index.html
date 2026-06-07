@@ -1319,6 +1319,10 @@ body[data-side="fallen"] .roster-prog-summary {
   padding: 1rem;
 }
 .modal-backdrop.show { display: flex; }
+/* Advancement modal can be opened nested on top of the wizard modal.
+   Bump its z-index so it sits above instead of behind (same base z-index
+   would let the later-in-DOM wizard paint over it). */
+#modal-advancement { z-index: 9200; }
 
 /* FIX visibility — paneles por modo + sub-tab usando body classes.
  * Prioridad: !important para ganar a manipulación legacy de style.display. */
@@ -8000,6 +8004,11 @@ function newWarband(factionId='new-antioch') {
     // bands had no central pool, so the QM "Lista" tab couldn't spend
     // outside a campaign. addFreeBattle increments this on every save.
     strongbox: { ducados: 0, glory: 0 },
+    // Patron de la banda (canon p.86-93). Determina qué Skill puede
+    // elegir un modelo cuando una Advancement Roll cae en "Patron Skill".
+    // Se elige al jugar la primera Advancement Patron (o manualmente).
+    // null hasta que se asigne. Ver PATRON_CATALOG.
+    patronId: null,
     // Fase 11 PIVOT v2 — Sandbox de loadouts experimentales.
     // Cada variante = un conjunto de overrides sobre la banda canon.
     // Schema: { id, name, createdAt, description?, overrides: [...] }
@@ -15600,6 +15609,8 @@ function migrateWarband(wb) {
   if (!Array.isArray(wb.tempBonuses)) wb.tempBonuses = [];
   // Fase 11 PIVOT v2 backfill — experimentalVariants.
   if (!Array.isArray(wb.experimentalVariants)) wb.experimentalVariants = [];
+  // Patron backfill — null hasta que se asigne (canon p.86-93).
+  if (typeof wb.patronId === 'undefined') wb.patronId = null;
   // SPEC-rediseno-ui Sub-H backfill — shoppingList items.scope.
   // Items legacy sin scope: forModel definido → 'unit', sin forModel → 'pool'.
   // Idempotente: si ya hay scope válido, no se toca.
@@ -24977,6 +24988,144 @@ window.addEventListener('resize', syncPanelsToViewport);
    ====================================================================== */
 
 /**
+ * PATRON_CATALOG — Patrones canon (Digital Rulebook p.86-93).
+ *
+ * Cada banda elige UN Patron al crearse. Cuando una Advancement Roll cae
+ * en "Patron Skill" (2 ó 12 en cualquier Skill Table), el modelo puede
+ * tomar una de las Skills ofrecidas por el Patron de la banda.
+ *
+ * `factions` lista los factionId (claves de DATA.factions) que pueden
+ * elegir ese Patron. Court of the Seven-Headed Serpent = 'court-serpent'.
+ * Mammon: Heretic Legions o Court (variante Greed) — modelado igual que
+ * Infernal Noble en facciones permitidas; la restricción de "Greed
+ * Warband" se deja como nota, no se gate-a por variante.
+ */
+const PATRON_CATALOG = {
+  'temporal-lord': {
+    id: 'temporal-lord',
+    name: 'Temporal Lord',
+    factions: ['new-antioch'],
+    note: 'New Antioch only.',
+    skills: [
+      { name: 'Armour & Equipment Procurement', summary: 'El coste de cualquier Armour, Shield o Equipment de 15👑+ se reduce en 5👑 si un modelo con esta Skill está en la banda. Solo un modelo puede tenerla.' },
+      { name: 'Melee Weapon Procurement', summary: 'El coste de cualquier Melee Weapon de 10👑+ se reduce en 5👑. Solo un modelo puede tenerla.' },
+      { name: 'Mendelist Chemicals', summary: 'El rival no puede gastar BLOOD MARKERS junto a este modelo para +1 INJURY DICE (sí para convertir a Bloodbath Roll).' },
+      { name: 'Ranged Weapon Procurement', summary: 'El coste de cualquier Ranged Weapon o Grenade de 20👑+ se reduce en 5👑. Solo un modelo puede tenerla.' },
+      { name: 'Sniper School', summary: 'Los Ranged Attacks de este modelo necesitan 1 BLOOD MARKER menos para convertir una Injury Roll en Bloodbath Roll.' },
+      { name: 'Special Assault Training', summary: 'Los Melee Attacks de este modelo necesitan 1 BLOOD MARKER menos para convertir una Injury Roll en Bloodbath Roll.' },
+    ],
+  },
+  'warrior-saint': {
+    id: 'warrior-saint',
+    name: 'Warrior Saint',
+    factions: ['trench-pilgrims', 'new-antioch'],
+    note: 'Trench Pilgrims and New Antioch only.',
+    skills: [
+      { name: 'Blessings of the Warrior Saint', summary: 'Al desplegar por primera vez, coloca D3 BLESSING MARKERS junto al modelo.' },
+      { name: 'David and Goliath', summary: '+1 DICE a un Melee Attack de este modelo si el objetivo está en base de 40mm o mayor.' },
+      { name: 'Dragonslayer', summary: 'Al hacer una Injury Roll de un Melee Attack, puedes cambiar uno de los D6 a un 6.' },
+      { name: 'Endure the Suffering', summary: 'Este modelo puede sufrir 1 Battle Scar extra antes de quedar Unfit for Duty.' },
+      { name: 'On your Knees!', summary: 'Enemigos Down a 1" de este modelo no pueden levantarse (aunque este modelo también esté Down).' },
+      { name: "Warrior's Prayer ACTION", summary: 'ACCIÓN: Risky Success Roll. Éxito → gana FEAR hasta fin de turno y puede quitar 1 BLOOD MARKER.' },
+    ],
+  },
+  'learned-saint': {
+    id: 'learned-saint',
+    name: 'Learned Saint',
+    factions: ['trench-pilgrims', 'new-antioch'],
+    note: 'Trench Pilgrims and New Antioch only.',
+    skills: [
+      { name: 'Favoured by God', summary: 'Al final de cada partida, la banda gana 1 ☼ extra por cada modelo con esta Skill en el campo.' },
+      { name: 'Healing Arts', summary: 'Puedes re-rollear el resultado de la Trauma Chart de ELITE para este modelo.' },
+      { name: 'Knowledge of Sciences', summary: 'El límite de un item de Battlekit +1 si un modelo con esta Skill está en la banda. Solo un modelo.' },
+      { name: 'Logistical Skills', summary: 'Aumenta en 1 cualquier límite de modelos (no-ELITE, base <50mm). Solo un modelo.' },
+      { name: 'Pennies from Heaven', summary: 'Al final de cada partida, la banda gana D6x5 👑 por cada modelo con esta Skill en el campo.' },
+      { name: 'Walk with God', summary: 'Elige 1 Skill de cualquier Skill Chart (incl. Exploration Skill) y dásela a este modelo.' },
+    ],
+  },
+  'infernal-noble': {
+    id: 'infernal-noble',
+    name: 'Infernal Noble',
+    factions: ['heretic-legions', 'court-serpent'],
+    note: 'Heretic Legions & The Court of the Seven-Headed Serpent only.',
+    skills: [
+      { name: '30 Pieces of Silver', summary: 'Al final de cada partida, la banda gana D6x5 👑 por cada modelo con esta Skill en el campo.' },
+      { name: 'Blessed Murder', summary: 'Si un Melee Attack de este modelo toma OoA a un enemigo, coloca 1 BLESSING MARKER junto a él.' },
+      { name: 'Blood Sacrifice ACTION', summary: 'ACCIÓN: Success Roll. Éxito → quita 1 BLOOD MARKER y colócalo junto a otro modelo a 6" (sin ARTIFICIAL/BLACK GRAIL/DEMONIC).' },
+      { name: 'Hellfire ACTION', summary: 'ACCIÓN: Risky Success Roll. Éxito → línea de fuego (FIRE) entre este modelo y un amigo a 18"; Injury Roll a cada modelo cruzado.' },
+      { name: 'Lash of Acheron ACTION', summary: 'ACCIÓN: Risky Success Roll. Éxito → Injury Roll con IGNORE ARMOUR a 1 enemigo a 6".' },
+      { name: 'Sadistic', summary: '+1 DICE y +1 INJURY DICE a Melee Attacks de este modelo si el objetivo está Down.' },
+    ],
+  },
+  'sublime-gate': {
+    id: 'sublime-gate',
+    name: 'Sublime Gate',
+    factions: ['iron-sultanate'],
+    note: 'Iron Sultanate only.',
+    skills: [
+      { name: 'Göre', summary: '+1 DICE y +1 INJURY DICE a Melee Attacks si el objetivo está Down. Además ignora el -1 DICE por estar Down.' },
+      { name: 'Imported Wares', summary: 'Compra 1 Weapon o 1 Armour del Armoury de New Antioch para este modelo. Re-comprable si se pierde.' },
+      { name: 'Janissary Training', summary: 'Si la primera ACCIÓN es Charge, +1 DICE a Melee el resto de la Activación. Además gana IGNORE OFF-HAND WEAPON.' },
+      { name: 'Rightly Guided', summary: 'Tras despliegue, elige 1 ACCIÓN (no Shoot/Fight) que tenga objetivo enemigo; este modelo no puede ser objetivo de ella.' },
+      { name: "Sultan's Favour", summary: 'Aumenta en 1 cualquier límite de modelos (no-ELITE, base 50mm+). Solo 1 modelo.' },
+      { name: 'Sword of Allah', summary: 'Elige 1 Skill de la Melee & Strength Skills Table para este modelo.' },
+    ],
+  },
+  'order-of-the-fly': {
+    id: 'order-of-the-fly',
+    name: 'The Order of the Fly',
+    factions: ['black-grail'],
+    note: 'Black Grail only.',
+    skills: [
+      { name: 'Cockroach Vitality', summary: 'El rival no puede gastar BLOOD MARKERS junto a este modelo para +1 INJURY DICE.' },
+      { name: 'Deceit of Beelzebub ACTION', summary: 'ACCIÓN: Risky Success Roll. Éxito → intercambia posición con un enemigo a 8".' },
+      { name: 'Eyes of the Fly', summary: 'Este modelo tiene IGNORE COVER e IGNORE LONG RANGE.' },
+      { name: 'Grail Plague', summary: 'Tras despliegue, por cada modelo con esta Skill en el campo, coloca 1 INFECTION MARKER junto a un enemigo sin BLACK GRAIL.' },
+      { name: 'Knight of the Flies', summary: '-1 DICE a Ranged Attacks que tengan a este modelo como objetivo.' },
+      { name: 'Wings of the Fly', summary: 'Este modelo se vuelve Flying. Sin efecto adicional si ya volaba.' },
+    ],
+  },
+  'mammon': {
+    id: 'mammon',
+    name: 'Mammon',
+    factions: ['heretic-legions', 'court-serpent'],
+    note: 'Heretic Legions o Court of the Seven-Headed Serpent (Greed Warband) only.',
+    skills: [
+      { name: 'Aureate Skin', summary: 'Cada vez que se coloca un BLOOD MARKER junto a este modelo, añade 5 👑 a tu tesoro.' },
+      { name: 'Crooked Dice', summary: 'Una vez por partida, re-rollea todos los dados de un Success Roll o de una Injury Roll de este modelo.' },
+      { name: 'Eternal Debt', summary: 'Los Wretched de la banda nunca se pierden: hacen Full Recovery automático si quedan OoA.' },
+      { name: 'Money Can Buy Anything', summary: 'El Limit de cualquier Battlekit +1 si un modelo con esta Skill está en la banda. Solo 1 modelo.' },
+      { name: 'Plutocracy', summary: 'Al tomar esta Skill, forma FIRETEAM con otro modelo no-ELITE. Risky Success Rolls en ACCIONES conjuntas se tratan como normales.' },
+      { name: 'Unsecured Loan', summary: 'Añade 100 👑 al Strongbox al tomar esta Skill (solo una vez).' },
+    ],
+  },
+  'antipope-of-avignon': {
+    id: 'antipope-of-avignon',
+    name: 'The Antipope of Avignon',
+    factions: ['black-grail'],
+    note: 'Black Grail only.',
+    skills: [
+      { name: "Beelzebub's Wisdom", summary: 'Si un enemigo elige a este modelo como objetivo de un Charge, no recibe Charge Bonus y carga solo con su Movement.' },
+      { name: 'Eye of Beelzebub ACTION', summary: 'ACCIÓN: Success Roll. Éxito → mueve 1" a un enemigo a 24" en Cover (fuera de Cover, sin quedar a 1" de amigos).' },
+      { name: 'Feast on Disease', summary: 'Si el objetivo de un Melee Attack tiene 1+ INFECTION MARKERS, cuesta 1 marker menos convertir a Bloodbath Roll.' },
+      { name: 'Infect the Mind', summary: 'Tras despliegue, por cada modelo con esta Skill en el campo, mueve 6" a un enemigo (no Charge).' },
+      { name: 'Silvered Tongue ACTION', summary: 'ACCIÓN: Success Roll. Éxito → un enemigo a 1" hace un Melee Attack contra sí mismo.' },
+      { name: 'Swine Hybrid', summary: '+2" al Movement Characteristic de este modelo.' },
+    ],
+  },
+};
+
+/** Patrones disponibles para una facción dada (canon p.86-93). */
+function patronsForFaction(factionId) {
+  if (!factionId) return [];
+  return Object.values(PATRON_CATALOG).filter(p => p.factions.includes(factionId));
+}
+/** Lookup de Patron por id. */
+function patronById(id) {
+  return id ? (PATRON_CATALOG[id] || null) : null;
+}
+
+/**
  * CAMPAIGN_TABLES — Datos oficiales del Trench Crusade Digital Rulebook (v1.0.2).
  *
  * Fuentes verificadas:
@@ -24988,6 +25137,7 @@ window.addEventListener('resize', syncPanelsToViewport);
  *   - Warband Threshold: page 98
  *   - Cannot Be Promoted: page 106
  *   - Limited Potential (max 7 XP): page 111
+ *   - Patrons: pages 86-93 (ver PATRON_CATALOG)
  */
 const CAMPAIGN_TABLES = {
   // XP threshold for each successive Advancement Roll.
@@ -26534,6 +26684,8 @@ function computeWarbandState(campaign, warbandId) {
     if (part.result === 'loss') state.losses++;
     if (part.result === 'draw') state.draws++;
     state.glory += part.gloryEarned || 0;
+    // Glorious Deeds — +1 ☼ each (canon p.97), on top of the base reward.
+    state.glory += participantDeedCount(part);
     // Glory Hound (Wildcard 10) — +1 ☼ per model with the skill that
     // was on the battlefield this game.
     state.glory += gloryHoundBonus(wb, part.modelOutcomes || []);
@@ -27255,6 +27407,40 @@ function gloryHoundBonus(wb, modelOutcomes) {
   return n;
 }
 
+/* Glorious Deeds count for a participant. Each model outcome's `feats`
+ * field records the Glorious Deeds that model performed in the game.
+ * Canon p.97: each Glorious Deed grants +1 ☼ to the warband (separate
+ * from the win/draw/loss reward). This helper totals them so the glory
+ * application paths can add the deed glory on top of the base reward.
+ */
+function participantDeedCount(part) {
+  if (!part || !Array.isArray(part.modelOutcomes)) return 0;
+  let n = 0;
+  for (const out of part.modelOutcomes) {
+    if (!out || out.participated === false) continue;
+    n += (out.feats || 0);
+  }
+  return n;
+}
+
+/* Recompute each model's `feats` from the scenario deed assignments
+ * stored in part.deeds ({ deedName: modelUid }). One Glorious Deed per
+ * model = +1 feat. This is only invoked when the scenario deed UI is
+ * active, so non-scenario battles keep their manually-entered feats.
+ */
+function recomputeFeatsFromDeeds(part) {
+  if (!part || !Array.isArray(part.modelOutcomes)) return;
+  const counts = {};
+  const deeds = part.deeds || {};
+  for (const uid of Object.values(deeds)) {
+    if (!uid) continue;
+    counts[uid] = (counts[uid] || 0) + 1;
+  }
+  for (const out of part.modelOutcomes) {
+    out.feats = counts[out.modelUid] || 0;
+  }
+}
+
 /* War-Luck (Wildcard 3): +1 extra Battle Scar before Unfit for Duty.
  * Canon Unfit threshold = 3 scars. War-Luck pushes it to 4. */
 function unfitScarThreshold(model) {
@@ -27490,6 +27676,8 @@ function wizardBattleToFreeBattle(w, opts) {
     resolvedWb = loadWarband(part.warbandId);
   }
 
+  // Glorious Deeds — +1 ☼ each (canon p.97), on top of the base reward.
+  fb.glory += participantDeedCount(part);
   // Glory Hound (Wildcard 10) — +1 ☼ per skill-bearer on the field.
   if (resolvedWb) fb.glory += gloryHoundBonus(resolvedWb, part.modelOutcomes || []);
   const findModel = (uid) => {
@@ -27983,10 +28171,15 @@ function summarizeWizardLoot(w) {
     const lootDucats = (disc && disc.result && typeof disc.result.lootDucats === 'number')
       ? disc.result.lootDucats : 0;
     const ducatsEarned = typeof p.ducatsEarned === 'number' ? p.ducatsEarned : 0;
-    const gloryEarned  = typeof p.gloryEarned  === 'number' ? p.gloryEarned  : 0;
+    const baseGlory    = typeof p.gloryEarned  === 'number' ? p.gloryEarned  : 0;
+    // Canon p.97 — each Glorious Deed adds +1 ☼ on top of the base reward.
+    const deedGlory    = participantDeedCount(p);
+    const gloryEarned  = baseGlory + deedGlory;
     return {
       warbandId: p.warbandId,
       ducatsEarned,
+      baseGlory,
+      deedGlory,
       gloryEarned,
       lootDucats,
       totalDucats: ducatsEarned + lootDucats,
@@ -28828,28 +29021,13 @@ function openAdvancementRollModal(model, wb, onApply) {
       const tableId = state.chosenTable;
       const skill = state.rolledSkills[tableId];
       if (!skill) return;
-      const entry = {
-        name: skill.name,
-        source: 'roll',
-        skillTable: tableId,
-        rolled: state.rolls[tableId].sum,
-      };
-      // Map mechanicalEffect to the existing advancement-id system so
-      // effectiveStats / effectiveKeywords pick up the modifier.
-      if (skill.mechanicalEffect) {
-        if (skill.mechanicalEffect.startsWith('gain-keyword:')) {
-          const kw = skill.mechanicalEffect.split(':')[1];
-          const idMap = { 'NEGATE FEAR':'fearless', 'TOUGH':'tough',
-                          'LEADER':'leader' };
-          const legacyId = idMap[kw];
-          if (legacyId) entry.id = legacyId;
-          entry.grantsKeyword = kw;
-        } else {
-          entry.id = skill.mechanicalEffect;
-        }
+      // Patron Skill (2D6 = 2 or 12): branch into the Patron picker
+      // (canon p.86-93) instead of applying the generic "Patron Skill".
+      if (skill.name === 'Patron Skill') {
+        renderPatronStep(tableId);
+        return;
       }
-      onApply(entry);
-      closeModal('modal-advancement');
+      applyChosenSkill(tableId, skill);
     });
 
     // Animate the dice in cascade per table — only on the FIRST render
@@ -28895,6 +29073,103 @@ function openAdvancementRollModal(model, wb, onApply) {
           ], 600).then(finalize);
         }, tableIdx * 250);
       }
+    });
+  }
+
+  // Build the advancement entry from a non-Patron skill and apply it.
+  function applyChosenSkill(tableId, skill) {
+    const entry = {
+      name: skill.name,
+      source: 'roll',
+      skillTable: tableId,
+      rolled: state.rolls[tableId] ? state.rolls[tableId].sum : null,
+    };
+    if (skill.mechanicalEffect) {
+      if (skill.mechanicalEffect.startsWith('gain-keyword:')) {
+        const kw = skill.mechanicalEffect.split(':')[1];
+        const idMap = { 'NEGATE FEAR':'fearless', 'TOUGH':'tough', 'LEADER':'leader' };
+        const legacyId = idMap[kw];
+        if (legacyId) entry.id = legacyId;
+        entry.grantsKeyword = kw;
+      } else {
+        entry.id = skill.mechanicalEffect;
+      }
+    }
+    onApply(entry);
+    closeModal('modal-advancement');
+  }
+
+  // Patron Skill picker (canon p.86-93). Lists the Patron Skills the
+  // warband may take. If the band already has a Patron set (wb.patronId),
+  // only that Patron's skills are shown; otherwise every Patron eligible
+  // for the faction is shown grouped, and picking one sets wb.patronId.
+  function renderPatronStep(tableId) {
+    const fid = wb.factionId;
+    const fixed = wb.patronId ? patronById(wb.patronId) : null;
+    const patrons = fixed ? [fixed] : patronsForFaction(fid);
+    let html = '<div class="roller-step">';
+    html += '<div class="roller-step-title">3. Patron Skill — elige una habilidad de tu Patron</div>';
+    if (!patrons.length) {
+      html += `<div class="notice info" style="margin-top:0.6rem;">
+        No hay Patrones canon para esta facción (${fid || '?'}). Puedes registrar el ascenso como "Patron Skill" genérico.
+      </div>`;
+      html += `<div class="advancement-actions">
+        <button class="btn" id="btn-patron-back">← Volver</button>
+        <button class="btn btn-primary" id="btn-patron-generic">Aplicar genérico</button>
+      </div></div>`;
+      content.innerHTML = html;
+      content.querySelector('#btn-patron-back').addEventListener('click', renderStep2);
+      content.querySelector('#btn-patron-generic').addEventListener('click', () => {
+        onApply({ name: 'Patron Skill', source: 'roll', skillTable: tableId,
+                  rolled: state.rolls[tableId] ? state.rolls[tableId].sum : null,
+                  patronSkill: true });
+        closeModal('modal-advancement');
+      });
+      return;
+    }
+    if (!fixed) {
+      html += `<div style="font-size:0.72rem;color:var(--parchment-dim);margin:0.3rem 0 0.6rem;">
+        Tu banda aún no tiene Patron asignado. Al elegir una Skill se fijará el Patron de la banda (canon: un Patron por banda).
+      </div>`;
+    }
+    for (const p of patrons) {
+      html += `<div class="patron-group" style="margin-top:0.5rem;">
+        <div style="font-weight:700;color:var(--gold);font-size:0.85rem;">${p.name}
+          <span style="font-weight:400;color:var(--parchment-dim);font-size:0.7rem;">· ${p.note}</span></div>
+        <div class="patron-skill-list" style="display:flex;flex-direction:column;gap:0.25rem;margin-top:0.3rem;">
+          ${p.skills.map(s => `
+            <div class="patron-skill-opt" data-patron="${p.id}" data-skill="${s.name.replace(/"/g,'&quot;')}"
+                 style="cursor:pointer;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;">
+              <strong style="font-size:0.8rem;">${s.name}</strong>
+              <div style="font-size:0.7rem;color:var(--parchment);">${s.summary}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }
+    html += `<div class="advancement-actions" style="margin-top:0.6rem;">
+      <button class="btn" id="btn-patron-back">← Volver</button>
+    </div></div>`;
+    content.innerHTML = html;
+    content.querySelector('#btn-patron-back').addEventListener('click', renderStep2);
+    content.querySelectorAll('.patron-skill-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const patronId = opt.dataset.patron;
+        const skillName = opt.dataset.skill;
+        // Fix the warband's Patron if not already set, and persist.
+        if (!wb.patronId) {
+          wb.patronId = patronId;
+          try { if (typeof persistWarband === 'function') persistWarband(wb); } catch (e) {}
+        }
+        onApply({
+          name: skillName,
+          source: 'roll',
+          skillTable: tableId,
+          rolled: state.rolls[tableId] ? state.rolls[tableId].sum : null,
+          patronSkill: true,
+          patronId,
+        });
+        closeModal('modal-advancement');
+      });
     });
   }
 
@@ -30298,16 +30573,17 @@ function renderWizardSetup(body) {
     <label>Fecha</label>
     <input type="date" id="wiz-date" value="${WIZARD.battle.date}" />
     <label>Escenario</label>
-    <input type="text" id="wiz-scenario" value="${WIZARD.battle.scenario}" placeholder="ej. Trench Raid, Hold the Line, Asalto al Búnker…" list="scenario-suggestions" />
-    <datalist id="scenario-suggestions">
-      <option value="Trench Raid">
-      <option value="Hold the Line">
-      <option value="Skirmish">
-      <option value="Ambush">
-      <option value="Loot the Battlefield">
-      <option value="Last Stand">
-      <option value="Capture the Objective">
-    </datalist>
+    <select id="wiz-scenario-select" class="outcome-input" style="width:100%;">
+      ${Object.entries(SCENARIOS_CATALOG).map(([key, s]) =>
+        `<option value="${key}" ${WIZARD.battle.scenario===key?'selected':''}>${s.name}${(s.deeds&&s.deeds.length)?` · ${s.deeds.length} Deeds`:''}</option>`
+      ).join('')}
+      <option value="__custom__" ${!SCENARIOS_CATALOG[WIZARD.battle.scenario]?'selected':''}>— Personalizado (texto libre) —</option>
+    </select>
+    <input type="text" id="wiz-scenario-custom" value="${SCENARIOS_CATALOG[WIZARD.battle.scenario]?'':(WIZARD.battle.scenario||'')}" placeholder="Nombre del escenario personalizado…"
+      style="margin-top:0.3rem;display:${SCENARIOS_CATALOG[WIZARD.battle.scenario]?'none':'block'};" />
+    <p style="font-family:var(--font-mono);font-size:0.62rem;color:var(--parchment-dim);margin:0.2rem 0 0;">
+      Elegir un escenario canon carga sus Glorious Deeds en el paso Resultados.
+    </p>
     <label>Notas (opcional)</label>
     <textarea id="wiz-notes" placeholder="Cómo se desarrolló la batalla, momentos memorables…">${WIZARD.battle.notes||''}</textarea>
     <label>Bandas que participaron</label>
@@ -30325,11 +30601,25 @@ function renderWizardSetup(body) {
     `);
     partsEl.appendChild(row);
   }
+  // Scenario select: toggle the custom text input visibility.
+  const scenSel = document.getElementById('wiz-scenario-select');
+  const scenCustom = document.getElementById('wiz-scenario-custom');
+  if (scenSel && scenCustom) {
+    scenSel.addEventListener('change', () => {
+      scenCustom.style.display = scenSel.value === '__custom__' ? 'block' : 'none';
+    });
+  }
 }
 function collectWizardSetup() {
   const c = STATE.currentCampaign;
   WIZARD.battle.date = document.getElementById('wiz-date').value;
-  WIZARD.battle.scenario = document.getElementById('wiz-scenario').value.trim();
+  const scenSel = document.getElementById('wiz-scenario-select');
+  const scenCustom = document.getElementById('wiz-scenario-custom');
+  if (scenSel) {
+    WIZARD.battle.scenario = scenSel.value === '__custom__'
+      ? (scenCustom ? scenCustom.value.trim() : '')
+      : scenSel.value;
+  }
   WIZARD.battle.notes = document.getElementById('wiz-notes').value;
   // Update participants list (preserve existing entries' data)
   const checkedWids = Array.from(document.querySelectorAll('#wiz-participants input:checked')).map(x => x.dataset.wid);
@@ -30375,12 +30665,21 @@ function renderWizardResults(body) {
       💀 ${defaults.loss.ducados}👑 / ${defaults.loss.glory}☼
       <button type="button" class="btn btn-icon" id="btn-edit-rewards" style="margin-left:0.5rem;font-size:0.6rem;">⚙ Editar</button>
     </p>`;
+  // Scenario-specific Glorious Deeds (canon p.97). When the battle's
+  // scenario maps to a catalog entry with deeds, surface them as a global
+  // list per participant: each deed assigned to a model contributes
+  // +1 ☼ (warband), +1 D6 to the Promotion Pool, and (if ELITE) +1 XP.
+  const scenarioEntry = SCENARIOS_CATALOG[WIZARD.battle.scenario] || null;
+  const scenarioDeeds = (scenarioEntry && Array.isArray(scenarioEntry.deeds)) ? scenarioEntry.deeds : [];
+
   for (const part of WIZARD.battle.participants) {
     const wb = loadWarband(part.warbandId);
     if (!wb) continue;
     const f = DATA.factions[wb.factionId];
+    const deedGlory = participantDeedCount(part);
+    if (!part.deeds || typeof part.deeds !== 'object') part.deeds = {};
     const block = el('div', 'detail-section');
-    block.innerHTML = `
+    let inner = `
       <div class="detail-label">${wb.name||'?'} <span style="color:var(--parchment-dim);font-weight:400;">(${f?f.shortName:'?'})</span></div>
       <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
         <button type="button" class="btn ${part.result==='win'?'btn-primary':''}"  data-result-wid="${part.warbandId}" data-result="win">🏆 Victoria</button>
@@ -30391,14 +30690,61 @@ function renderWizardResults(body) {
         <label class="outcome-checkbox" style="border:none;padding:0;">Ducados (👑):
           <input type="number" min="0" max="999" data-ducats-wid="${part.warbandId}" value="${part.ducatsEarned||0}" class="outcome-input" style="width:70px;" />
         </label>
-        <label class="outcome-checkbox" style="border:none;padding:0;">Glory (☼):
+        <label class="outcome-checkbox" style="border:none;padding:0;">Glory base (☼):
           <input type="number" min="0" max="50" data-glory-wid="${part.warbandId}" value="${part.gloryEarned||0}" class="outcome-input" style="width:60px;" />
         </label>
         <button type="button" class="btn btn-icon" data-apply-default-wid="${part.warbandId}" title="Aplicar default según resultado">↻ default</button>
-      </div>
-    `;
+      </div>`;
+
+    if (scenarioDeeds.length) {
+      const models = wb.models || [];
+      inner += `
+        <div class="wiz-deeds" style="margin-top:0.6rem;border-top:1px solid var(--border);padding-top:0.5rem;">
+          <div style="font-weight:700;color:var(--gold);font-size:0.82rem;">🏆 Glorious Deeds — ${scenarioEntry.name}</div>
+          <div style="font-size:0.68rem;color:var(--parchment-dim);margin-bottom:0.4rem;">
+            Cada Deed cumplido: +1 ☼ a la banda · +1 dado al Promotion Pool · +1 XP si lo hizo un ELITE. Asigna el modelo que lo cumplió.
+          </div>
+          ${scenarioDeeds.map((d, di) => {
+            const assigned = part.deeds[d.name] || '';
+            return `
+              <div style="display:flex;gap:0.5rem;align-items:flex-start;margin-top:0.3rem;">
+                <select data-deed-wid="${part.warbandId}" data-deed-name="${(d.name||'').replace(/"/g,'&quot;')}" class="outcome-input" style="min-width:150px;">
+                  <option value="">— no cumplido —</option>
+                  ${models.map(m => {
+                    const u = getUnit(wb.factionId, m.unitId);
+                    const nm = m.customName || (u ? u.name : m.uid);
+                    return `<option value="${m.uid}" ${assigned===m.uid?'selected':''}>${nm}</option>`;
+                  }).join('')}
+                </select>
+                <div style="font-size:0.72rem;">
+                  <strong>${d.name}</strong>${d.awardsLeaderXP ? ' <span style="color:var(--gold);" title="Suele cumplirlo el Leader">★</span>' : ''}
+                  <div style="color:var(--parchment-dim);">${d.desc||''}</div>
+                </div>
+              </div>`;
+          }).join('')}
+          <div style="margin-top:0.5rem;font-size:0.8rem;">
+            Glory total: <strong style="color:var(--gold);">${(part.gloryEarned||0)} base + ${deedGlory} deeds = ${(part.gloryEarned||0) + deedGlory} ☼</strong>
+          </div>
+        </div>`;
+    }
+    block.innerHTML = inner;
     body.appendChild(block);
   }
+
+  // Deed assignment → rebuild part.deeds + recompute each model's feats.
+  body.querySelectorAll('[data-deed-wid]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const wid = sel.dataset.deedWid;
+      const deedName = sel.dataset.deedName;
+      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
+      if (!part) return;
+      if (!part.deeds || typeof part.deeds !== 'object') part.deeds = {};
+      if (sel.value) part.deeds[deedName] = sel.value;
+      else delete part.deeds[deedName];
+      recomputeFeatsFromDeeds(part);
+      renderWizardStep();
+    });
+  });
   body.querySelectorAll('[data-result-wid]').forEach(btn => {
     btn.addEventListener('click', () => {
       const wid = btn.dataset.resultWid;
@@ -30835,26 +31181,20 @@ function renderWizardAdvancements(body) {
         </div>
         ${Array.from({length: newAdvances}).map((_, idx) => {
           const sel = out.advancementsChosen[idx];
-          // Fase 9 — filter out Patron-flavoured advancements in free
-          // context. Today CAMPAIGN_TABLES.advancements doesn't include
-          // Patron entries, but the filter is in place as a guard.
-          const advsForCtx = filterAdvancementsForContext(
-            CAMPAIGN_TABLES.advancements,
-            WIZARD.context
-          );
+          // Canon Advancement Roll (p.104): the player rolls 2D6 on each
+          // of 2 chosen Skill Tables and picks one result. Patron Skill
+          // (2/12) branches into the Patron picker (p.86-93).
           return `
             <div style="margin-top:0.5rem;">
               <label>Ascenso ${idx+1}</label>
-              <div class="adv-options">
-                ${advsForCtx.map(adv => `
-                  <div class="adv-opt ${sel && sel.id===adv.id?'selected':''}" data-adv="${adv.id}" data-idx="${idx}" data-uid="${out.modelUid}" data-wid="${part.warbandId}">
-                    ${adv.name}
-                  </div>
-                `).join('')}
-              </div>
-              ${sel && sel.id==='custom' ? `
-                <input type="text" placeholder="Describe el ascenso personalizado…" value="${(sel.name||'').replace(/"/g,'&quot;')}" data-adv-text data-idx="${idx}" data-uid="${out.modelUid}" data-wid="${part.warbandId}" style="margin-top:0.3rem;" />
-              ` : ''}
+              ${sel ? `
+                <div class="adv-chosen" style="display:flex;align-items:center;gap:0.5rem;justify-content:space-between;padding:0.4rem 0.5rem;border:1px solid var(--gold);border-radius:4px;">
+                  <span><strong>${sel.name}</strong>${sel.skillTable ? ` <span style="color:var(--parchment-dim);font-size:0.7rem;">(${(CAMPAIGN_TABLES.skillTables[sel.skillTable]||{}).name||sel.skillTable}${typeof sel.rolled==='number'?` · 2D6=${sel.rolled}`:''})</span>` : ''}${sel.patronSkill ? ' <span style="color:var(--gold);font-size:0.7rem;">★ Patron</span>' : ''}</span>
+                  <button class="btn" data-adv-roll data-idx="${idx}" data-uid="${out.modelUid}" data-wid="${part.warbandId}" style="font-size:0.7rem;padding:0.2rem 0.5rem;">🎲 Re-tirar</button>
+                </div>
+              ` : `
+                <button class="btn btn-primary" data-adv-roll data-idx="${idx}" data-uid="${out.modelUid}" data-wid="${part.warbandId}" style="margin-top:0.3rem;">🎲 Tirar ascenso (2 tablas · 2D6)</button>
+              `}
             </div>
           `;
         }).join('')}
@@ -30863,23 +31203,23 @@ function renderWizardAdvancements(body) {
     }
   }
 
-  body.querySelectorAll('[data-adv]').forEach(opt => {
-    opt.addEventListener('click', () => {
-      const wid = opt.dataset.wid, uid_ = opt.dataset.uid, idx = parseInt(opt.dataset.idx,10);
-      const advId = opt.dataset.adv;
-      const adv = CAMPAIGN_TABLES.advancements.find(a => a.id === advId);
-      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
-      const out = part.modelOutcomes.find(o => o.modelUid === uid_);
-      out.advancementsChosen[idx] = { id: adv.id, name: adv.name, category: adv.category };
-      renderWizardStep();
-    });
-  });
-  body.querySelectorAll('[data-adv-text]').forEach(inp => {
-    inp.addEventListener('input', () => {
-      const wid = inp.dataset.wid, uid_ = inp.dataset.uid, idx = parseInt(inp.dataset.idx,10);
-      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
-      const out = part.modelOutcomes.find(o => o.modelUid === uid_);
-      out.advancementsChosen[idx].name = inp.value || 'Ascenso personalizado';
+  // Each slot opens the canon Advancement Roll modal. The chosen Skill
+  // entry is stored into out.advancementsChosen[idx]. The modal handles
+  // the 2-table pick, the 2D6 rolls, the skip-rule for known skills, and
+  // the Patron Skill picker.
+  body.querySelectorAll('[data-adv-roll]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wid = btn.dataset.wid, uid_ = btn.dataset.uid, idx = parseInt(btn.dataset.idx, 10);
+      const wbHere = loadWarband(wid);
+      if (!wbHere) return;
+      const modelHere = wbHere.models.find(x => x.uid === uid_);
+      if (!modelHere) return;
+      openAdvancementRollModal(modelHere, wbHere, (entry) => {
+        const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
+        const out = part.modelOutcomes.find(o => o.modelUid === uid_);
+        out.advancementsChosen[idx] = entry;
+        renderWizardStep();
+      });
     });
   });
 }
@@ -31361,7 +31701,7 @@ function renderWizardSummary(body) {
       </div>
       <div style="font-size:0.9rem;margin-top:0.4rem;">
         Total a aplicar: <strong style="color:var(--gold);">${lootRow.totalDucats} 👑</strong>
-        ${lootRow.gloryEarned ? `<strong> + ${lootRow.gloryEarned} ☼</strong>` : ''}
+        ${lootRow.gloryEarned ? `<strong> + ${lootRow.gloryEarned} ☼</strong>${lootRow.deedGlory ? ` <span style="color:var(--parchment-dim);font-size:0.78rem;">(${lootRow.baseGlory} base + ${lootRow.deedGlory} deeds)</span>` : ''}` : ''}
       </div>`;
 
     if (xpRows.length) {
