@@ -31723,54 +31723,57 @@ function openExplorationOptionPicker(disc, factionId) {
 }
 
 function renderWizardQuartermaster(body) {
+  const isFree = WIZARD.context === 'free';
+  const summary = summarizeWizardLoot(WIZARD);
+
+  // Free context: AUTO-credit this battle's income to the strongbox as soon
+  // as the player reaches the QM step (idempotent via WIZARD.incomeApplied),
+  // so the money is immediately spendable in one step — no extra click. The
+  // save path won't re-credit (addFreeBattle skipStrongboxCredit).
+  if (isFree && !WIZARD.incomeApplied) {
+    creditWizardFreeIncome();
+  }
+
   body.innerHTML = `<h4>Quartermaster</h4>
     <p style="font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);">
-      Resumen de ingresos por banda. En campaña puedes abrir el Quartermaster
-      ahora para gastar; en partida libre los ducats se aplicarán al
-      strongbox de la banda al guardar.
+      ${isFree
+        ? 'Los ingresos de esta batalla (Looting + Glorious Deeds) ya están en el strongbox de la banda. Ábrelo para gastarlos ahora.'
+        : 'Resumen de ingresos por banda. Abre el Quartermaster para gastar; los cambios se reflejan en campaign.finances.'}
     </p>`;
-  const summary = summarizeWizardLoot(WIZARD);
   if (!summary.length) {
     body.innerHTML += `<div class="notice info" style="margin-top:1rem;">
       Sin participantes que recibir ingresos.
     </div>`;
     return;
   }
-  const isFree = WIZARD.context === 'free';
   for (const row of summary) {
     const wb = (typeof loadWarband === 'function') ? loadWarband(row.warbandId) : null;
     const wbName = wb && wb.name ? wb.name : row.warbandId;
+    const bal = wb ? getWarbandBalance(wb, isFree ? null : STATE.currentCampaign) : { ducados:0, glory:0 };
     const card = el('div', 'detail-section');
     let inner = `
       <div class="detail-label">${wbName}</div>
       <div style="font-size:0.85rem;margin-top:0.25rem;">
-        Resultado: <strong>${row.ducatsEarned} 👑</strong>
-        ${row.gloryEarned ? ` · <strong>${row.gloryEarned} ☼</strong>` : ''}
-      </div>
-      <div style="font-size:0.85rem;">
-        Exploration: <strong>${row.lootDucats} 👑</strong>
-      </div>
-      <div style="font-size:0.95rem;margin-top:0.4rem;border-top:1px solid var(--parchment-dim);padding-top:0.4rem;">
-        Total a aplicar: <strong style="color:var(--gold);">${row.totalDucats} 👑</strong>
+        Ingresos de esta batalla: <strong style="color:var(--gold);">${row.totalDucats} 👑</strong>
         ${row.gloryEarned ? ` <strong>+ ${row.gloryEarned} ☼</strong>` : ''}
+        <span style="color:var(--parchment-dim);"> (Looting ${row.lootDucats} 👑${row.deedGlory ? ` · Deeds ${row.deedGlory} ☼` : ''})</span>
       </div>`;
     if (isFree) {
-      const credited = !!WIZARD.incomeApplied;
-      inner += `<div style="margin-top:0.5rem;">
-        <button class="btn btn-primary" type="button" data-open-free-qm-wid="${row.warbandId}">
-          🛒 ${credited ? 'Seguir gastando' : 'Cobrar y gastar ahora'}
-        </button>
-        <div style="margin-top:0.4rem;font-size:0.78rem;color:${credited ? 'var(--gold)' : 'var(--parchment-dim)'};">
-          ${credited
-            ? '⚠ Ingresos ya acreditados al strongbox. El importe SE CONSERVA aunque retrocedas y cambies la Exploración (no se recalcula). Puedes seguir comprando o avanzar.'
-            : 'Acredita los ingresos de esta batalla al strongbox de la banda y abre el Quartermaster para gastarlos de inmediato. Si no, se aplican al guardar.'}
+      inner += `
+        <div style="font-size:0.95rem;margin-top:0.4rem;border-top:1px solid var(--parchment-dim);padding-top:0.4rem;">
+          Saldo del strongbox: <strong style="color:var(--gold);">${bal.ducados} 👑 · ${bal.glory} ☼</strong>
         </div>
-      </div>`;
+        <div style="margin-top:0.5rem;">
+          <button class="btn btn-primary" type="button" data-open-free-qm-wid="${row.warbandId}">🛒 Abrir Quartermaster (gastar)</button>
+        </div>
+        <div style="margin-top:0.4rem;font-size:0.75rem;color:var(--gold);">
+          ⚠ Ingresos ya acreditados. El importe se conserva aunque retrocedas y cambies la Exploración (no se recalcula).
+        </div>`;
     } else {
       inner += `<div style="margin-top:0.5rem;">
         <button class="btn" type="button" data-open-qm-wid="${row.warbandId}">🛒 Abrir Quartermaster</button>
         <span style="margin-left:0.5rem;font-size:0.8rem;color:var(--parchment-dim);">
-          (los gastos se reflejan en campaign.finances)
+          (el Looting de esta batalla se aplica al guardar)
         </span>
       </div>`;
     }
@@ -31778,7 +31781,6 @@ function renderWizardQuartermaster(body) {
     body.appendChild(card);
   }
 
-  // Wire campaign-context "Open QM" buttons.
   if (!isFree) {
     body.querySelectorAll('[data-open-qm-wid]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -31790,26 +31792,52 @@ function renderWizardQuartermaster(body) {
       });
     });
   } else {
-    // Free context: credit this battle's income to the strongbox NOW (once)
-    // so the player can spend the exploration loot immediately, then open
-    // the (free) Quartermaster. The save path won't re-credit.
     body.querySelectorAll('[data-open-free-qm-wid]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const wid = btn.dataset.openFreeQmWid;
-        const wb = loadWarband(wid);
+        const wb = loadWarband(btn.dataset.openFreeQmWid);
         if (!wb || typeof openQuartermaster !== 'function') return;
-        if (!WIZARD.incomeApplied) {
-          const fb = wizardBattleToFreeBattle(WIZARD, { wb });
-          if (!wb.strongbox || typeof wb.strongbox !== 'object') wb.strongbox = { ducados: 0, glory: 0 };
-          wb.strongbox.ducados += (typeof fb.loot  === 'number' ? fb.loot  : 0);
-          wb.strongbox.glory   += (typeof fb.glory === 'number' ? fb.glory : 0);
-          WIZARD.incomeApplied = true;
-          if (typeof persistWarband === 'function') persistWarband(wb);
-        }
-        openQuartermaster(null, wb);
+        openQuartermaster(null, wb);  // income already credited on step entry
       });
     });
   }
+}
+
+/* Credit the current free battle's income (Looting ducats + glory) to the
+ * warband's strongbox, once. Idempotent: sets WIZARD.incomeApplied so the
+ * save path skips re-crediting. Returns the credited {ducados, glory}. */
+function creditWizardFreeIncome() {
+  if (!WIZARD || WIZARD.context !== 'free' || WIZARD.incomeApplied) return { ducados:0, glory:0 };
+  const part = (WIZARD.battle.participants || [])[0];
+  if (!part || !part.warbandId) return { ducados:0, glory:0 };
+  const wb = (typeof loadWarband === 'function') ? loadWarband(part.warbandId) : null;
+  if (!wb) return { ducados:0, glory:0 };
+  const fb = wizardBattleToFreeBattle(WIZARD, { wb });
+  if (!wb.strongbox || typeof wb.strongbox !== 'object') wb.strongbox = { ducados: 0, glory: 0 };
+  const d = typeof fb.loot  === 'number' ? fb.loot  : 0;
+  const g = typeof fb.glory === 'number' ? fb.glory : 0;
+  wb.strongbox.ducados += d;
+  wb.strongbox.glory   += g;
+  WIZARD.incomeApplied = true;
+  WIZARD.creditedIncome = { ducados: d, glory: g, warbandId: wb.id };
+  if (typeof persistWarband === 'function') persistWarband(wb);
+  return { ducados: d, glory: g };
+}
+
+/* Reverse the auto-credited free income — used when the player cancels the
+ * wizard after reaching the QM step, so the strongbox doesn't keep money
+ * for a battle that was never saved. Purchases made in the meantime stay
+ * debited (the player chose to spend), so this only removes the credit. */
+function reverseWizardFreeIncome() {
+  if (!WIZARD || !WIZARD.incomeApplied || !WIZARD.creditedIncome) return;
+  const ci = WIZARD.creditedIncome;
+  const wb = (typeof loadWarband === 'function') ? loadWarband(ci.warbandId) : null;
+  if (!wb) return;
+  if (!wb.strongbox || typeof wb.strongbox !== 'object') wb.strongbox = { ducados: 0, glory: 0 };
+  wb.strongbox.ducados -= (ci.ducados || 0);
+  wb.strongbox.glory   -= (ci.glory   || 0);
+  WIZARD.incomeApplied = false;
+  WIZARD.creditedIncome = null;
+  if (typeof persistWarband === 'function') persistWarband(wb);
 }
 function collectWizardQuartermaster() { return true; }
 
@@ -31957,11 +31985,14 @@ document.getElementById('wizard-prev').addEventListener('click', () => {
 });
 document.getElementById('wizard-cancel').addEventListener('click', () => {
   if (!WIZARD) return;
+  const creditedNote = WIZARD.incomeApplied
+    ? ' Los ingresos ya cobrados al strongbox se revertirán (las compras hechas se mantienen).'
+    : '';
   confirmModal({
     title: 'Cancelar registro',
-    message: 'Se perderán los datos introducidos en este registro de batalla. ¿Continuar?',
+    message: 'Se perderán los datos introducidos en este registro de batalla.' + creditedNote + ' ¿Continuar?',
     confirmText: 'Cancelar batalla',
-    onConfirm: closeWizard,
+    onConfirm: () => { reverseWizardFreeIncome(); closeWizard(); },
   });
 });
 // Fase 4.1 — Skip button: advance the wizard without invoking the

@@ -23,12 +23,16 @@ const TMP = path.join(require('os').tmpdir(), 'warband_forge_expl_loot.js');
 const moduleCode = js.slice(0, bootIdx) + `
 module.exports = {
   wizardBattleToFreeBattle, addFreeBattle, startLiveFreeBattle, SCENARIOS_CATALOG,
+  creditWizardFreeIncome, reverseWizardFreeIncome,
+  newWarband, persistWarband, loadWarband,
+  setWizard: (w) => { WIZARD = w; },
+  getWizard: () => (typeof WIZARD !== 'undefined' ? WIZARD : null),
+  getStrongbox: (id) => { const wb = loadWarband(id); return wb ? wb.strongbox : null; },
 };
 `;
 const stub = `
 const localStorage = { _d: {}, getItem(k){return this._d[k]||null;}, setItem(k,v){this._d[k]=String(v);}, removeItem(k){delete this._d[k];}, clear(){this._d={};} };
 function alert(){}
-function persistWarband(){}
 function fakeEl(){ return { style:{}, classList:{add(){},remove(){},toggle(){},contains(){return false;}}, addEventListener(){}, appendChild(){}, querySelectorAll(){return []; }, querySelector(){return null;}, dataset:{}, innerHTML:'', textContent:'' }; }
 const window = { addEventListener(){}, matchMedia(){return {matches:false,addEventListener(){}};}, requestAnimationFrame(){return 0;} };
 const document = { addEventListener(){}, querySelectorAll(){return []; }, querySelector(){return fakeEl();}, getElementById(){return fakeEl();}, createElement(){return fakeEl();}, body:fakeEl(), documentElement:fakeEl() };
@@ -36,7 +40,9 @@ const document = { addEventListener(){}, querySelectorAll(){return []; }, queryS
 fs.writeFileSync(TMP, stub + moduleCode);
 
 const lib = require(TMP);
-const { wizardBattleToFreeBattle, addFreeBattle, startLiveFreeBattle, SCENARIOS_CATALOG } = lib;
+const { wizardBattleToFreeBattle, addFreeBattle, startLiveFreeBattle, SCENARIOS_CATALOG,
+        creditWizardFreeIncome, reverseWizardFreeIncome, newWarband, persistWarband,
+        loadWarband, setWizard, getStrongbox } = lib;
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
@@ -89,6 +95,44 @@ group('Group 3: addFreeBattle skips credit when already applied', () => {
   ok(wb.strongbox.ducados === 120, 'strongbox unchanged (no double-credit)');
   ok(wb.strongbox.glory === 3, 'glory unchanged');
   ok(wb.freeBattles.length === 1, 'battle still appended');
+});
+
+/* ------------------------------------------------------------------ */
+group('Group 4: creditWizardFreeIncome auto-credits the strongbox', () => {
+  const wb = newWarband('iron-sultanate');
+  wb.id = 'wb_qm';
+  wb.models = [{ uid:'m1', baseProgression:{ xp:0, promotedToElite:true } }];
+  wb.strongbox = { ducados: 0, glory: 0 };
+  persistWarband(wb);
+
+  const lfb = startLiveFreeBattle({ id:'wb_qm' }, { scenarioId: FIRST });
+  setWizard({
+    context:'free', lfb, incomeApplied:false,
+    battle:{ id:'b', scenario: lfb.scenarioId,
+      participants:[{ warbandId:'wb_qm', result:'win', ducatsEarned:0, gloryEarned:0,
+        modelOutcomes:[{ modelUid:'m1', participated:true, outOfAction:false, feats:1 }] }],
+      discoveries:[{ warbandId:'wb_qm', rollTotal:15, tableName:'common',
+        result:{ kind:'pillaged', entry:null, lootDucats:150, reason:'no-entry' } }],
+    },
+  });
+  const credited = creditWizardFreeIncome();
+  ok(credited.ducados === 150 && credited.glory === 1, 'credited 150👑 + 1☼');
+  const sb = getStrongbox('wb_qm');
+  ok(sb.ducados === 150 && sb.glory === 1, 'strongbox reflects 150/1');
+
+  // Idempotent — calling again does nothing (incomeApplied is set).
+  const again = creditWizardFreeIncome();
+  ok(again.ducados === 0 && again.glory === 0, 'second credit is a no-op');
+  ok(getStrongbox('wb_qm').ducados === 150, 'strongbox unchanged on re-credit');
+});
+
+group('Group 5: reverseWizardFreeIncome undoes the credit on cancel', () => {
+  reverseWizardFreeIncome();
+  const sb = getStrongbox('wb_qm');
+  ok(sb.ducados === 0 && sb.glory === 0, 'strongbox back to 0 after reverse');
+  // Reversing again is a no-op (incomeApplied cleared).
+  reverseWizardFreeIncome();
+  ok(getStrongbox('wb_qm').ducados === 0, 'second reverse is a no-op');
 });
 
 console.log(`\n${pass} passed · ${fail} failed`);
