@@ -31760,9 +31760,9 @@ function renderWizardQuartermaster(body) {
         <button class="btn btn-primary" type="button" data-open-free-qm-wid="${row.warbandId}">
           🛒 ${credited ? 'Seguir gastando' : 'Cobrar y gastar ahora'}
         </button>
-        <div style="margin-top:0.4rem;font-size:0.78rem;color:var(--parchment-dim);">
+        <div style="margin-top:0.4rem;font-size:0.78rem;color:${credited ? 'var(--gold)' : 'var(--parchment-dim)'};">
           ${credited
-            ? 'Ingresos ya acreditados al strongbox. Puedes seguir comprando o avanzar.'
+            ? '⚠ Ingresos ya acreditados al strongbox. El importe SE CONSERVA aunque retrocedas y cambies la Exploración (no se recalcula). Puedes seguir comprando o avanzar.'
             : 'Acredita los ingresos de esta batalla al strongbox de la banda y abre el Quartermaster para gastarlos de inmediato. Si no, se aplican al guardar.'}
         </div>
       </div>`;
@@ -31938,11 +31938,22 @@ function saveFreeBattleFromWizard() {
 /* ----- Wizard nav handlers ----- */
 document.getElementById('wizard-prev').addEventListener('click', () => {
   if (!WIZARD) return;
-  if (WIZARD.step > 0) {
-    WIZARD.step--;
-    WIZARD.modelSlideIdx = 0;  // reset slide pagination
-    renderWizardStep();
+  if (WIZARD.step <= 0) return;
+  // Warn once when stepping back after the income was already credited at
+  // the QM step: the strongbox keeps that amount — it is NOT recomputed if
+  // the Exploration result changes.
+  const curId = WIZARD.steps[WIZARD.step] && WIZARD.steps[WIZARD.step].id;
+  if (WIZARD.incomeApplied && !WIZARD._incomeBackWarned &&
+      (curId === 'quartermaster' || curId === 'resumen')) {
+    WIZARD._incomeBackWarned = true;
+    if (!confirm('Ya cobraste los ingresos de esta batalla al strongbox. Si retrocedes y cambias la Exploración, el importe ya acreditado SE CONSERVA (no se recalcula). ¿Retroceder igualmente?')) {
+      WIZARD._incomeBackWarned = false;
+      return;
+    }
   }
+  WIZARD.step--;
+  WIZARD.modelSlideIdx = 0;  // reset slide pagination
+  renderWizardStep();
 });
 document.getElementById('wizard-cancel').addEventListener('click', () => {
   if (!WIZARD) return;
