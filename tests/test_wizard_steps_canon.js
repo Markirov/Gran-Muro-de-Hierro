@@ -63,8 +63,10 @@ function group(name, fn) { console.log('\n' + name); fn(); }
 const mockCampaign = { id:'cmp_t', name:'T', warbandIds:['wb_x'], battles:[], rewardDefaults:{win:{ducados:50,glory:1},draw:{ducados:30,glory:0},loss:{ducados:20,glory:0}} };
 const FIRST_SCENARIO = Object.keys(SCENARIOS_CATALOG)[0];
 
-const CAMPAIGN_CANON = ['setup','resultados','modelos','trauma','promotions-xp','exploration','quartermaster','resumen'];
-const FREE_CANON     = ['resultados','modelos','trauma','promotions-xp','exploration','quartermaster','resumen'];
+// "resultados" eliminado: el dinero viene del Looting de Exploración y la
+// gloria de los Glorious Deeds; no hay recompensa fija por resultado.
+const CAMPAIGN_CANON = ['setup','modelos','trauma','promotions-xp','exploration','quartermaster','resumen'];
+const FREE_CANON     = ['modelos','trauma','promotions-xp','exploration','quartermaster','resumen'];
 
 /* ------------------------------------------------------------------ */
 group('Group 1: WIZARD.steps shape', () => {

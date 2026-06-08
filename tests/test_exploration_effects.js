@@ -126,7 +126,9 @@ group('Group 6: wizardBattleToFreeBattle — applies ducatsBonus to fb.loot', ()
     },
   };
   const fb = wizardBattleToFreeBattle(W);
-  ok(fb.loot === 50 + 30, `fb.loot = ducatsEarned + ducatsBonus = 80 (got ${fb.loot})`);
+  // Canon p.113 — loot = base ducats (50) + exploration Looting (lootDucats=80)
+  // + add-ducats option bonus (30) = 160.
+  ok(fb.loot === 50 + 80 + 30, `fb.loot = base + Looting + ducatsBonus = 160 (got ${fb.loot})`);
 });
 
 group('Group 7: wizardBattleToFreeBattle — captures pendingEffect', () => {
@@ -145,7 +147,9 @@ group('Group 7: wizardBattleToFreeBattle — captures pendingEffect', () => {
     },
   };
   const fb = wizardBattleToFreeBattle(W);
-  ok(fb.loot === 50, 'fb.loot unchanged (non-ducats effect)');
+  // Non-ducats option: no add-ducats bonus, but the exploration Looting
+  // (lootDucats=90) is still credited on top of the base ducats (50) = 140.
+  ok(fb.loot === 50 + 90, 'fb.loot = base + Looting (non-ducats option adds no bonus)');
   ok(fb.discoveries[0].pendingEffect && fb.discoveries[0].pendingEffect.kind === 'grant-xp-to-elites',
      'pendingEffect serialized on the discovery');
 });

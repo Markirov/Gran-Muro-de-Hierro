@@ -94,7 +94,9 @@ group('Group 1: wizardBattleToFreeBattle — basic conversion', () => {
   ok(fb.opponent === 'Heretics', 'opponent from lfb');
   ok(fb.dicePicked === 4, 'dicePicked from lfb');
   ok(fb.result === 'win', 'result from participant');
-  ok(fb.loot === 50, 'loot = ducatsEarned');
+  // Canon p.113 — loot = base ducats (50) + exploration Looting (rollTotal×10
+  // = 100 from the discovery) = 150.
+  ok(fb.loot === 150, 'loot = base + exploration Looting');
   // Canon p.97 — base glory (1) + 1 Glorious Deed (m1 feats:1) = 2.
   ok(fb.glory === 2, 'glory = base reward + deeds');
   ok(typeof fb.completedAt === 'string' && fb.completedAt.length > 10, 'completedAt set');

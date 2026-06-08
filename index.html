@@ -1319,10 +1319,8 @@ body[data-side="fallen"] .roster-prog-summary {
   padding: 1rem;
 }
 .modal-backdrop.show { display: flex; }
-/* Advancement modal can be opened nested on top of the wizard modal.
-   Bump its z-index so it sits above instead of behind (same base z-index
-   would let the later-in-DOM wizard paint over it). */
-#modal-advancement { z-index: 9200; }
+/* Nested modals are stacked dynamically by openModal()/closeModal() via an
+   inline z-index, so a picker launched from the wizard always sits on top. */
 
 /* FIX visibility — paneles por modo + sub-tab usando body classes.
  * Prioridad: !important para ganar a manipulación legacy de style.display. */
@@ -15796,15 +15794,20 @@ function createFreeBattle(opts) {
  * persistWarband so the same path that handles other warband mutations
  * also handles free battles — no separate index, no separate storage key.
  */
-function addFreeBattle(wb, fb) {
+function addFreeBattle(wb, fb, opts) {
   if (!wb) return;
   if (!Array.isArray(wb.freeBattles)) wb.freeBattles = [];
   wb.freeBattles.push(fb);
   // BACKLOG P1/3 — fold the battle's loot/glory into the warband's
   // central strongbox so the QM "Lista" can spend in free context.
+  // opts.skipStrongboxCredit: the wizard QM step already credited the
+  // income (so the player could spend it during the battle wizard) —
+  // skip here to avoid double-counting.
   if (!wb.strongbox || typeof wb.strongbox !== 'object') wb.strongbox = { ducados: 0, glory: 0 };
-  if (fb && typeof fb.loot  === 'number') wb.strongbox.ducados += fb.loot;
-  if (fb && typeof fb.glory === 'number') wb.strongbox.glory   += fb.glory;
+  if (!(opts && opts.skipStrongboxCredit)) {
+    if (fb && typeof fb.loot  === 'number') wb.strongbox.ducados += fb.loot;
+    if (fb && typeof fb.glory === 'number') wb.strongbox.glory   += fb.glory;
+  }
   if (typeof persistWarband === 'function') {
     persistWarband(wb);
   }
@@ -19731,21 +19734,42 @@ function addUnitToRoster(unit, isMerc=false) {
    MODALS
    ====================================================================== */
 
+// Modal stacking. All .modal-backdrop share the same base z-index, so a
+// modal opened on top of another (e.g. a picker launched from the battle
+// wizard) would render BEHIND it based on DOM order and be unclickable.
+// When opening a modal while others are already shown, bump its z-index
+// above them so nested modals are always selectable.
+let _modalZTop = 200;
 function openModal(id) {
-  document.getElementById(id).classList.add('show');
+  const el = document.getElementById(id);
+  if (!el) return;
+  const anyOpen = document.querySelectorAll('.modal-backdrop.show').length > 0;
+  if (anyOpen) {
+    _modalZTop += 10;
+    el.style.zIndex = String(_modalZTop);
+  }
+  el.classList.add('show');
 }
 function closeModal(id) {
-  document.getElementById(id).classList.remove('show');
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('show');
+  el.style.zIndex = '';
+  // Reset the stacking counter once everything is closed.
+  if (document.querySelectorAll('.modal-backdrop.show').length === 0) {
+    _modalZTop = 200;
+  }
 }
 document.querySelectorAll('[data-close]').forEach(b => {
   b.addEventListener('click', () => {
     const m = b.closest('.modal-backdrop');
-    if (m) m.classList.remove('show');
+    if (m && m.id) closeModal(m.id);
+    else if (m) m.classList.remove('show');
   });
 });
 document.querySelectorAll('.modal-backdrop').forEach(b => {
   b.addEventListener('click', (e) => {
-    if (e.target === b) b.classList.remove('show');
+    if (e.target === b) { if (b.id) closeModal(b.id); else b.classList.remove('show'); }
   });
 });
 
@@ -26456,8 +26480,14 @@ function campaignBalance(c, wid) {
   for (const battle of (c.battles || [])) {
     const part = (battle.participants || []).find(p => p.warbandId === wid);
     if (!part) continue;
+    // Base reward (legacy battles may still carry it) + canon income:
+    // Exploration Looting (ducats) and Glorious Deeds (glory). Deeds also
+    // feed XP/Promotion elsewhere; here they fund the warband's treasury.
     earnD += part.ducatsEarned || 0;
+    earnD += battleExplorationLoot(battle, wid);
     earnG += part.gloryEarned  || 0;
+    earnG += participantDeedCount(part);
+    earnG += gloryHoundBonus(wb, part.modelOutcomes || []);
   }
 
   let refD = 0, refG = 0;
@@ -27505,6 +27535,19 @@ function participantDeedCount(part) {
   return n;
 }
 
+/* Exploration Looting credited by a battle to a given warband: the
+ * discovery's lootDucats (rollTotal × 10, canon p.113). Used by both the
+ * free path (fb.loot) and campaignBalance so removing the non-canon
+ * win/draw/loss reward doesn't leave campaign bands without income. */
+function battleExplorationLoot(battle, wid) {
+  if (!battle || !Array.isArray(battle.discoveries)) return 0;
+  const disc = battle.discoveries.find(d => d && d.warbandId === wid);
+  if (disc && disc.result && typeof disc.result.lootDucats === 'number') {
+    return disc.result.lootDucats;
+  }
+  return 0;
+}
+
 /* Recompute each model's `feats` from the scenario deed assignments
  * stored in part.deeds ({ deedName: modelUid }). One Glorious Deed per
  * model = +1 feat. This is only invoked when the scenario deed UI is
@@ -27742,6 +27785,16 @@ function wizardBattleToFreeBattle(w, opts) {
   fb.completedAt = new Date().toISOString();
   fb.loot  = typeof part.ducatsEarned === 'number' ? part.ducatsEarned : 0;
   fb.glory = typeof part.gloryEarned  === 'number' ? part.gloryEarned  : 0;
+  // Canon p.113 — Looting: cada Exploration Roll da rollTotal × 10 👑
+  // (lootDucats), la fuente principal de dinero. Antes se mostraba pero
+  // NO se acreditaba al strongbox; ahora se suma al loot de la batalla.
+  {
+    const disc0 = (Array.isArray(w.battle.discoveries) ? w.battle.discoveries : [])
+                    .find(d => d && d.warbandId === part.warbandId);
+    if (disc0 && disc0.result && typeof disc0.result.lootDucats === 'number') {
+      fb.loot += disc0.result.lootDucats;
+    }
+  }
   // Fase 5.3 — add-ducats effects from chosen exploration options pile
   // onto the battle loot. Other effects land on the discovery as
   // pendingEffect (see the discoveries loop below).
@@ -30553,15 +30606,16 @@ function startWizard(opts) {
     }
   }
 
-  // Canon step list. Order matches Fase 4 spec in CLAUDE.md:
-  // Setup (campaign-only context capture) → Resultados → Modelos →
-  // Trauma → Promotions/XP → Exploration → Quartermaster → Resumen.
-  // Modelos and Resultados still come before Trauma because Trauma rolls
-  // operate on OoA models marked in Modelos. In Fase 4.3+ the body
-  // contents may be merged further, but the surface ids stay stable.
+  // Step list. El paso "Resultados" (ducados/glory manuales) se eliminó:
+  // canon, el dinero proviene del Looting de Exploración (rollTotal×10) y
+  // la gloria de los Glorious Deeds — no hay recompensa fija por victoria.
+  // El resultado win/draw/loss (que habilita el re-roll de Exploración si
+  // ganaste) se captura ahora en el paso Exploration. Los Glorious Deeds
+  // del escenario se asignan en el paso Modelos.
+  // Orden: Setup → Modelos → Trauma → Promotions/XP → Exploration →
+  // Quartermaster → Resumen.
   const ALL_STEPS = [
     { id: 'setup',         label: 'Setup' },
-    { id: 'resultados',    label: 'Resultados' },
     { id: 'modelos',       label: 'Modelos' },
     { id: 'trauma',        label: 'Trauma' },
     { id: 'promotions-xp', label: 'Promotions / XP' },
@@ -30647,7 +30701,6 @@ function renderWizardStep() {
   if (stepObj) {
     switch (stepObj.id) {
       case 'setup':          renderWizardSetup(body); break;
-      case 'resultados':     renderWizardResults(body); break;
       case 'modelos':        renderWizardModels(body); break;
       case 'trauma':         renderWizardInjuries(body); break;
       case 'promotions-xp':  renderWizardAdvancements(body); break;
@@ -30731,13 +30784,13 @@ function collectWizardSetup() {
     const e = existing.find(p => p.warbandId === wid);
     if (e) return e;
     const wb = loadWarband(wid);
-    const c = STATE.currentCampaign;
-    const def = (c && c.rewardDefaults && c.rewardDefaults.draw) || { ducados:30, glory:0 };
+    // Canon: sin recompensa fija por resultado. El dinero proviene del
+    // Looting de Exploración y la gloria de los Glorious Deeds.
     return {
       warbandId: wid,
       result: 'draw',
-      gloryEarned: def.glory,
-      ducatsEarned: def.ducados,
+      gloryEarned: 0,
+      ducatsEarned: 0,
       modelOutcomes: wb.models.map(m => ({
         modelUid: m.uid,
         participated: true,
@@ -30757,132 +30810,97 @@ function collectWizardSetup() {
 }
 
 /* --- Step 1: Per-warband result + ducats + glory --- */
-function renderWizardResults(body) {
-  const c = STATE.currentCampaign;
-  const defaults = (c && c.rewardDefaults) || { win:{ducados:50,glory:1}, draw:{ducados:30,glory:0}, loss:{ducados:20,glory:0} };
-  body.innerHTML = `<h4>Resultado, Ducados y Glory</h4>
-    <p style="font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);">
-      Defaults sugeridos para ${c ? c.name : '?'}:
-      🏆 ${defaults.win.ducados}👑 / ${defaults.win.glory}☼ ·
-      ⚖ ${defaults.draw.ducados}👑 / ${defaults.draw.glory}☼ ·
-      💀 ${defaults.loss.ducados}👑 / ${defaults.loss.glory}☼
-      <button type="button" class="btn btn-icon" id="btn-edit-rewards" style="margin-left:0.5rem;font-size:0.6rem;">⚙ Editar</button>
-    </p>`;
-  // Scenario-specific Glorious Deeds (canon p.97). When the battle's
-  // scenario maps to a catalog entry with deeds, surface them as a global
-  // list per participant: each deed assigned to a model contributes
-  // +1 ☼ (warband), +1 D6 to the Promotion Pool, and (if ELITE) +1 XP.
-  const scenarioEntry = SCENARIOS_CATALOG[WIZARD.battle.scenario] || null;
-  const scenarioDeeds = (scenarioEntry && Array.isArray(scenarioEntry.deeds)) ? scenarioEntry.deeds : [];
-
+/* Win/Draw/Loss selector per participant. Canon: el resultado no otorga
+ * dinero (eso es el Looting de Exploración) — solo decide si ganaste, lo
+ * que habilita un re-roll extra de Exploración (p.112) y alimenta el
+ * récord W/L/D de campaña. Se muestra en el paso Exploration. */
+function appendWizardResultSelector(body) {
+  const wrap = el('div', 'detail-section');
+  let html = `<div class="detail-label">Resultado de la batalla</div>
+    <div style="font-size:0.68rem;color:var(--parchment-dim);margin-bottom:0.4rem;">
+      No da dinero (el dinero viene del Looting de abajo). Ganar habilita un re-roll extra de Exploración.
+    </div>`;
   for (const part of WIZARD.battle.participants) {
-    const wb = loadWarband(part.warbandId);
-    if (!wb) continue;
-    const f = DATA.factions[wb.factionId];
-    const deedGlory = participantDeedCount(part);
-    if (!part.deeds || typeof part.deeds !== 'object') part.deeds = {};
-    const block = el('div', 'detail-section');
-    let inner = `
-      <div class="detail-label">${wb.name||'?'} <span style="color:var(--parchment-dim);font-weight:400;">(${f?f.shortName:'?'})</span></div>
-      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+    const wb = (typeof loadWarband === 'function') ? loadWarband(part.warbandId) : null;
+    html += `<div style="margin-top:0.4rem;">
+      <div style="font-size:0.8rem;margin-bottom:0.25rem;">${wb && wb.name ? wb.name : part.warbandId}</div>
+      <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
         <button type="button" class="btn ${part.result==='win'?'btn-primary':''}"  data-result-wid="${part.warbandId}" data-result="win">🏆 Victoria</button>
         <button type="button" class="btn ${part.result==='draw'?'btn-primary':''}" data-result-wid="${part.warbandId}" data-result="draw">⚖ Empate</button>
         <button type="button" class="btn ${part.result==='loss'?'btn-danger':''}"  data-result-wid="${part.warbandId}" data-result="loss">💀 Derrota</button>
       </div>
-      <div style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;margin-top:0.5rem;">
-        <label class="outcome-checkbox" style="border:none;padding:0;">Ducados (👑):
-          <input type="number" min="0" max="999" data-ducats-wid="${part.warbandId}" value="${part.ducatsEarned||0}" class="outcome-input" style="width:70px;" />
-        </label>
-        <label class="outcome-checkbox" style="border:none;padding:0;">Glory base (☼):
-          <input type="number" min="0" max="50" data-glory-wid="${part.warbandId}" value="${part.gloryEarned||0}" class="outcome-input" style="width:60px;" />
-        </label>
-        <button type="button" class="btn btn-icon" data-apply-default-wid="${part.warbandId}" title="Aplicar default según resultado">↻ default</button>
-      </div>`;
+    </div>`;
+  }
+  wrap.innerHTML = html;
+  body.appendChild(wrap);
+  body.querySelectorAll('[data-result-wid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const part = WIZARD.battle.participants.find(p => p.warbandId === btn.dataset.resultWid);
+      if (part) part.result = btn.dataset.result;
+      renderWizardStep();
+    });
+  });
+}
 
-    if (scenarioDeeds.length) {
-      const models = wb.models || [];
-      inner += `
-        <div class="wiz-deeds" style="margin-top:0.6rem;border-top:1px solid var(--border);padding-top:0.5rem;">
-          <div style="font-weight:700;color:var(--gold);font-size:0.82rem;">🏆 Glorious Deeds — ${scenarioEntry.name}</div>
-          <div style="font-size:0.68rem;color:var(--parchment-dim);margin-bottom:0.4rem;">
-            Cada Deed cumplido: +1 ☼ a la banda · +1 dado al Promotion Pool · +1 XP si lo hizo un ELITE. Asigna el modelo que lo cumplió.
-          </div>
-          ${scenarioDeeds.map((d, di) => {
-            const assigned = part.deeds[d.name] || '';
-            return `
-              <div style="display:flex;gap:0.5rem;align-items:flex-start;margin-top:0.3rem;">
-                <select data-deed-wid="${part.warbandId}" data-deed-name="${(d.name||'').replace(/"/g,'&quot;')}" class="outcome-input" style="min-width:150px;">
-                  <option value="">— no cumplido —</option>
-                  ${models.map(m => {
-                    const u = getUnit(wb.factionId, m.unitId);
-                    const nm = m.customName || (u ? u.name : m.uid);
-                    return `<option value="${m.uid}" ${assigned===m.uid?'selected':''}>${nm}</option>`;
-                  }).join('')}
-                </select>
-                <div style="font-size:0.72rem;">
-                  <strong>${d.name}</strong>${d.awardsLeaderXP ? ' <span style="color:var(--gold);" title="Suele cumplirlo el Leader">★</span>' : ''}
-                  <div style="color:var(--parchment-dim);">${d.desc||''}</div>
-                </div>
-              </div>`;
-          }).join('')}
-          <div style="margin-top:0.5rem;font-size:0.8rem;">
-            Glory total: <strong style="color:var(--gold);">${(part.gloryEarned||0)} base + ${deedGlory} deeds = ${(part.gloryEarned||0) + deedGlory} ☼</strong>
-          </div>
-        </div>`;
-    }
-    block.innerHTML = inner;
+/* Scenario-specific Glorious Deeds (canon p.97). Una lista global por
+ * participante: cada deed asignado a un modelo contribuye +1 ☼ a la banda,
+ * +1 D6 al Promotion Pool, y +1 XP si lo hizo un ELITE. Se asigna en el
+ * paso Modelos (qué hizo cada modelo). Solo aparece si el escenario tiene
+ * Glorious Deeds en SCENARIOS_CATALOG. */
+function appendWizardScenarioDeeds(body) {
+  const scenarioEntry = SCENARIOS_CATALOG[WIZARD.battle.scenario] || null;
+  const scenarioDeeds = (scenarioEntry && Array.isArray(scenarioEntry.deeds)) ? scenarioEntry.deeds : [];
+  if (!scenarioDeeds.length) return;
+
+  for (const part of WIZARD.battle.participants) {
+    const wb = loadWarband(part.warbandId);
+    if (!wb) continue;
+    if (!part.deeds || typeof part.deeds !== 'object') part.deeds = {};
+    const deedGlory = participantDeedCount(part);
+    const models = wb.models || [];
+    const block = el('div', 'detail-section');
+    block.innerHTML = `
+      <div class="wiz-deeds">
+        <div style="font-weight:700;color:var(--gold);font-size:0.82rem;">🏆 Glorious Deeds — ${scenarioEntry.name} <span style="font-weight:400;color:var(--parchment-dim);">(${wb.name||'?'})</span></div>
+        <div style="font-size:0.68rem;color:var(--parchment-dim);margin-bottom:0.4rem;">
+          Cada Deed cumplido: +1 ☼ a la banda · +1 dado al Promotion Pool · +1 XP si lo hizo un ELITE. Asigna el modelo que lo cumplió.
+        </div>
+        ${scenarioDeeds.map((d) => {
+          const assigned = part.deeds[d.name] || '';
+          return `
+            <div style="display:flex;gap:0.5rem;align-items:flex-start;margin-top:0.3rem;">
+              <select data-deed-wid="${part.warbandId}" data-deed-name="${(d.name||'').replace(/"/g,'&quot;')}" class="outcome-input" style="min-width:150px;">
+                <option value="">— no cumplido —</option>
+                ${models.map(m => {
+                  const u = getUnit(wb.factionId, m.unitId);
+                  const nm = m.customName || (u ? u.name : m.uid);
+                  return `<option value="${m.uid}" ${assigned===m.uid?'selected':''}>${nm}</option>`;
+                }).join('')}
+              </select>
+              <div style="font-size:0.72rem;">
+                <strong>${d.name}</strong>${d.awardsLeaderXP ? ' <span style="color:var(--gold);" title="Suele cumplirlo el Leader">★</span>' : ''}
+                <div style="color:var(--parchment-dim);">${d.desc||''}</div>
+              </div>
+            </div>`;
+        }).join('')}
+        <div style="margin-top:0.5rem;font-size:0.8rem;">
+          Glory por Deeds: <strong style="color:var(--gold);">+${deedGlory} ☼</strong>
+        </div>
+      </div>`;
     body.appendChild(block);
   }
 
-  // Deed assignment → rebuild part.deeds + recompute each model's feats.
   body.querySelectorAll('[data-deed-wid]').forEach(sel => {
     sel.addEventListener('change', () => {
-      const wid = sel.dataset.deedWid;
-      const deedName = sel.dataset.deedName;
-      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
+      const part = WIZARD.battle.participants.find(p => p.warbandId === sel.dataset.deedWid);
       if (!part) return;
       if (!part.deeds || typeof part.deeds !== 'object') part.deeds = {};
-      if (sel.value) part.deeds[deedName] = sel.value;
-      else delete part.deeds[deedName];
+      if (sel.value) part.deeds[sel.dataset.deedName] = sel.value;
+      else delete part.deeds[sel.dataset.deedName];
       recomputeFeatsFromDeeds(part);
       renderWizardStep();
     });
   });
-  body.querySelectorAll('[data-result-wid]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const wid = btn.dataset.resultWid;
-      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
-      const wasResult = part.result;
-      part.result = btn.dataset.result;
-      // If user hasn't customised earnings (still 0 or matches old default), apply new default
-      const oldDef = defaults[wasResult] || { ducados:0, glory:0 };
-      const newDef = defaults[part.result] || { ducados:0, glory:0 };
-      if ((part.ducatsEarned || 0) === oldDef.ducados) part.ducatsEarned = newDef.ducados;
-      if ((part.gloryEarned  || 0) === oldDef.glory)   part.gloryEarned  = newDef.glory;
-      renderWizardStep();
-    });
-  });
-  body.querySelectorAll('[data-apply-default-wid]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const wid = btn.dataset.applyDefaultWid;
-      const part = WIZARD.battle.participants.find(p => p.warbandId === wid);
-      const def = defaults[part.result] || { ducados:0, glory:0 };
-      part.ducatsEarned = def.ducados;
-      part.gloryEarned  = def.glory;
-      renderWizardStep();
-    });
-  });
-  const editBtn = document.getElementById('btn-edit-rewards');
-  if (editBtn) editBtn.addEventListener('click', () => openRewardDefaultsModal());
-}
-function collectWizardResults() {
-  for (const part of WIZARD.battle.participants) {
-    const dInp = document.querySelector(`[data-ducats-wid="${part.warbandId}"]`);
-    const gInp = document.querySelector(`[data-glory-wid="${part.warbandId}"]`);
-    if (dInp) part.ducatsEarned = parseInt(dInp.value, 10) || 0;
-    if (gInp) part.gloryEarned  = parseInt(gInp.value,  10) || 0;
-  }
-  return true;
 }
 
 /* --- Step 2: Per-model outcomes --- */
@@ -30966,6 +30984,8 @@ function renderWizardModels(body) {
       if (field === 'ooa' || field === 'participated') renderWizardStep();
     });
   });
+  // Scenario Glorious Deeds (global list + asignar modelo). Drives feats.
+  appendWizardScenarioDeeds(body);
 }
 
 /**
@@ -31085,6 +31105,8 @@ function renderWizardModelsMobile(body, rows) {
       renderWizardModels(body);
     }
   });
+  // Scenario Glorious Deeds below the per-model slide (drives feats).
+  appendWizardScenarioDeeds(body);
 }
 function collectWizardModels() { return true; /* all bound live */ }
 
@@ -31373,10 +31395,12 @@ function saveBattleFromWizard() {
 function renderWizardExploration(body) {
   body.innerHTML = `<h4>Exploration</h4>
     <p style="font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);">
-      Tira los dados de Exploration y mira el resultado en la tabla canon.
-      Las opciones de cada descubrimiento (y los efectos sobre la banda) se
-      aplican manualmente — el modal interactivo llega en Fase 5.
+      Tira los dados de Exploration: el Looting da <strong>rollTotal × 10 👑</strong>
+      (la fuente canon de dinero). Marca el resultado de la batalla — si ganaste
+      tienes un re-roll extra.
     </p>`;
+  // Win/Draw/Loss — afecta al re-roll extra (canon p.112) y al récord de campaña.
+  appendWizardResultSelector(body);
   const ctxs = getWizardExplorationContexts(WIZARD);
   if (!ctxs.length) {
     body.innerHTML += `<div class="notice info" style="margin-top:1rem;">
@@ -31731,9 +31755,16 @@ function renderWizardQuartermaster(body) {
         ${row.gloryEarned ? ` <strong>+ ${row.gloryEarned} ☼</strong>` : ''}
       </div>`;
     if (isFree) {
-      inner += `<div style="margin-top:0.5rem;font-size:0.8rem;color:var(--parchment-dim);">
-        Los ingresos de partida libre se aplican al strongbox de la banda
-        al guardar la batalla en el paso <em>Resumen</em> (Fase 4.7).
+      const credited = !!WIZARD.incomeApplied;
+      inner += `<div style="margin-top:0.5rem;">
+        <button class="btn btn-primary" type="button" data-open-free-qm-wid="${row.warbandId}">
+          🛒 ${credited ? 'Seguir gastando' : 'Cobrar y gastar ahora'}
+        </button>
+        <div style="margin-top:0.4rem;font-size:0.78rem;color:var(--parchment-dim);">
+          ${credited
+            ? 'Ingresos ya acreditados al strongbox. Puedes seguir comprando o avanzar.'
+            : 'Acredita los ingresos de esta batalla al strongbox de la banda y abre el Quartermaster para gastarlos de inmediato. Si no, se aplican al guardar.'}
+        </div>
       </div>`;
     } else {
       inner += `<div style="margin-top:0.5rem;">
@@ -31747,7 +31778,7 @@ function renderWizardQuartermaster(body) {
     body.appendChild(card);
   }
 
-  // Wire campaign-context "Open QM" buttons. Free context has no buttons.
+  // Wire campaign-context "Open QM" buttons.
   if (!isFree) {
     body.querySelectorAll('[data-open-qm-wid]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -31756,6 +31787,26 @@ function renderWizardQuartermaster(body) {
         const wb = loadWarband(wid);
         if (!c || !wb || typeof openQuartermaster !== 'function') return;
         openQuartermaster(c, wb);
+      });
+    });
+  } else {
+    // Free context: credit this battle's income to the strongbox NOW (once)
+    // so the player can spend the exploration loot immediately, then open
+    // the (free) Quartermaster. The save path won't re-credit.
+    body.querySelectorAll('[data-open-free-qm-wid]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const wid = btn.dataset.openFreeQmWid;
+        const wb = loadWarband(wid);
+        if (!wb || typeof openQuartermaster !== 'function') return;
+        if (!WIZARD.incomeApplied) {
+          const fb = wizardBattleToFreeBattle(WIZARD, { wb });
+          if (!wb.strongbox || typeof wb.strongbox !== 'object') wb.strongbox = { ducados: 0, glory: 0 };
+          wb.strongbox.ducados += (typeof fb.loot  === 'number' ? fb.loot  : 0);
+          wb.strongbox.glory   += (typeof fb.glory === 'number' ? fb.glory : 0);
+          WIZARD.incomeApplied = true;
+          if (typeof persistWarband === 'function') persistWarband(wb);
+        }
+        openQuartermaster(null, wb);
       });
     });
   }
@@ -31874,7 +31925,9 @@ function saveFreeBattleFromWizard() {
   }
   const fb = wizardBattleToFreeBattle(WIZARD, { wb });
   applyWizardOutcomesToWarband(wb, WIZARD, fb);
-  addFreeBattle(wb, fb);   // persistWarband happens inside addFreeBattle
+  // If the QM step already credited this battle's income to the strongbox
+  // (so the player could spend it during the wizard), don't credit again.
+  addFreeBattle(wb, fb, { skipStrongboxCredit: !!WIZARD.incomeApplied });
   clearLiveFreeBattle();
   closeWizard();
   if (typeof renderAll === 'function') renderAll();
@@ -31914,7 +31967,6 @@ document.getElementById('wizard-next').addEventListener('click', () => {
   if (!stepObj) return;
   switch (stepObj.id) {
     case 'setup':         ok = collectWizardSetup(); break;
-    case 'resultados':    ok = collectWizardResults(); break;
     case 'modelos':       ok = collectWizardModels(); break;
     case 'trauma':        ok = collectWizardInjuries(); break;
     case 'promotions-xp': ok = collectWizardAdvancements(); break;
