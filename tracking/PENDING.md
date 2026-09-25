@@ -7,7 +7,8 @@
 
 ## 🟡 Media Prioridad
 
-- [ ] **Huecos de datos canon vistos en el modo mesa** (Domain & Product Owner → verificar en PDF): (1) `Anqa Guard` (Companion, Silahdar de Caza2) no existe en la armería de Forge — ¿es el `Takwin Anqā Bird` u otra pieza? (2) `Jezzail` (Iron Sultanate) tiene `weaponKeywords: []` en la armería; confirmar en el PDF si tiene keywords base. (3) `Greatsword / Greataxe` sale sin keywords con la variante Iron Wall ("Greatsword sin HEAVY"): confirmar que no le queda ninguna. El Lead Developer corrige los datos tras la verificación.
+- [ ] **PDFs canon fuera de su sitio** (Marcos): `herramientas/pdfs-reglamento/` está vacío (solo `trench-crusade-tarjetas.pdf`); los PDFs del reglamento están en `E:\_DUPLICADOS_PDF_revisar\` con el prefijo `E__Drive_Trench Crusade_herramientas_pdfs-reglamento_` (parece una limpieza de duplicados). Devolverlos a `herramientas/pdfs-reglamento/` para que la regla D.5 apunte a un sitio real.
+- [ ] **Auditoría canon del resto de la armería** (Lead Developer, baja urgencia): esta sesión aparecieron 3 errores en piezas comunes (Trench Shield, Holy Icon Shield, Alchemist Armour). Pasar el resto de `DATA.factions[*].armoury` contra Rulebook + Warbands of TC con un script de comparación.
 - [ ] **Probar el modo mesa en partida real** (Marcos): usarlo en el Android durante 1-2 partidas y anotar aquí lo que falte o sobre. Ideas ya aparcadas en `IDEAS.md`.
 - [ ] **Validación física en mesa** (Domain & Product Owner / Marcos, no codeable): imprimir tarjetas y battletrackers de Cazadores del Muro y Herejes Infernales y jugar 2-3 partidas. Confirmar legibilidad, tamaño y encaje de imprenta antes de construir más encima. Hallazgos → aquí como tareas del Lead Developer.
 
@@ -20,6 +21,7 @@
 
 ## ✅ Completado
 
+- [x] **Huecos de datos canon vistos en el modo mesa** (Domain & Product Owner → verificar en PDF): (1) `Anqa Guard` (Companion, Silahdar de Caza2) no existe en la armería de Forge — ¿es el `Takwin Anqā Bird` u otra pieza? (2) `Jezzail` (Iron Sultanate) tiene `weaponKeywords: []` en la armería; confirmar en el PDF si tiene keywords base. (3) `Greatsword / Greataxe` sale sin keywords con la variante Iron Wall ("Greatsword sin HEAVY"): confirmar que no le queda ninguna. El Lead Developer corrige los datos tras la verificación. → **Cerrado 2026-09-25** con los PDFs canon: (1) es el `Anq Guard` de la armería Iron Wall (alias de nombre); (2) Jezzail sin keywords es correcto; (3) Great Sword/Axe tiene +1 INJURY DICE, CRITICAL, HEAVY — el fallo era de emparejado de nombre. Ver DONE.
 - [x] **Modo mesa: toda la información de reglas en la ficha** (petición de Marcos): bloques visibles Armas (keywords explicadas + restricciones), Equipo (keywords + habilidades que concede) y Habilidades (con descripción, sin repetir las del equipo). Sin inventar textos que no estén en los datos.
 - [x] **Modo mesa — ficha móvil por miniatura:** diseño en `tracking/plans/PLAN_2026-09-25_modo-mesa.md`, aprobado. Overlay a pantalla completa dentro de Forge, swipe entre miniaturas, estado de combate + activación por turno + efectos/usos, estado en `localStorage` sin tocar la banda.
 - [x] **Tarjetas PDF 4 por folio:** opción 2×2 (94,5×132 mm) además de la 3×3 actual; selector en el botón "🃏 Tarjetas PDF" que recuerda la última elección.

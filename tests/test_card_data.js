@@ -90,7 +90,7 @@ group('Group 3: EQUIPMENT_IMPLICIT_ABILITIES map', () => {
   ok(Array.isArray(EQUIPMENT_IMPLICIT_ABILITIES['Trench Shield']), 'Trench Shield in map');
   ok(EQUIPMENT_IMPLICIT_ABILITIES['Trench Shield'][0].name === 'Shield Combo', 'Shield Combo');
   ok(EQUIPMENT_IMPLICIT_ABILITIES['Binoculars'][0].name === 'Survey the Land', 'Survey the Land');
-  ok(EQUIPMENT_IMPLICIT_ABILITIES['Alchemist Armour'].length === 2, 'Alchemist Armour = 2 abilities');
+  ok(EQUIPMENT_IMPLICIT_ABILITIES['Alchemist Armour'].length === 3, 'Alchemist Armour = 3 abilities (NEGATE FIRE, NEGATE GAS, Protection From Harm — Warbands of TC)');
 });
 
 group('Group 4: getImplicitAbilities recorre equipment', () => {
@@ -100,7 +100,7 @@ group('Group 4: getImplicitAbilities recorre equipment', () => {
 
   const m2 = mkModel('Jabirean', [{name:'Alchemist Armour'}]);
   const a2 = getImplicitAbilities(m2);
-  ok(a2.length === 2, 'Alchemist Armour → 2 abilities');
+  ok(a2.length === 3, 'Alchemist Armour → 3 abilities');
   ok(a2.some(a => /FIRE/i.test(a.name)), 'incluye NEGATE FIRE');
   ok(a2.some(a => /GAS/i.test(a.name)), 'incluye NEGATE GAS');
 

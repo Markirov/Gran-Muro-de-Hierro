@@ -4348,6 +4348,7 @@ body.table-mode-open { overflow: hidden; }
 .tm-rules b { font-family: var(--font-mono); font-weight: normal; color: var(--parchment-bright); }
 .tm-rule-desc { color: var(--parchment); }
 .tm-ref-abilities > .tm-rules { padding-left: 16px; }
+.tm-ref-note { margin: 6px 0 0; font-size: 0.9rem; line-height: 1.35; }
 .tm-ref-empty { margin: 0; color: var(--parchment-dim); font-style: italic; }
 .tm-dots {
   flex: 0 0 auto;
@@ -5837,7 +5838,7 @@ const DATA = {
           { id:'heavy-ballistic-na',name:'Heavy Ballistic Shield',cost:15,currency:'👑', restriction:'Machine Armour only · Shield Combo',
             type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE','COVER'] },
           { id:'trench-shield-na',  name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         armour: [
           { id:'engineer-armour-na',name:'Engineer Body Armour', cost:45, currency:'👑', restriction:'Combat Engineer only',
@@ -6053,9 +6054,9 @@ const DATA = {
         ],
         shields: [
           { id:'holy-icon-tp',    name:'Holy Icon Shield',     cost:2,  currency:'☼', restriction:'Unique · ELITE only · Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER','IMPERVIOUS'] },
           { id:'trench-shield-tp',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         armour: [
           { id:'reinforced-tp',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'ELITE only',
@@ -6296,7 +6297,7 @@ const DATA = {
         ],
         shields: [
           { id:'trench-shield-is',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
           // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
           { id:'iron-shield-iw',  name:'Iron Shield',          cost:30, currency:'👑',
             variantOnly:'iron-wall-def', restriction:'Brazen Bull only · Limit: 1',
@@ -6305,7 +6306,7 @@ const DATA = {
         ],
         armour: [
           { id:'alchemist-armour-is',name:'Alchemist Armour',  cost:50, currency:'👑', restriction:'Unique · ELITE only · Limit: 1',
-            type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER','NEGATE SHRAPNEL'] },
+            type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER','NEGATE FIRE','NEGATE GAS'] },
           { id:'reinforced-is',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'ELITE & Janissaries only',
             type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER'] },
           { id:'standard-is',     name:'Standard Armour',      cost:15, currency:'👑',
@@ -6554,7 +6555,7 @@ const DATA = {
         ],
         shields: [
           { id:'trench-shield-hl',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         armour: [
           { id:'reinforced-hl',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'Anointed & ELITE only',
@@ -6743,7 +6744,7 @@ const DATA = {
           { id:'bg-shield-bg',    name:'Black Grail Shield',   cost:20, currency:'👑', restriction:'Unique · ELITE only · Shield Combo',
             type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
           { id:'trench-shield-bg',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         armour: [
           { id:'reinforced-bg',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'ELITE only',
@@ -6890,7 +6891,7 @@ const DATA = {
         ],
         shields: [
           { id:'trench-shield-co',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE'] },
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         armour: [
           { id:'inf-iron-co',     name:'Infernal Iron Armour', cost:50, currency:'👑', restriction:'Unique · Hell Knights only',
@@ -33933,10 +33934,15 @@ const EQUIPMENT_IMPLICIT_ABILITIES = {
     name: 'Survey the Land',
     desc: 'Enemy no INFIL a 16" del modelo (salvo en su zona).',
   }],
+  // Warbands of Trench Crusade: -2 INJURY MODIFIER, NEGATE FIRE, NEGATE GAS
+  // + Protection From Harm. NEGATE [X] = ignora el Efecto de X (Rulebook).
   'Alchemist Armour': [
-    { name: 'NEGATE FIRE', desc: 'Inmune a ataques con keyword FIRE.' },
-    { name: 'NEGATE GAS',  desc: 'Inmune a ataques con keyword GAS.' },
+    { name: 'NEGATE FIRE', desc: 'No le afecta el Efecto de la keyword FIRE.' },
+    { name: 'NEGATE GAS',  desc: 'No le afecta el Efecto de la keyword GAS.' },
+    { name: 'Protection From Harm', desc: '-1 INJURY DICE a las Injury Rolls de ataques con armas FIRE o GAS contra el portador.' },
   ],
+  // Rulebook, Medi-kit: concede la Treat ACTION (texto en GENERAL_TERMS_LIBRARY).
+  'Medi-kit': [{ name: 'Treat ACTION', desc: '' }],
   'Alchemical Ammunition': [{
     name: 'AMMUNITION (+1 DICE)',
     desc: 'Estático: +1 DICE al primer Ranged Attack del modelo.',
@@ -33944,7 +33950,7 @@ const EQUIPMENT_IMPLICIT_ABILITIES = {
   // Sub-E — expansión equipo con implicit abilities.
   'Gas Mask': [{
     name: 'NEGATE GAS',
-    desc: 'Inmune a ataques con keyword GAS.',
+    desc: 'No le afecta el Efecto de la keyword GAS.',
   }],
   'Field Shrine': [{
     name: 'Field Shrine Aura',
@@ -34338,15 +34344,7 @@ function buildModelCardData(model, wb) {
   // nombre + manos + rango + keywords. Enriquece desde DATA.armoury si el
   // import Companion no trajo los detalles.
   function _findArmouryByName(name) {
-    if (!wb.factionId || !DATA || !DATA.factions || !DATA.factions[wb.factionId]) return null;
-    const f = DATA.factions[wb.factionId];
-    if (!f.armoury) return null;
-    const lc = String(name || '').toLowerCase().trim();
-    for (const cat of Object.values(f.armoury)) {
-      const found = cat.find(x => String(x.name || '').toLowerCase().trim() === lc);
-      if (found) return found;
-    }
-    return null;
+    return findArmouryItemByName(wb, name);
   }
   const weapons = equipment.filter(e =>
     /weapon/i.test(e.type || '') || /grenade/i.test(e.type || '')
@@ -35551,6 +35549,37 @@ function clearTableSession(wb, storage) {
   try { st && st.removeItem(_tableSessionKey(wb)); } catch (e) { /* sin storage */ }
 }
 
+/* Busca una pieza de la armería por nombre tolerando las variantes de
+ * Companion: "Greatsword / Greataxe" ↔ "Great Sword/Axe" (misma cabeza
+ * antes de "/"), "Medi-Kit" ↔ "Medi-kit", diacríticos, y alias explícitos.
+ * Primero la armería de la facción de la banda; luego cualquier facción. */
+const COMPANION_EQUIPMENT_ALIASES = {
+  'anqa guard': 'Anq Guard',   // Companion "Anqa Guard"; PDF Defenders "Anq Guard"
+};
+function _normEquipName(n) {
+  return String(n || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9/+-]/g, '');
+}
+function findArmouryItemByName(wb, name) {
+  const alias = COMPANION_EQUIPMENT_ALIASES[String(name || '').toLowerCase().trim()];
+  const target = _normEquipName(alias || name);
+  if (!target) return null;
+  const head = (n) => n.split('/')[0];
+  const factions = (typeof DATA !== 'undefined' && DATA.factions) ? DATA.factions : {};
+  const order = [wb && wb.factionId].concat(Object.keys(factions)).filter((f, i, a) => f && factions[f] && a.indexOf(f) === i);
+  for (const pass of ['exact', 'head']) {
+    for (const fid of order) {
+      for (const cat of Object.values(factions[fid].armoury || {})) {
+        for (const it of (cat || [])) {
+          const n = _normEquipName(it.name);
+          if (pass === 'exact' ? n === target : (head(n) && head(n) === head(target))) return it;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 /* Texto de regla para una keyword/habilidad/término, desde las bibliotecas
  * de Forge (armas, keywords de modelo, habilidades, términos generales).
  * Insensible a mayúsculas; si una keyword paramétrica ("AUTOMATIC 4",
@@ -35583,16 +35612,13 @@ function lookupRuleText(name) {
  * (o de cualquier facción si no aparece). */
 function buildTableRefData(model, wb) {
   const data = buildModelCardData(model, wb);
-  const findItem = (name) => {
+  const findItem = (name) => findArmouryItemByName(wb, name) || {};
+  // EQUIPMENT_IMPLICIT_ABILITIES por nombre, insensible a mayúsculas (Medi-Kit/Medi-kit).
+  const implicitFor = (name) => {
+    if (typeof EQUIPMENT_IMPLICIT_ABILITIES === 'undefined') return [];
     const lc = String(name || '').toLowerCase().trim();
-    const f = wb && wb.factionId && DATA && DATA.factions && DATA.factions[wb.factionId];
-    if (f && f.armoury) {
-      for (const cat of Object.values(f.armoury)) {
-        const hit = (cat || []).find(x => String(x.name || '').toLowerCase().trim() === lc);
-        if (hit) return hit;
-      }
-    }
-    return (typeof lookupWeaponDataByName === 'function' && lookupWeaponDataByName({ name })) || {};
+    const k = Object.keys(EQUIPMENT_IMPLICIT_ABILITIES).find(x => x.toLowerCase() === lc);
+    return k ? EQUIPMENT_IMPLICIT_ABILITIES[k] : [];
   };
   const rule = (n) => ({ name: n, desc: lookupRuleText(n) });
   // Tokens de la restricción que son reglas con texto (p. ej. "Shield Combo").
@@ -35620,8 +35646,7 @@ function buildTableRefData(model, wb) {
   const granted = new Set();
   const equipment = (data.battlekit || []).map(bk => {
     const item = findItem(bk.name);
-    const grants = ((typeof EQUIPMENT_IMPLICIT_ABILITIES !== 'undefined' && EQUIPMENT_IMPLICIT_ABILITIES[bk.name]) || [])
-      .map(g => ({ name: g.name, desc: g.desc || lookupRuleText(g.name) }));
+    const grants = implicitFor(bk.name).map(g => ({ name: g.name, desc: g.desc || lookupRuleText(g.name) }));
     grants.forEach(g => granted.add(g.name.toLowerCase()));
     const kws = Array.isArray(item.weaponKeywords) ? item.weaponKeywords : [];
     // Si la pieza concede una habilidad con el mismo nombre que una regla
@@ -35630,6 +35655,7 @@ function buildTableRefData(model, wb) {
     return {
       name: bk.name, type: bk.type || item.type || '',
       restriction: item.restriction || '',
+      note: item.note || '',
       rules: uniqueByName(kws.map(rule).concat(restrictionRules(item.restriction)))
         .filter(r => !grantNames.has(r.name.toLowerCase())),
       grants,
@@ -35685,7 +35711,8 @@ function _tmCardHtml(model) {
   }).join('');
   const equipment = ref.equipment.map(eq =>
     `<div class="tm-ref-item"><div class="tm-ref-title"><b>${escapeHtml(eq.name)}</b>${eq.type ? ` <span class="tm-ref-meta">${escapeHtml(eq.type)}</span>` : ''}</div>
-      ${eq.restriction ? `<div class="tm-ref-restr">${escapeHtml(eq.restriction)}</div>` : ''}${rulesHtml(eq.rules.concat(eq.grants))}</div>`).join('');
+      ${eq.restriction ? `<div class="tm-ref-restr">${escapeHtml(eq.restriction)}</div>` : ''}${rulesHtml(eq.rules.concat(eq.grants))}
+      ${eq.note ? `<p class="tm-ref-note">${escapeHtml(eq.note)}</p>` : ''}</div>`).join('');
   const abilities = rulesHtml(ref.abilities);
   return `<section class="tm-card${st.status === 'down' ? ' tm-down' : ''}${out ? ' tm-out' : ''}" data-uid="${escapeHtml(model.uid)}">
     <header class="tm-card-head">

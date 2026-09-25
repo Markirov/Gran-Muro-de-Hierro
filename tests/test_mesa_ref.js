@@ -33,7 +33,7 @@ ok(L.lookupRuleText('ELITE') === L.KEYWORD_LIBRARY['ELITE'], 'keyword de modelo'
 ok(L.lookupRuleText('shield combo') === L.WEAPON_KEYWORD_LIBRARY['Shield Combo'].summary, 'insensible a mayúsculas');
 ok(L.lookupRuleText('AUTOMATIC 4') === L.WEAPON_KEYWORD_LIBRARY['AUTOMATIC'].summary, 'paramétrica sin entrada exacta → base');
 ok(L.lookupRuleText('BLAST 3"') === L.WEAPON_KEYWORD_LIBRARY['BLAST 3"'].summary, 'paramétrica con entrada exacta');
-ok(L.lookupRuleText('Anqa Guard') === '', 'sin datos → cadena vacía (no se inventa)');
+ok(L.lookupRuleText('Pieza Inexistente') === '', 'sin datos → cadena vacía (no se inventa)');
 
 const sil = L.buildTableRefData(byName('Silahdar'), wb);
 
@@ -57,11 +57,33 @@ ok(shield && find(shield.grants, 'Shield Combo').desc === L.EQUIPMENT_IMPLICIT_A
 const alch = find(sil.equipment, 'Alchemist Armour');
 ok(alch && find(alch.grants, 'NEGATE FIRE') && find(alch.grants, 'NEGATE GAS'), 'Alchemist Armour concede NEGATE FIRE y NEGATE GAS');
 const anqa = find(sil.equipment, 'Anqa Guard');
-ok(anqa && anqa.rules.length === 0 && anqa.grants.length === 0, 'Anqa Guard sin datos: solo el nombre');
 const offi = L.buildTableRefData(byName('Janissary Officer'), wb);
 const reinf = find(offi.equipment, 'Reinforced Armour');
 ok(reinf && find(reinf.rules, '-2 INJURY MODIFIER') && find(reinf.rules, '-2 INJURY MODIFIER').desc.length > 0,
    'Reinforced Armour: -2 INJURY MODIFIER explicado');
+
+console.log('\nGroup 3b: nombres de Companion distintos a la armería (verificado contra impresión de Trench Companion)');
+const gs = find(sil.weapons, 'Greatsword / Greataxe');
+ok(gs && ['+1 INJURY DICE', 'CRITICAL', 'HEAVY'].every(k => find(gs.rules, k)),
+   'Greatsword / Greataxe ↔ Great Sword/Axe: +1 INJURY DICE, CRITICAL, HEAVY');
+ok(gs && gs.hand === '2H', 'Greatsword a dos manos');
+// Defenders of the Iron Wall PDF: Anq Guard = HEAVY (DEPLOYABLE es solo de Trench Companion).
+ok(anqa && find(anqa.rules, 'HEAVY'), 'Anqa Guard ↔ Anq Guard: HEAVY');
+
+console.log('\nGroup 3c: datos canon corregidos (Rulebook p.79 / Warbands of TC)');
+ok(shield && find(shield.rules, '-1 INJURY MODIFIER') && !find(shield.rules, '-1 INJURY DICE'),
+   'Trench Shield: -1 INJURY MODIFIER (no -1 INJURY DICE)');
+const alchKw = alch ? alch.rules.concat(alch.grants).map(r => r.name) : [];
+ok(['-2 INJURY MODIFIER', 'NEGATE FIRE', 'NEGATE GAS'].every(k => alchKw.includes(k)) && !alchKw.includes('NEGATE SHRAPNEL'),
+   'Alchemist Armour: -2 INJURY MODIFIER, NEGATE FIRE, NEGATE GAS (sin NEGATE SHRAPNEL)');
+ok(alch && find(alch.grants, 'Protection From Harm') && /FIRE/.test(find(alch.grants, 'Protection From Harm').desc),
+   'Alchemist Armour concede Protection From Harm');
+ok(alch && !/Inmune a ataques/.test(find(alch.grants, 'NEGATE FIRE').desc), 'NEGATE FIRE con semántica canon (ignora el Efecto)');
+ok(anqa && typeof anqa.note === 'string' && anqa.note.length > 20, 'Anqa Guard muestra la nota de reglas de la armería');
+const medi = find(sil.equipment, 'Medi-Kit');
+ok(medi && find(medi.grants, 'Treat ACTION') && find(medi.grants, 'Treat ACTION').desc.length > 0, 'Medi-Kit concede Treat ACTION con texto');
+ok(!find(sil.weapons, 'Greatsword / Greataxe').rules.some(r => r.name === 'Unique' && !/Unique/.test(gs.restriction || '')),
+   'sin reglas de restricción ajenas');
 
 console.log('\nGroup 4: habilidades');
 const ab = sil.abilities;
