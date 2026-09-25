@@ -4,7 +4,7 @@
 
 ## 🔴 Alta Prioridad
 
-- [ ] **Modo mesa — ficha móvil por miniatura:** diseño en `tracking/plans/PLAN_2026-09-25_modo-mesa.md`, pendiente de revisión de Marcos antes de implementar. Overlay a pantalla completa dentro de Forge, swipe entre miniaturas, estado de combate + activación por turno + efectos/usos, estado en `localStorage` sin tocar la banda.
+- [ ] [En progreso - Lead Developer (Claude Code)] (Locks: index.html, tests/test_mesa_state.js, tests/test_mesa_ui.js) **Modo mesa — ficha móvil por miniatura:** diseño en `tracking/plans/PLAN_2026-09-25_modo-mesa.md`, aprobado. Overlay a pantalla completa dentro de Forge, swipe entre miniaturas, estado de combate + activación por turno + efectos/usos, estado en `localStorage` sin tocar la banda.
 
 ## 🟡 Media Prioridad
 

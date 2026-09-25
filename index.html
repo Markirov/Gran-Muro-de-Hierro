@@ -35276,6 +35276,149 @@ function drawTrackerPanelOnCanvas(ctx, x0, y0, w, h, data) {
   }
 }
 
+/* ─── MODO MESA — sesión de partida en el móvil ─────────────────────
+ * PLAN: tracking/plans/PLAN_2026-09-25_modo-mesa.md.
+ * Estado solo de la partida, en localStorage['wf-mesa-<wb.id>']. Nunca
+ * se escribe en la banda (no afecta a guardado, historial ni export TC).
+ * Funciones puras: mutan la sesión recibida y la devuelven.
+ */
+const TABLE_SESSION_VERSION = 1;
+const TABLE_STATUSES = ['up', 'down', 'out'];
+// Misma lista que el battletracker PDF (drawTrackerPanelOnCanvas).
+const TABLE_EFFECTS_BASE = ['BLES', 'AIM', 'MEM', 'FEAR', 'CHARGED', 'OTRO'];
+const TABLE_EFFECTS_ELEMENTAL = ['FIRE', 'GAS', 'SHRAPNEL'];
+
+function _defaultTableModelState() {
+  return { activated: false, blood: 0, status: 'up', effects: [], spent: [] };
+}
+
+function newTableSession(wb) {
+  const s = {
+    v: TABLE_SESSION_VERSION,
+    warbandId: wb && wb.id,
+    startedAt: new Date().toISOString(),
+    turn: 1,
+    models: {},
+  };
+  return syncTableSession(s, wb);
+}
+
+// Añade estado limpio para modelos nuevos. Los que ya no están en la banda
+// se conservan (por si vuelven) y simplemente no se muestran.
+function syncTableSession(session, wb) {
+  const models = (wb && Array.isArray(wb.models)) ? wb.models : [];
+  for (const m of models) {
+    if (m && m.uid && !session.models[m.uid]) session.models[m.uid] = _defaultTableModelState();
+  }
+  return session;
+}
+
+function getTableModelState(session, uid) {
+  return (session && session.models && session.models[uid]) || _defaultTableModelState();
+}
+
+function _tableModel(session, uid) {
+  if (!session.models[uid]) session.models[uid] = _defaultTableModelState();
+  return session.models[uid];
+}
+
+function toggleTableActivated(session, uid) {
+  const st = _tableModel(session, uid);
+  st.activated = !st.activated;
+  return session;
+}
+
+function adjustTableBlood(session, uid, delta) {
+  const st = _tableModel(session, uid);
+  st.blood = Math.max(0, (st.blood || 0) + (Number(delta) || 0));
+  return session;
+}
+
+function setTableStatus(session, uid, status) {
+  if (!TABLE_STATUSES.includes(status)) return session;
+  _tableModel(session, uid).status = status;
+  return session;
+}
+
+function _toggleInList(list, value) {
+  const i = list.indexOf(value);
+  if (i >= 0) list.splice(i, 1); else list.push(value);
+}
+
+function toggleTableEffect(session, uid, code) {
+  _toggleInList(_tableModel(session, uid).effects, code);
+  return session;
+}
+
+function toggleTableSpent(session, uid, abilityName) {
+  _toggleInList(_tableModel(session, uid).spent, abilityName);
+  return session;
+}
+
+// Pasar turno solo desmarca activaciones: sangre, efectos y usos los retira
+// el jugador a mano (cuándo se retira cada marcador depende de la regla).
+function advanceTableTurn(session) {
+  session.turn = (session.turn || 1) + 1;
+  for (const uid of Object.keys(session.models)) session.models[uid].activated = false;
+  return session;
+}
+
+// Cuenta sobre los modelos presentes en la banda que no están Fuera de combate.
+function tableActivationCount(session, wb) {
+  const models = (wb && Array.isArray(wb.models)) ? wb.models : [];
+  let activated = 0, total = 0;
+  for (const m of models) {
+    const st = getTableModelState(session, m.uid);
+    if (st.status === 'out') continue;
+    total++;
+    if (st.activated) activated++;
+  }
+  return { activated, total };
+}
+
+function getTableEffectCodes(cardData) {
+  return cardData && cardData.hasElementalMastery
+    ? TABLE_EFFECTS_BASE.concat(TABLE_EFFECTS_ELEMENTAL)
+    : TABLE_EFFECTS_BASE.slice();
+}
+
+function _tableSessionKey(wbOrId) {
+  return 'wf-mesa-' + (typeof wbOrId === 'string' ? wbOrId : (wbOrId && wbOrId.id));
+}
+
+function _tableStorage(storage) {
+  if (storage) return storage;
+  try { return (typeof localStorage !== 'undefined') ? localStorage : null; } catch (e) { return null; }
+}
+
+function loadTableSession(wb, storage) {
+  const st = _tableStorage(storage);
+  let s = null;
+  try {
+    const raw = st && st.getItem(_tableSessionKey(wb));
+    if (raw) s = JSON.parse(raw);
+  } catch (e) { s = null; }
+  if (!s || s.v !== TABLE_SESSION_VERSION || s.warbandId !== (wb && wb.id) || !s.models) {
+    return newTableSession(wb);
+  }
+  return syncTableSession(s, wb);
+}
+
+// Devuelve false si no pudo guardar (storage bloqueado o lleno).
+function saveTableSession(session, storage) {
+  const st = _tableStorage(storage);
+  try {
+    if (!st) return false;
+    st.setItem(_tableSessionKey(session.warbandId), JSON.stringify(session));
+    return true;
+  } catch (e) { return false; }
+}
+
+function clearTableSession(wb, storage) {
+  const st = _tableStorage(storage);
+  try { st && st.removeItem(_tableSessionKey(wb)); } catch (e) { /* sin storage */ }
+}
+
 /* ─── PDF generation: tarjetas + battletrackers ──────────────────── */
 
 function _drawCropMarks(doc, x, y, w, h) {

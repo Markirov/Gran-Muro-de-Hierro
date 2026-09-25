@@ -83,4 +83,18 @@ Registro de kills/Deeds para XP · volcar resultado al asistente post-batalla (o
 
 ## Tareas (checklist de implementación)
 
-_Se completa tras la revisión de este diseño por Marcos._
+Diseño aprobado por Marcos el 2026-09-25 ("Implementa").
+
+**Fase 1 — Lógica pura**
+- [x] 1.1 `tests/test_mesa_state.js` en rojo (helpers puros + persistencia con `localStorage` simulado).
+- [x] 1.2 Implementar helpers puros y `getTableEffectCodes` antes de `boot()`.
+- [x] 1.3 Implementar `loadTableSession` / `saveTableSession` / `clearTableSession`. Test en verde.
+
+**Fase 2 — Interfaz**
+- [ ] 2.1 `tests/test_mesa_ui.js` en rojo (jsdom).
+- [ ] 2.2 Botón `#btn-table-mode` + overlay `#table-mode` + CSS móvil (scroll-snap, ≥44 px, tintes Down/Fuera).
+- [ ] 2.3 Render de cabecera, carrusel, fichas y puntos; handlers de todos los controles. Test en verde.
+
+**Fase 3 — Cierre**
+- [ ] 3.1 Prueba manual a 375×812 con `Bandas/Caza2.json` (swipe, puntos, recarga y reapertura).
+- [ ] 3.2 `bash verify.sh` verde; fuera de alcance a `IDEAS.md`; DONE + PENDING + commit + push.
