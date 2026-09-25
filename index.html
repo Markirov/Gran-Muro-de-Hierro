@@ -4337,10 +4337,18 @@ body.table-mode-open { overflow: hidden; }
 .tm-chip { min-height: 44px; padding: 0 12px; background: var(--iron-mid); border: var(--border-iron); border-radius: 22px; font-family: var(--font-mono) !important; font-size: 0.85rem; }
 .tm-effect[aria-pressed="true"] { background: var(--faithful-deep); border-color: var(--faithful-gold-bright); color: var(--faithful-gold-bright); }
 .tm-spent[aria-pressed="true"] { text-decoration: line-through; opacity: 0.5; }
-.tm-ref { border-top: var(--border-iron); padding-top: 8px; }
-.tm-ref summary { min-height: 44px; display: flex; align-items: center; font-family: var(--font-heading); cursor: pointer; }
-.tm-ref ul { margin: 6px 0; padding-left: 18px; font-size: 0.9rem; }
-.tm-ref li { margin-bottom: 6px; }
+.tm-ref { border-top: var(--border-iron); padding-top: 10px; display: flex; flex-direction: column; gap: 14px; }
+.tm-ref-sec { display: flex; flex-direction: column; gap: 8px; }
+.tm-ref-item { background: var(--iron-deep); border: var(--border-iron); border-radius: 4px; padding: 8px 10px; }
+.tm-ref-title { font-family: var(--font-heading); color: var(--parchment-bright); }
+.tm-ref-meta { font-family: var(--font-mono); font-size: 0.75rem; color: var(--faithful-gold); }
+.tm-ref-restr { font-family: var(--font-mono); font-size: 0.72rem; color: var(--parchment-dim); margin-top: 2px; }
+.tm-rules { margin: 6px 0 0; padding-left: 16px; font-size: 0.92rem; line-height: 1.35; }
+.tm-rules li { margin-bottom: 5px; }
+.tm-rules b { font-family: var(--font-mono); font-weight: normal; color: var(--parchment-bright); }
+.tm-rule-desc { color: var(--parchment); }
+.tm-ref-abilities > .tm-rules { padding-left: 16px; }
+.tm-ref-empty { margin: 0; color: var(--parchment-dim); font-style: italic; }
 .tm-dots {
   flex: 0 0 auto;
   display: flex; justify-content: center; flex-wrap: wrap; gap: 2px;
@@ -35543,6 +35551,98 @@ function clearTableSession(wb, storage) {
   try { st && st.removeItem(_tableSessionKey(wb)); } catch (e) { /* sin storage */ }
 }
 
+/* Texto de regla para una keyword/habilidad/término, desde las bibliotecas
+ * de Forge (armas, keywords de modelo, habilidades, términos generales).
+ * Insensible a mayúsculas; si una keyword paramétrica ("AUTOMATIC 4",
+ * "BLAST 2\"") no tiene entrada exacta, cae a su base ("AUTOMATIC").
+ * Sin dato → '' (mandato canon: no se inventa texto). */
+function lookupRuleText(name) {
+  const libs = [
+    typeof WEAPON_KEYWORD_LIBRARY !== 'undefined' ? WEAPON_KEYWORD_LIBRARY : null,
+    typeof KEYWORD_LIBRARY !== 'undefined' ? KEYWORD_LIBRARY : null,
+    typeof ABILITY_LIBRARY !== 'undefined' ? ABILITY_LIBRARY : null,
+    typeof GENERAL_TERMS_LIBRARY !== 'undefined' ? GENERAL_TERMS_LIBRARY : null,
+  ].filter(Boolean);
+  const textOf = (v) => (typeof v === 'string' ? v : (v && v.summary) || '');
+  const find = (key) => {
+    const lc = key.toLowerCase().trim();
+    for (const lib of libs) {
+      if (lib[key] != null) return textOf(lib[key]);
+      for (const k of Object.keys(lib)) if (k.toLowerCase().trim() === lc) return textOf(lib[k]);
+    }
+    return '';
+  };
+  const raw = String(name || '').trim();
+  if (!raw) return '';
+  return find(raw) || find(raw.replace(/\s+[\d+-]+"?$/, '')) || '';
+}
+
+/* Datos de consulta de la ficha del modo mesa: armas, equipo (con las
+ * habilidades que concede cada pieza) y habilidades propias con texto.
+ * Reutiliza buildModelCardData; enriquece desde la armería de la facción
+ * (o de cualquier facción si no aparece). */
+function buildTableRefData(model, wb) {
+  const data = buildModelCardData(model, wb);
+  const findItem = (name) => {
+    const lc = String(name || '').toLowerCase().trim();
+    const f = wb && wb.factionId && DATA && DATA.factions && DATA.factions[wb.factionId];
+    if (f && f.armoury) {
+      for (const cat of Object.values(f.armoury)) {
+        const hit = (cat || []).find(x => String(x.name || '').toLowerCase().trim() === lc);
+        if (hit) return hit;
+      }
+    }
+    return (typeof lookupWeaponDataByName === 'function' && lookupWeaponDataByName({ name })) || {};
+  };
+  const rule = (n) => ({ name: n, desc: lookupRuleText(n) });
+  // Tokens de la restricción que son reglas con texto (p. ej. "Shield Combo").
+  const restrictionRules = (restr) => String(restr || '').split('·').map(t => t.trim())
+    .filter(t => t && lookupRuleText(t)).map(rule);
+  const uniqueByName = (list) => {
+    const seen = new Set();
+    return list.filter(r => { const k = r.name.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  };
+
+  const weapons = (data.weapons || []).map(wp => {
+    const item = findItem(wp.name);
+    // Companion trae type "ranged weapon": las manos salen de la armería.
+    const it = String(item.type || '');
+    const hand = wp.hand || (/2-?handed/i.test(it) ? '2H' : /1-?handed/i.test(it) ? '1H' : /pistol/i.test(it) ? 'Pistol' : '');
+    return {
+      name: wp.name, hand, type: item.type || wp.type || '',
+      range: (wp.range && wp.range !== '—') ? wp.range : (item.range || '—'),
+      dice: wp.dice, injury: wp.injury,
+      restriction: item.restriction || '',
+      rules: uniqueByName((wp.keywords || []).map(rule).concat(restrictionRules(item.restriction))),
+    };
+  });
+
+  const granted = new Set();
+  const equipment = (data.battlekit || []).map(bk => {
+    const item = findItem(bk.name);
+    const grants = ((typeof EQUIPMENT_IMPLICIT_ABILITIES !== 'undefined' && EQUIPMENT_IMPLICIT_ABILITIES[bk.name]) || [])
+      .map(g => ({ name: g.name, desc: g.desc || lookupRuleText(g.name) }));
+    grants.forEach(g => granted.add(g.name.toLowerCase()));
+    const kws = Array.isArray(item.weaponKeywords) ? item.weaponKeywords : [];
+    // Si la pieza concede una habilidad con el mismo nombre que una regla
+    // genérica (Trench Shield → Shield Combo), manda el texto concedido.
+    const grantNames = new Set(grants.map(g => g.name.toLowerCase()));
+    return {
+      name: bk.name, type: bk.type || item.type || '',
+      restriction: item.restriction || '',
+      rules: uniqueByName(kws.map(rule).concat(restrictionRules(item.restriction)))
+        .filter(r => !grantNames.has(r.name.toLowerCase())),
+      grants,
+    };
+  });
+
+  const abilities = (data.abilities || [])
+    .filter(a => !granted.has(String(a.name).toLowerCase()))
+    .map(a => ({ name: a.name, kind: a.kind, desc: a.desc || lookupRuleText(a.name) }));
+
+  return { weapons, equipment, abilities };
+}
+
 /* ─── MODO MESA — interfaz (overlay móvil) ──────────────────────────
  * Una ficha por miniatura en un carrusel con scroll-snap. Cada toque:
  * función pura → saveTableSession → re-render de esa ficha + cabecera +
@@ -35573,10 +35673,20 @@ function _tmCardHtml(model) {
     `<button type="button" class="tm-chip tm-effect" data-effect="${code}" aria-pressed="${st.effects.includes(code)}"${dis}>${code}</button>`).join('');
   const oneShot = (data.oneShotAbilities || []).map(a =>
     `<button type="button" class="tm-chip tm-spent" data-ability="${escapeHtml(a.name)}" aria-pressed="${st.spent.includes(a.name)}"${dis}>${escapeHtml(a.name)}</button>`).join('');
-  const weapons = (data.weapons || []).map(wp =>
-    `<li><b>${escapeHtml(wp.name || '')}</b> · ${escapeHtml(String(wp.range || '—'))} · ${escapeHtml(String(wp.dice || '—'))} · herida ${escapeHtml(String(wp.injury || '—'))}${wp.keyword ? `<br><small>${escapeHtml(wp.keyword)}</small>` : ''}</li>`).join('');
-  const abilities = (data.abilities || []).map(a =>
-    `<li><b>${escapeHtml(a.name || '')}</b>${a.desc ? ` — ${escapeHtml(a.desc)}` : ''}</li>`).join('');
+  const ref = buildTableRefData(model, wb);
+  const rulesHtml = (rules) => rules.length ? `<ul class="tm-rules">${rules.map(r =>
+    `<li><b>${escapeHtml(r.name)}</b>${r.desc ? `<span class="tm-rule-desc"> — ${escapeHtml(r.desc)}</span>` : ''}</li>`).join('')}</ul>` : '';
+  const known = (v) => v && v !== '—' && v !== '-';
+  const weapons = ref.weapons.map(wp => {
+    const meta = [wp.hand, known(wp.range) ? wp.range : '', known(wp.dice) ? wp.dice + ' dados' : '',
+      known(wp.injury) ? 'herida ' + wp.injury : ''].filter(Boolean).join(' · ');
+    return `<div class="tm-ref-item"><div class="tm-ref-title"><b>${escapeHtml(wp.name)}</b>${meta ? ` <span class="tm-ref-meta">${escapeHtml(meta)}</span>` : ''}</div>
+      ${wp.restriction ? `<div class="tm-ref-restr">${escapeHtml(wp.restriction)}</div>` : ''}${rulesHtml(wp.rules)}</div>`;
+  }).join('');
+  const equipment = ref.equipment.map(eq =>
+    `<div class="tm-ref-item"><div class="tm-ref-title"><b>${escapeHtml(eq.name)}</b>${eq.type ? ` <span class="tm-ref-meta">${escapeHtml(eq.type)}</span>` : ''}</div>
+      ${eq.restriction ? `<div class="tm-ref-restr">${escapeHtml(eq.restriction)}</div>` : ''}${rulesHtml(eq.rules.concat(eq.grants))}</div>`).join('');
+  const abilities = rulesHtml(ref.abilities);
   return `<section class="tm-card${st.status === 'down' ? ' tm-down' : ''}${out ? ' tm-out' : ''}" data-uid="${escapeHtml(model.uid)}">
     <header class="tm-card-head">
       <h3 class="tm-name">${escapeHtml(name)}</h3>
@@ -35599,11 +35709,11 @@ function _tmCardHtml(model) {
       <div class="tm-chips">${effects}</div>
     </div>
     ${oneShot ? `<div class="tm-block"><div class="tm-label">Habilidades de un uso</div><div class="tm-chips">${oneShot}</div></div>` : ''}
-    <details class="tm-ref">
-      <summary>Armas y habilidades</summary>
-      ${weapons ? `<ul>${weapons}</ul>` : '<p>Sin armas.</p>'}
-      ${abilities ? `<ul>${abilities}</ul>` : ''}
-    </details>
+    <div class="tm-ref">
+      <section class="tm-ref-sec tm-ref-weapons"><div class="tm-label">Armas</div>${weapons || '<p class="tm-ref-empty">Sin armas.</p>'}</section>
+      <section class="tm-ref-sec tm-ref-equipment"><div class="tm-label">Equipo</div>${equipment || '<p class="tm-ref-empty">Sin equipo.</p>'}</section>
+      <section class="tm-ref-sec tm-ref-abilities"><div class="tm-label">Habilidades</div>${abilities || '<p class="tm-ref-empty">Sin habilidades.</p>'}</section>
+    </div>
   </section>`;
 }
 
@@ -35634,8 +35744,7 @@ function _tmRenderCard(uid) {
   const tmp = document.createElement('div');
   tmp.innerHTML = _tmCardHtml(model);
   const fresh = tmp.firstElementChild;
-  const wasOpen = old.querySelector('details.tm-ref') && old.querySelector('details.tm-ref').open;
-  if (wasOpen) fresh.querySelector('details.tm-ref').open = true;
+  fresh.scrollTop = old.scrollTop;  // no saltar arriba al tocar un control
   old.replaceWith(fresh);
 }
 

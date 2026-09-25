@@ -60,7 +60,17 @@ ok($$('.tm-dot', ov).length === wb.models.length, 'un punto por ficha');
 ok(/Turno 1/.test($('.tm-turn', ov).textContent), 'cabecera "Turno 1"');
 ok(/0\/9 activadas/.test($('.tm-count', ov).textContent), 'contador "0/9 activadas"');
 ok($$('.tm-effect', cards[0]).length >= 6, 'chips de efectos (≥6)');
-ok(!!$('details.tm-ref', cards[0]) && !$('details.tm-ref', cards[0]).open, 'consulta plegada por defecto');
+// Consulta completa visible (petición Marcos: cuanta más información, mejor).
+ok(!$('details.tm-ref', cards[0]), 'consulta ya no va plegada');
+ok(!!$('.tm-ref-weapons', cards[0]) && !!$('.tm-ref-equipment', cards[0]) && !!$('.tm-ref-abilities', cards[0]),
+   'bloques Armas, Equipo y Habilidades');
+const eqText = $('.tm-ref-equipment', cards[0]).textContent;
+ok(['Trench Shield', 'Medi-Kit', 'Alchemist Armour', 'Anqa Guard'].every(n => eqText.includes(n)), 'equipo del Silahdar listado');
+ok(/Shield Combo/.test(eqText) && /NEGATE FIRE/.test(eqText), 'habilidades concedidas bajo su pieza');
+ok(/SHRAPNEL/.test($('.tm-ref-weapons', cards[0]).textContent) &&
+   $$('.tm-ref-weapons .tm-rule-desc', cards[0]).some(e => e.textContent.trim().length > 10), 'keywords de arma con explicación');
+const abText = $('.tm-ref-abilities', cards[0]).textContent;
+ok(/ELITE/.test(abText) && !/Shield Combo/.test(abText), 'habilidades propias sin repetir las del equipo');
 ok(doc.body.classList.contains('table-mode-open'), 'body bloquea scroll');
 
 console.log('\nGroup 4: activar');
