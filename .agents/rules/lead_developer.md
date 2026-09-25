@@ -15,7 +15,7 @@
 - **D.3 · Capas:** datos canon (`DATA`, `CAMPAIGN_TABLES`, `ENEMY_FACTORIES`) no mutan; la lógica de banda y motor son funciones puras que no tocan DOM ni `localStorage`; persistencia/UI aparte. Todo lo que toca el DOM arranca desde `boot()`.
 - **D.4 · El motor consulta flags, no nombres:** nada de `m.name === 'X'` en el simulador; el flag se setea en `applyVariantBonus` / construcción de banda y el motor lo lee.
 - **D.5 · Fidelidad canon:** cualquier dato de reglas se verifica en el PDF (`herramientas/pdfs-reglamento/`). Lo que no se pueda modelar fielmente se omite explícitamente, no se aproxima. Decisiones de producto → preguntar a Marcos antes de codificar.
-- **D.6 · Single-file sin dependencias nuevas:** todo en `index.html`; solo jsPDF por CDN. Strings visibles al usuario en español.
+- **D.6 · Single-file sin dependencias nuevas:** todo en `index.html`; dependencias externas existentes: jsPDF por CDN y el SDK de Firebase por `import()` dinámico (solo para el sync opcional). Nada nuevo sin aprobación de Marcos. Strings visibles al usuario en español.
 - **D.7 · Round-trip Companion sin pérdida:** `baseProgression` y el estado local (variantes, lista de compra, freeBattles…) nunca se filtran al export a Trench Companion; la re-importación preserva el estado local.
 
 ## Comandos de desarrollo
