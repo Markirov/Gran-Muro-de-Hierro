@@ -4308,7 +4308,7 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
     <button class="btn" id="btn-print" data-action-priority="secondary" data-action-group="impresion">🖨 Imprimir</button>
     <button class="btn" id="btn-pdf" data-action-priority="secondary" data-action-group="impresion">📜 PDF</button>
     <button class="btn" id="btn-cards-pdf" data-action-priority="secondary" data-action-group="impresion"
-            title="Genera PDF con las tarjetas de los modelos (formato Magic, 9 por hoja A4)">
+            title="Genera PDF con las tarjetas de los modelos: 9 por folio (tamaño Magic) o 4 por folio (grande)">
       🃏 Tarjetas PDF
     </button>
     <button class="btn" id="btn-trackers-pdf" data-action-priority="secondary" data-action-group="impresion"
@@ -4879,6 +4879,18 @@ body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fall
 </div>
 
 <!-- ============ MODALS ============ -->
+
+<div class="modal-backdrop" id="modal-cards-layout">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>🃏 Tarjetas PDF</h3>
+    <p class="panel-subtitle">Elige cuántas tarjetas por folio A4</p>
+    <div class="modal-actions">
+      <button class="btn" data-cards-layout="3x3" title="Tamaño carta Magic, 63×88 mm">9 por folio (tamaño carta)</button>
+      <button class="btn" data-cards-layout="2x2" title="Tarjetas ×1,5, 94,5×132 mm — más legibles impresas">4 por folio (grande)</button>
+    </div>
+  </div>
+</div>
 
 <div class="modal-backdrop" id="modal-load">
   <div class="modal">
@@ -19945,20 +19957,40 @@ async function _downloadPdfBlob(blob, filename) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-document.getElementById('btn-cards-pdf')?.addEventListener('click', async () => {
+// "🃏 Tarjetas PDF" abre un selector de formato (9 ó 4 por folio); la
+// última elección queda marcada por defecto (localStorage wf-cards-layout).
+document.getElementById('btn-cards-pdf')?.addEventListener('click', () => {
   const wb = STATE.currentWarband;
   if (!wb || !Array.isArray(wb.models) || wb.models.length === 0) {
     alert('La banda no tiene modelos.');
     return;
   }
+  let last = '3x3';
+  try { last = localStorage.getItem('wf-cards-layout') || '3x3'; } catch (e) {}
+  document.querySelectorAll('#modal-cards-layout [data-cards-layout]').forEach(b => {
+    b.classList.toggle('btn-primary', b.dataset.cardsLayout === last);
+  });
+  openModal('modal-cards-layout');
+});
+document.querySelectorAll('#modal-cards-layout [data-cards-layout]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const layout = btn.dataset.cardsLayout;
+    try { localStorage.setItem('wf-cards-layout', layout); } catch (e) {}
+    closeModal('modal-cards-layout');
+    await exportCardsPdf(layout);
+  });
+});
+async function exportCardsPdf(layout) {
+  const wb = STATE.currentWarband;
+  if (!wb || !Array.isArray(wb.models) || wb.models.length === 0) return;
   try {
-    const blob = await generateCardsPdf(wb);
+    const blob = await generateCardsPdf(wb, { layout });
     const safeName = (wb.name || 'banda').replace(/[^\w\d -]/g, '').trim() || 'banda';
-    await _downloadPdfBlob(blob, 'tarjetas-' + safeName + '.pdf');
+    await _downloadPdfBlob(blob, 'tarjetas-' + safeName + (layout === '2x2' ? '-4xfolio' : '') + '.pdf');
   } catch (e) {
     alert('Error generando PDF de tarjetas: ' + e.message);
   }
-});
+}
 document.getElementById('btn-trackers-pdf')?.addEventListener('click', async () => {
   const wb = STATE.currentWarband;
   if (!wb || !Array.isArray(wb.models) || wb.models.length === 0) {
@@ -35272,7 +35304,22 @@ function _drawCardsHeaderFooter(doc, wb, pageIdx, totalPages) {
            105, 292, { align: 'center' });
 }
 
-async function generateCardsPdf(wb) {
+/* Rejilla de tarjetas en A4 portrait. '3x3' = 9 por folio a tamaño carta
+ * Magic (63×88 mm); '2x2' = 4 por folio a ×1,5 (94,5×132 mm), misma
+ * proporción. Cualquier otro valor cae a '3x3'. */
+function getCardsPdfLayout(layout) {
+  const big = layout === '2x2';
+  const cols = big ? 2 : 3, rows = big ? 2 : 3;
+  const cardW = big ? 94.5 : 63, cardH = big ? 132 : 88;
+  return {
+    id: big ? '2x2' : '3x3',
+    cols, rows, perPage: cols * rows, cardW, cardH,
+    marginX: (210 - cols * cardW) / 2,
+    marginY: (297 - rows * cardH) / 2,
+  };
+}
+
+async function generateCardsPdf(wb, opts) {
   if (!wb || !Array.isArray(wb.models) || wb.models.length === 0) {
     throw new Error('La banda no tiene modelos para exportar tarjetas.');
   }
@@ -35284,11 +35331,8 @@ async function generateCardsPdf(wb) {
   try { await preloadFactionImages(wb); } catch (e) { /* silencioso, PDF sin watermarks */ }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const cols = 3, rows = 3;
-  const cardW = 63, cardH = 88;
-  const marginX = (210 - cols * cardW) / 2;
-  const marginY = (297 - rows * cardH) / 2;
-  const perPage = cols * rows;
+  const { cols, cardW, cardH, marginX, marginY, perPage } =
+    getCardsPdfLayout(opts && opts.layout);
   const totalPages = Math.ceil(wb.models.length / perPage);
 
   for (let i = 0; i < wb.models.length; i++) {
