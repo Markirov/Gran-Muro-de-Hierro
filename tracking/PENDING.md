@@ -5,7 +5,6 @@
 ## 🔴 Alta Prioridad
 
 - [ ] **Migrar backlog previo a tracking:** volcar `BACKLOG.md`, `TODO.md` y `ROADMAP.md` (raíz) a este archivo por prioridad, y retirarlos o dejarlos como histórico.
-- [ ] **Definir `verify.sh` real:** hoy es un stub (`package.json` no tiene test real; hay `tests/` y `jsdom`). Cablear la suite de `tests/` y añadir las directrices `D.*` del Lead Developer.
 
 ## 🟡 Media Prioridad
 
@@ -19,4 +18,4 @@ _(vacío)_
 
 ## ✅ Completado
 
-_(vacío)_
+- [x] **Definir `verify.sh` real:** hoy es un stub (`package.json` no tiene test real; hay `tests/` y `jsdom`). Cablear la suite de `tests/` y añadir las directrices `D.*` del Lead Developer.

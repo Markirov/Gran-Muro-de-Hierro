@@ -14,7 +14,12 @@
 | Código | Título | Archivo |
 |---|---|---|
 | D.1 | Verificación obligatoria antes de cerrar tarea | `rules/lead_developer.md` |
-| _(D.2+)_ | _(definir según el stack; ver `recipes/<stack>/` del framework)_ | `rules/lead_developer.md` |
+| D.2 | TDD obligatorio (patrones module-style / jsdom-style) | `rules/lead_developer.md` |
+| D.3 | Separación de capas (canon inmutable, motor puro, UI desde `boot()`) | `rules/lead_developer.md` |
+| D.4 | El motor consulta flags, no nombres | `rules/lead_developer.md` |
+| D.5 | Fidelidad canon verificada en PDF | `rules/lead_developer.md` |
+| D.6 | Single-file sin dependencias nuevas, UI en español | `rules/lead_developer.md` |
+| D.7 | Round-trip Companion sin pérdida | `rules/lead_developer.md` |
 
 ## Domain & Product Owner · QA Auditor
 

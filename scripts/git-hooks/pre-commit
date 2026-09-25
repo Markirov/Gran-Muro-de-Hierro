@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# pre-commit — gate ligero de tipos antes de cada commit (AGENTS.md §1.1).
-# Más ligero que verify.sh (sin build) para no frenar micro-commits.
-# STUB: mientras no haya stack, deja pasar. Con stack, corre el chequeo de tipos y bloquea si falla.
+# pre-commit — gate ligero antes de cada commit (AGENTS.md §1.1).
+# Solo sintaxis del <script> de index.html (<1s); la suite completa va en verify.sh.
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-# Ejemplo Node (descomenta y adapta):
-# if [ -f package.json ] && [ -d node_modules ]; then
-#   npx tsc --noEmit || { echo "pre-commit: errores de tipos, commit bloqueado."; exit 1; }
-# fi
-
+if git diff --cached --name-only | grep -qx 'index.html'; then
+  node scripts/check-syntax.js || { echo "pre-commit: error de sintaxis en index.html, commit bloqueado."; exit 1; }
+fi
 exit 0

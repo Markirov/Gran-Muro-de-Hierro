@@ -21,6 +21,7 @@ fi
 
 # 3. Dependencias (rellenar según el stack)
 #   Node:   [ -f package.json ] && npm install
+[ -d node_modules/jsdom ] || { echo "-- npm install (jsdom) --"; npm install --silent; }
 #   Python: [ -f requirements.txt ] && pip install -r requirements.txt
 
 # 4. Versión del harness (aviso pasivo si el framework tiene una más nueva; NUNCA se aplica sola)
