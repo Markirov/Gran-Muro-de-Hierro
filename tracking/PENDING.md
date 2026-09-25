@@ -4,7 +4,7 @@
 
 ## 🔴 Alta Prioridad
 
-- [ ] **Ficha móvil interactiva por miniatura** (brainstorming en curso con Marcos): archivo HTML autónomo, una miniatura por pantalla con swipe, marcado de estado/turno; opción A (solo partida, estado en el móvil, no vuelve a Forge).
+- [ ] **Modo mesa — ficha móvil por miniatura:** diseño en `tracking/plans/PLAN_2026-09-25_modo-mesa.md`, pendiente de revisión de Marcos antes de implementar. Overlay a pantalla completa dentro de Forge, swipe entre miniaturas, estado de combate + activación por turno + efectos/usos, estado en `localStorage` sin tocar la banda.
 
 ## 🟡 Media Prioridad
 
