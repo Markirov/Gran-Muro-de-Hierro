@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# pre-commit — gate ligero de tipos antes de cada commit (AGENTS.md §1.1).
+# Más ligero que verify.sh (sin build) para no frenar micro-commits.
+# STUB: mientras no haya stack, deja pasar. Con stack, corre el chequeo de tipos y bloquea si falla.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+# Ejemplo Node (descomenta y adapta):
+# if [ -f package.json ] && [ -d node_modules ]; then
+#   npx tsc --noEmit || { echo "pre-commit: errores de tipos, commit bloqueado."; exit 1; }
+# fi
+
+exit 0

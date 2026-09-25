@@ -1,6 +1,6 @@
-# CLAUDE.md — puntero de protocolo
+# GEMINI.md — puntero de protocolo
 
-> El runtime de Claude Code carga este archivo automáticamente.
+> El runtime de Gemini/Antigravity carga este archivo automáticamente.
 > La fuente **ÚNICA y completa** del protocolo núcleo está en **`.agents/AGENTS.md`**; lo propio de este proyecto (roles, reglas de dominio) está en **`.agents/PROJECT.md`** — lee ambos al empezar cada sesión.
 
 1. Lee `.agents/AGENTS.md` y `.agents/PROJECT.md` al inicio de cada sesión (punto de entrada único).

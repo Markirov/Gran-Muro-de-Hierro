@@ -1,0 +1,5 @@
+# TAREAS COMPLETADAS (DONE)
+
+> Cronológico inverso — lo más reciente arriba. Cada entrada: `(fecha, Rol (Herramienta), motivo)` + qué se hizo y cómo se verificó. Al superar ~1500 líneas, archiva lo antiguo a `archive/DONE-<año>-Q<trimestre>.md`.
+
+- [x] **Migración a Harness v2.5.0, sabor `lean` (3 roles)** (2026-09-25, Framework Maintainer (Claude Code), a petición del usuario): proyecto sin `.agents/` y con un `CLAUDE.md` propio de 21KB. Tag de seguridad `pre-integracion-framework-2026-09-25`. La guía original se movió íntegra a `.agents/PROJECT.md` (con tabla de roles lean encima); `.agents/AGENTS.md` es copia exacta del núcleo; roles/skills lean, punteros raíz (`CLAUDE.md`/`GEMINI.md`/`AGENTS.md`), `init.sh`, `verify.sh` (stub), hook `pre-commit` y `tracking/` sembrados desde el scaffold. Registrado con `harness.sh adopt lean tracking`. Pendiente: migrar `BACKLOG.md`/`TODO.md`/`ROADMAP.md` a `tracking/PENDING.md` y definir `verify.sh` real. `Bandas/cazadores-del-muro.pdf` (sin trackear previo) no se tocó.
