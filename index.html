@@ -5794,7 +5794,8 @@ const DATA = {
           { id:'heavy-flamethrower-na',name:'Heavy Flamethrower',cost:55, currency:'👑', restriction:'Limit: 1',
             type:'2-Handed', range:'10\"', weaponKeywords:['-1 INJURY DICE','AUTOMATIC 2','FIRE','FLAMETHROWER','HEAVY','IGNORE ARMOUR'] },
           { id:'heavy-shotgun-na',  name:'Heavy Shotgun',        cost:20, currency:'👑', restriction:'Shield Combo · Limit: 2',
-            type:'2-Handed', range:'12"', weaponKeywords:['+1 DICE','+1 INJURY DICE','HEAVY','SHOTGUN'] },
+            type:'2-Handed', range:'12"', weaponKeywords:['+1 DICE','HEAVY'],
+            note:'Tungsten-orichalcum Alloy Shot: +2 INJURY DICE en ataques a distancia a Short Range.', shortRangeInjuryDice:2 },
           { id:'machine-gun-na',    name:'Machine Gun',          cost:50, currency:'👑', restriction:'Limit: 2',
             type:'2-Handed', range:'36"', weaponKeywords:['AUTOMATIC 3','HEAVY','RELOAD'] },
           { id:'pistol-na',         name:'Pistol',               cost:6,  currency:'👑',
@@ -5828,15 +5829,16 @@ const DATA = {
         ],
         grenades: [
           { id:'frag-na',           name:'Frag Grenades',        cost:7,  currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','SHRAPNEL'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
           { id:'incend-na',         name:'Incendiary Grenades',  cost:15, currency:'👑', restriction:'Limit: 2',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','FIRE','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
           { id:'satchel-na',        name:'Satchel Charge',       cost:15, currency:'👑', restriction:'Consumable · Limit: 3 (1 per model)',
-            type:'Grenade', range:'4"', weaponKeywords:['+1 INJURY DICE','BLAST 3"','HEAVY','SHRAPNEL'] },
+            type:'Grenade', range:'6"', weaponKeywords:['+1 INJURY DICE','BLAST 3"','CONSUMABLE','HEAVY','IGNORE ARMOUR','IGNORE COVER','SCATTER'] },
         ],
         shields: [
           { id:'heavy-ballistic-na',name:'Heavy Ballistic Shield',cost:15,currency:'👑', restriction:'Machine Armour only · Shield Combo',
-            type:'Shield', range:'-', weaponKeywords:['-1 INJURY DICE','COVER'] },
+            type:'Shield', range:'-', weaponKeywords:['COVER'] },
           { id:'trench-shield-na',  name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
             type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
@@ -6046,11 +6048,13 @@ const DATA = {
         ],
         grenades: [
           { id:'incend-tp',       name:'Incendiary Grenades',  cost:15, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','FIRE','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
           { id:'molotov-tp',      name:'Molotov Cocktail',     cost:5,  currency:'👑',
-            type:'Grenade', range:'6"', weaponKeywords:['BLAST 3"','FIRE','IGNORE ARMOUR'] },
+            type:'Grenade', range:'6"', weaponKeywords:['-1 INJURY DICE','ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
           { id:'warcross-tp',     name:'Warcross',             cost:5,  currency:'👑', restriction:'Unique',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','SHRAPNEL'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','IGNORE LONG RANGE'] },
         ],
         shields: [
           { id:'holy-icon-tp',    name:'Holy Icon Shield',     cost:2,  currency:'☼', restriction:'Unique · ELITE only · Shield Combo',
@@ -6074,7 +6078,7 @@ const DATA = {
           { id:'holy-relic-tp',   name:'Holy Relic',           cost:2,  currency:'☼', restriction:'ELITE only',
             type:'Equipment', range:'-', weaponKeywords:['BLESSED 1'] },
           { id:'incend-ammo-tp',  name:'Incendiary Ammunition',cost:15, currency:'👑', restriction:'Consumable · Limit: 1',
-            type:'Equipment', range:'-', weaponKeywords:['FIRE'] },
+            type:'Equipment', range:'-', weaponKeywords:['AMMUNITION (FIRE)','CONSUMABLE'] },
           { id:'capirote-tp',     name:'Iron Capirote',        cost:7,  currency:'👑', restriction:'Unique · Headgear',
             type:'Headgear', range:'-', weaponKeywords:['NEGATE FEAR','NEGATE SHRAPNEL'] },
           { id:'martyr-pills-tp', name:'Martyrdom Pills',      cost:20, currency:'👑', restriction:'Consumable · Limit: 3',
@@ -6098,9 +6102,11 @@ const DATA = {
           { id:'heavy-flame-anchor', name:'Heavy Flamethrower', cost:45, currency:'👑', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'10\"', weaponKeywords:['-1 INJURY DICE','AUTOMATIC 2','FIRE','FLAMETHROWER','HEAVY','IGNORE ARMOUR'] },
           { id:'punt-gun-anchor',    name:'Punt Gun',           cost:10, currency:'👑', restriction:'Anchorite Shrine only',
-            type:'1-Handed', range:'18"', weaponKeywords:['+1 DICE','+1 INJURY DICE','HEAVY','SHOTGUN','SHRAPNEL','Overcharge'] },
+            type:'1-Handed', range:'18"', weaponKeywords:['+1 DICE','+1 INJURY DICE','HEAVY','SHOTGUN','SHRAPNEL'],
+            note:'Overcharge: antes de disparar puedes sobrecargarlo si el modelo tiene STRONG o está en contacto con un aliado. El ataque gana BLAST 3" y RELOAD; después el tirador recibe 1 BLOOD MARKER y su activación termina.' },
           { id:'trench-mortar-anchor', name:'Trench Mortar',    cost:40, currency:'👑', restriction:'Anchorite Shrine only',
-            type:'1-Handed', range:'6"-36"', weaponKeywords:['+1 INJURY DICE','BLAST 3"','FIRE','HEAVY','IGNORE COVER','SCATTER','High Trajectory'] },
+            type:'1-Handed', range:'6"-36"', weaponKeywords:['+1 INJURY DICE','BLAST 3"','FIRE','HEAVY','IGNORE COVER','SCATTER'],
+            note:'High Trajectory: el modelo o punto objetivo no puede estar a 6" o menos del atacante (si el disparo hace Scatter sí puede acabar más cerca).' },
         ],
         anchoriteBattlekit: [
           { id:'gas-filters-anchor',   name:'Gas Filters',     cost:5,  currency:'👑', restriction:'Anchorite Shrine only',
@@ -6291,9 +6297,10 @@ const DATA = {
         ],
         grenades: [
           { id:'frag-is',         name:'Frag Grenades',        cost:7,  currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','SHRAPNEL'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
           { id:'incend-is',       name:'Incendiary Grenades',  cost:15, currency:'👑', restriction:'Jabirean Alchemist only',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','FIRE','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
         ],
         shields: [
           { id:'trench-shield-is',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
@@ -6547,11 +6554,12 @@ const DATA = {
         ],
         grenades: [
           { id:'frag-hl',         name:'Frag Grenades',        cost:7,  currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','SHRAPNEL'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
           { id:'gas-hl',          name:'Gas Grenades',         cost:10, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','GAS','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
           { id:'incend-hl',       name:'Incendiary Grenades',  cost:15, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','FIRE','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
         ],
         shields: [
           { id:'trench-shield-hl',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
@@ -6573,7 +6581,7 @@ const DATA = {
           { id:'soul-contract-hl',name:'Hellbound Soul Contract',cost:5,currency:'👑', restriction:'Heretic Troopers & Legionnaires only · Limit: 3',
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'incend-ammo-hl',  name:'Incendiary Ammunition',cost:15, currency:'👑', restriction:'Consumable · Limit: 1',
-            type:'Equipment', range:'-', weaponKeywords:['FIRE'] },
+            type:'Equipment', range:'-', weaponKeywords:['AMMUNITION (FIRE)','CONSUMABLE'] },
           { id:'inf-brand-hl',    name:'Infernal Brand',       cost:5,  currency:'👑',
             type:'Equipment', range:'-', weaponKeywords:['NEGATE FIRE'] },
           { id:'mountain-hl',     name:'Mountaineer Kit',      cost:3,  currency:'👑', restriction:'Limit: 2',
@@ -6708,7 +6716,7 @@ const DATA = {
           { id:'pistol-bg',       name:'Pistol',               cost:6,  currency:'👑',
             type:'1-Handed', range:'12"/Melee', weaponKeywords:['PISTOL'] },
           { id:'putrid-shotgun-bg',name:'Putrid Shotgun',      cost:20, currency:'👑', restriction:'Unique · Bayonet Lug · Shield Combo · Limit: 2',
-            type:'2-Handed', range:'12"', weaponKeywords:['+1 DICE','ASSAULT','INFECTION MARKERS','SHOTGUN'] },
+            type:'2-Handed', range:'12"', weaponKeywords:['+1 DICE','ASSAULT','INFECTION MARKERS'] },
           { id:'shotgun-bg',      name:'Shotgun',              cost:10, currency:'👑', restriction:'Bayonet Lug · Shield Combo',
             type:'2-Handed', range:'12\"', weaponKeywords:['+1 DICE','SHOTGUN'] },
           { id:'viscera-cannon-bg',name:'Viscera Cannon',      cost:50, currency:'👑', restriction:'Unique · ELITE only · Limit: 2',
@@ -6736,9 +6744,10 @@ const DATA = {
         ],
         grenades: [
           { id:'gas-bg',          name:'Gas Grenades',         cost:10, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','GAS','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
           { id:'parasite-bg',     name:'Parasite Grenades',    cost:15, currency:'👑', restriction:'Unique',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','DEADLY'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT'],
+            note:'Terrifying Hallucinations: si impacta, tras resolver la Injury Roll puedes mover al objetivo 3" en línea recta y en cualquier dirección (puede acabar a 1" de un enemigo o Retirarse, y Trepar, Saltar un hueco o Saltar hacia abajo).' },
         ],
         shields: [
           { id:'bg-shield-bg',    name:'Black Grail Shield',   cost:20, currency:'👑', restriction:'Unique · ELITE only · Shield Combo',
@@ -6853,7 +6862,7 @@ const DATA = {
           { id:'heavy-flame-co',  name:'Heavy Flamethrower',   cost:55, currency:'👑', restriction:'Limit: 1',
             type:'2-Handed', range:'10\"', weaponKeywords:['-1 INJURY DICE','AUTOMATIC 2','FIRE','FLAMETHROWER','HEAVY','IGNORE ARMOUR'] },
           { id:'ophidian-rifle-co',name:'Ophidian Rifle',      cost:25, currency:'👑', restriction:'Unique · ELITE only · Limit: 3',
-            type:'2-Handed', range:'30"', weaponKeywords:['HEAVY'] },
+            type:'2-Handed', range:'30"', weaponKeywords:['HEAVY','IGNORE COVER','IGNORE LONG RANGE'] },
           { id:'pistol-co',       name:'Pistol',               cost:6,  currency:'👑',
             type:'1-Handed', range:'12"/Melee', weaponKeywords:['PISTOL'] },
           { id:'serpent-gun-co',  name:'Serpent Assault Gun',  cost:50, currency:'👑', restriction:'Unique · Limit: 2',
@@ -6885,9 +6894,10 @@ const DATA = {
         ],
         grenades: [
           { id:'gas-co',          name:'Gas Grenades',         cost:10, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','GAS','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
           { id:'incend-co',       name:'Incendiary Grenades',  cost:15, currency:'👑', restriction:'Limit: 2',
-            type:'Grenade', range:'8"', weaponKeywords:['BLAST 3"','FIRE','IGNORE ARMOUR'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
         ],
         shields: [
           { id:'trench-shield-co',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
@@ -6909,7 +6919,7 @@ const DATA = {
           { id:'gas-mask-co',      name:'Gas Mask',              cost:5,  currency:'👑',
             type:'Equipment', range:'-', weaponKeywords:['NEGATE GAS'] },
           { id:'incend-ammo-co',   name:'Incendiary Ammunition', cost:15, currency:'👑', restriction:'Consumable · Limit: 1',
-            type:'Equipment', range:'-', weaponKeywords:['FIRE'] },
+            type:'Equipment', range:'-', weaponKeywords:['AMMUNITION (FIRE)','CONSUMABLE'] },
           { id:'music-co',         name:'Musical Instrument',    cost:15, currency:'👑', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD'] },
           { id:'restraining-co',   name:'Restraining Muzzle',    cost:10, currency:'👑', restriction:'Unique · Yoke Fiends only · Limit: 3',
@@ -7535,9 +7545,10 @@ const KEYWORD_LIBRARY = {
   'STRONG':        'Fuerte: bonificadores en cuerpo a cuerpo y permite usar ciertas armas pesadas.',
   'FEAR':          'Provoca miedo en el enemigo: penaliza tiradas de Moral cercanas.',
   'NEGATE FEAR':   'Inmune a los efectos de FEAR.',
-  'NEGATE GAS':    'Inmune a los efectos de las granadas y armas con la keyword GAS.',
+  'NEGATE GAS':    'No le afecta el Efecto de la keyword GAS.',
+  'NEGATE FIRE':   'No le afecta el Efecto de la keyword FIRE.',
   'NEGATE MINED':  'Inmune al detonador de terreno MINED al moverse.',
-  'NEGATE SHRAPNEL':'Inmune a los efectos colaterales de la keyword SHRAPNEL.',
+  'NEGATE SHRAPNEL':'No le afecta el Efecto de la keyword SHRAPNEL.',
   'NEGATE DIFFICULT TERRAIN':'Ignora las penalizaciones de movimiento por terreno difícil.',
   'FLYING':        'Puede mover por el aire ignorando terreno y obstáculos.',
   'INFILTRATOR':   'Puede desplegarse de forma avanzada o sigilosa antes del primer turno.',
@@ -7691,6 +7702,22 @@ const WEAPON_KEYWORD_LIBRARY = {
     type: 'effect',
     summary: 'Ignora la regla COVER del objetivo: el modelo a cubierto no recibe sus -DICE habituales contra este ataque.',
   },
+  'IGNORE LONG RANGE': {
+    type: 'effect',
+    summary: 'Ignora el -1 DICE por atacar a Long Range (más de la mitad del alcance del arma).',
+  },
+  'DEPLOYABLE': {
+    type: 'tag',
+    summary: 'Battlekit representado por una miniatura o pieza de escenografía que se puede colocar durante la partida.',
+  },
+  'BLESSED': {
+    type: 'effect',
+    summary: 'La primera vez que despliegas el modelo en la partida, coloca junto a él tantos BLESSING MARKERS como indique X.',
+  },
+  'AMMUNITION': {
+    type: 'effect',
+    summary: 'Se usa en la siguiente partida del modelo. Al desplegarlo, elige 1 arma a distancia: gana la keyword indicada entre paréntesis hasta el final de la partida. El arma no puede tener BLAST, FIRE, GAS ni SHRAPNEL, ni más de un tipo de AMMUNITION.',
+  },
   'RELOAD': {
     type: 'effect',
     summary: 'Tras disparar, el arma queda sin munición y debe recargarse: la siguiente activación del modelo se gasta automáticamente recargándola, no puede atacar otra vez.',
@@ -7717,7 +7744,7 @@ const WEAPON_KEYWORD_LIBRARY = {
   },
   'NEGATE SHRAPNEL': {
     type: 'effect',
-    summary: 'Inmune a la regla SHRAPNEL: no recibe Injury Roll extra como daño colateral de explosiones.',
+    summary: 'No le afecta el Efecto de la keyword SHRAPNEL (no recibe el BLOOD MARKER extra tras la Injury Roll).',
   },
   'INFECTION MARKERS': {
     type: 'effect',
@@ -9471,6 +9498,9 @@ function companionEquipToBattleWeapon(cmEq) {
       injuryDice,
       injuryMod,
       keywords: kws,
+      // Flags de reglas especiales del arma (datos de la armería).
+      critIgnoreArmour: !!canonical.critIgnoreArmour,
+      shortRangeInjuryDice: canonical.shortRangeInjuryDice || 0,
     };
   }
   // Fallback for custom Companion items not in our catalogue
@@ -9746,6 +9776,9 @@ function _armouryItemToBattleWeapon(item) {
     injuryDice,
     injuryMod,
     keywords: kws,
+    // Flags de reglas especiales del arma (datos de la armería).
+    critIgnoreArmour: !!item.critIgnoreArmour,
+    shortRangeInjuryDice: item.shortRangeInjuryDice || 0,
   };
 }
 
@@ -10980,7 +11013,7 @@ function bestWeapon_lab(attacker, target, type, phase) {
       if (hasCleave && target.isDown) s += 1.5;  // remate bonus
       // BLAST scales with target density (we don't know neighbours here, so
       // use a generic heuristic — already handled at applyInjury_lab time)
-      if (w.keywords.has('BLAST') || w.keywords.has('BLAST 3"')) s += 1.5;
+      if (hasBlastKeyword(w)) s += 1.5;
       if (w.keywords.has('AUTOMATIC 2') || w.keywords.has('AUTOMATIC 3')) s += 1.5;
       // FIRE: small bonus, but useless vs NEGATE FIRE
       if (w.keywords.has('FIRE')) s += target.negateFire ? 0 : 0.5;
@@ -11000,6 +11033,23 @@ function bestWeapon_lab(attacker, target, type, phase) {
   })[0];
 }
 
+/** BLAST X" con cualquier tamaño (canon: Frag BLAST 2", Gas BLAST 3"). */
+function hasBlastKeyword(weapon) {
+  if (!weapon || !weapon.keywords) return false;
+  for (const k of weapon.keywords) if (/^BLAST( |$)/.test(String(k))) return true;
+  return false;
+}
+
+/** Short Range canon: objetivo a la mitad del alcance o menos. Solo se
+ *  puede saber con posiciones (_pos); sin ellas devuelve false — el Lab
+ *  abstracto no modela bandas de alcance (tampoco Long Range). */
+function isShortRange_lab(attacker, target, weapon) {
+  if (!attacker || !target || !attacker._pos || !target._pos || !weapon) return false;
+  const r = typeof weapon.range === 'number' ? weapon.range : parseInt(String(weapon.range || '').match(/(\d+)/)?.[1] || '0', 10);
+  if (!r) return false;
+  return distance(attacker, target) <= r / 2;
+}
+
 function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemies, extraInjuryMod) {
   // Hold Your Fire! consumption: if attacker was marked by HYF this turn,
   // ~50% of attacks fizzle. We model it as a coin flip per attack.
@@ -11009,6 +11059,10 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
   let injuryDice = weapon.injuryDice;
   let injuryMod = weapon.injuryMod + (extraInjuryMod || 0);
   if (isCritical) injuryDice += weapon.keywords.has('CRITICAL') ? 2 : 1;
+  // Tungsten-orichalcum Alloy Shot (Heavy Shotgun): +X INJURY DICE a Short Range.
+  if (!isMelee && weapon.shortRangeInjuryDice && isShortRange_lab(attacker, target, weapon)) {
+    injuryDice += weapon.shortRangeInjuryDice;
+  }
   if (isMelee && target.isDown) injuryDice += 1;
   // Punishing Millstones (Procession of the Sacred Affliction variant):
   // canon adds another +1 INJURY DICE on top of the standard "Down bonus"
@@ -11026,7 +11080,9 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
 
   // Court Lust — attacker pierceArmour fuerza bypass.
   const bypass = applyLustPierce(
-    weapon.keywords.has('IGNORE ARMOUR') || weapon.keywords.has('ARMOUR-PIERCING'),
+    weapon.keywords.has('IGNORE ARMOUR') || weapon.keywords.has('ARMOUR-PIERCING') ||
+      // Liquid Fire (Incendiary Grenades, Molotov): el Crítico da IGNORE ARMOUR.
+      (isCritical && !!weapon.critIgnoreArmour),
     attacker
   );
   let result = injuryRoll_lab(injuryDice, injuryMod, target.armour, bypass);
@@ -11107,9 +11163,10 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
   }
 
   // Simplified BLAST: hits the target plus 1-2 random others
-  if (weapon.keywords.has('BLAST') || weapon.keywords.has('BLAST 3"')) {
+  if (hasBlastKeyword(weapon)) {
     const others = allEnemies.filter(e => e !== target && !e.isOut);
-    const n = others.length >= 5 ? 2 : 1;
+    // BLAST 2" (Frag) cubre menos área que 3": como mucho 1 modelo extra.
+    const n = (others.length >= 5 && !weapon.keywords.has('BLAST 2"')) ? 2 : 1;
     shuffle_lab(others).slice(0, n).forEach(e => {
       if (Math.random() < 0.5) {
         let id = weapon.injuryDice;
@@ -11148,7 +11205,8 @@ function resolveRanged_lab(attacker, target, weapon, allEnemies) {
   // no se ejecuta. Back-compat: sin _pos, ignora check.
   if (!isWithinWeaponRange(attacker, target, weapon)) return;
   let diceMod = attacker.rangedDice + weapon.diceMod - attacker.bloodMarkers;
-  if (weapon.keywords.has('SHOTGUN')) diceMod += 1;
+  // SHOTGUN canon = -1 INJURY DICE a Long Range. El Lab no modela bandas de
+  // alcance, así que no se aplica; el +1 DICE de las escopetas ya va en el perfil.
   // Flag consumers — Court Gluttony aura del target reduce attacker
   // dice; Fortify ACTION bonifica defender contra ranged.
   diceMod = applyGluttonyMalus(diceMod, target);
@@ -11214,7 +11272,7 @@ function resolveRanged_lab(attacker, target, weapon, allEnemies) {
     if (target.isOut) return;
     const r = successRollWithBlessing_lab(attacker, diceMod, risky);
     if (r === 'FAILURE') {
-      if ((weapon.keywords.has('BLAST') || weapon.keywords.has('BLAST 3"'))
+      if (hasBlastKeyword(weapon)
           && weapon.keywords.has('SCATTER')
           && Math.random() < 0.3) {
         applyInjury_lab(attacker, target, weapon, false, false, allEnemies);
@@ -12886,7 +12944,6 @@ function scoreWeaponPotential(weapon, ctx) {
   if (kws.includes('CRITICAL')) score += 6;
   if (kws.includes('AUTOMATIC 2')) score += 8;
   if (kws.includes('AUTOMATIC 3')) score += 14;
-  if (kws.includes('SHOTGUN')) score += 4;  // close-range bonus
 
   // ── Penalties ───────────────────────────────────────────────────────
   if (kws.includes('-1 INJURY DICE')) score -= 4;
@@ -13430,7 +13487,7 @@ function _computeCoverageFromBattleBand(battleBand) {
   // ── antiHorde ─────────────────────────────────────────────────────
   // BLAST + AUTOMATIC + FLAMETHROWER. Saturation at 4+.
   {
-    const cnt = countWpnKw('BLAST') + countWpnKw('BLAST 3"') +
+    const cnt = countWpnKw('BLAST') + countWpnKw('BLAST 2"') + countWpnKw('BLAST 3"') +
                 countWpnKw('AUTOMATIC 2') + countWpnKw('AUTOMATIC 3') +
                 countWpnKw('FLAMETHROWER');
     result.antiHorde.count = cnt;
@@ -13936,7 +13993,7 @@ function generateTacticalAnalysis(wb, matchupResults) {
   // Counters
   const countKw = (kw) => allWpns.filter(w => w.keywords && w.keywords.has(kw)).length;
   const nIgnoreArmour = countKw('IGNORE ARMOUR') + countKw('ARMOUR-PIERCING');
-  const nBlast        = countKw('BLAST') + countKw('BLAST 3"');
+  const nBlast        = countKw('BLAST') + countKw('BLAST 2"') + countKw('BLAST 3"');
   const nFlamethrower = countKw('FLAMETHROWER');
   const nAutomatic    = countKw('AUTOMATIC 2') + countKw('AUTOMATIC 3');
   const nCritical     = countKw('CRITICAL');
@@ -14415,7 +14472,7 @@ function analyzeEnemyThreats_lab(matchupResults) {
       );
     }
 
-    if (keywordSet.has('BLAST') || keywordSet.has('BLAST 3"')) {
+    if (keywordSet.has('BLAST') || keywordSet.has('BLAST 2"') || keywordSet.has('BLAST 3"')) {
       countermeasures.push(
         `su weapon tiene BLAST — separa modelos al menos 2" entre sí, evita cluster en cobertura compartida`
       );
@@ -35603,7 +35660,7 @@ function lookupRuleText(name) {
   };
   const raw = String(name || '').trim();
   if (!raw) return '';
-  return find(raw) || find(raw.replace(/\s+[\d+-]+"?$/, '')) || '';
+  return find(raw) || find(raw.replace(/\s+[\d+-]+"?$/, '')) || find(raw.replace(/\s*\([^)]*\)$/, '')) || '';
 }
 
 /* Datos de consulta de la ficha del modo mesa: armas, equipo (con las
@@ -39899,6 +39956,9 @@ function _lab2ToAbstractWeapon(eqItem, factionId) {
     range: entry.range || '24"',
     diceMod, injuryDice, injuryMod,
     keywords: kws,
+    // Flags de reglas especiales del arma (datos de la armería).
+    critIgnoreArmour: !!entry.critIgnoreArmour,
+    shortRangeInjuryDice: entry.shortRangeInjuryDice || 0,
   };
 }
 

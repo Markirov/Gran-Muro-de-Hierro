@@ -15,8 +15,9 @@ const js = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
 const bootIdx = js.search(/\nfunction boot\(\)/);
 const dom = new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
 dom.window.alert = () => {};
-dom.window.eval(js.slice(0, bootIdx) + '\n;window.__lib = { DATA };');
-const { DATA } = dom.window.__lib;
+const W = dom.window;
+W.eval(js.slice(0, bootIdx) + '\n;window.__lib = { DATA };');
+const { DATA } = W.__lib;
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
@@ -56,6 +57,84 @@ console.log('\nGroup 1: keywords canon de equipo');
 for (const [id, kws] of Object.entries(EXPECTED)) {
   ok(!!byId[id] && kwOf(id) === kws.slice().sort().join(', '), `${id}: ${kws.join(', ')} (got ${kwOf(id) || '—'})`);
 }
+
+// Lote 2 (aprobado por Marcos): armas y granadas, sí afectan al Lab.
+console.log('\nGroup 2: armas y granadas (Rulebook p.77-78, Warbands of TC)');
+const FRAG = ['ASSAULT', 'BLAST 2"', 'IGNORE COVER', 'IGNORE LONG RANGE', 'SHRAPNEL'];
+const GAS = ['-1 INJURY DICE', 'ASSAULT', 'BLAST 3"', 'GAS', 'IGNORE ARMOUR', 'IGNORE COVER', 'IGNORE LONG RANGE'];
+const INC = ['ASSAULT', 'FIRE', 'IGNORE COVER', 'IGNORE LONG RANGE'];
+const WEAPONS = {
+  'frag-na': FRAG, 'frag-is': FRAG, 'frag-hl': FRAG,
+  'gas-hl': GAS, 'gas-bg': GAS, 'gas-co': GAS,
+  'incend-na': INC, 'incend-tp': INC, 'incend-is': INC, 'incend-hl': INC, 'incend-co': INC,
+  'molotov-tp': ['-1 INJURY DICE'].concat(INC),
+  'warcross-tp': ['ASSAULT', 'IGNORE LONG RANGE'],
+  'parasite-bg': ['ASSAULT'],
+  'satchel-na': ['+1 INJURY DICE', 'BLAST 3"', 'CONSUMABLE', 'HEAVY', 'IGNORE ARMOUR', 'IGNORE COVER', 'SCATTER'],
+  'heavy-shotgun-na': ['+1 DICE', 'HEAVY'],
+  'putrid-shotgun-bg': ['+1 DICE', 'ASSAULT', 'INFECTION MARKERS'],
+  'ophidian-rifle-co': ['HEAVY', 'IGNORE COVER', 'IGNORE LONG RANGE'],
+  'punt-gun-anchor': ['+1 DICE', '+1 INJURY DICE', 'HEAVY', 'SHOTGUN', 'SHRAPNEL'],
+  'trench-mortar-anchor': ['+1 INJURY DICE', 'BLAST 3"', 'FIRE', 'HEAVY', 'IGNORE COVER', 'SCATTER'],
+  'heavy-ballistic-na': ['COVER'],
+  'incend-ammo-tp': ['AMMUNITION (FIRE)', 'CONSUMABLE'], 'incend-ammo-hl': ['AMMUNITION (FIRE)', 'CONSUMABLE'],
+  'incend-ammo-co': ['AMMUNITION (FIRE)', 'CONSUMABLE'],
+};
+for (const [id, kws] of Object.entries(WEAPONS)) {
+  ok(!!byId[id] && kwOf(id) === kws.slice().sort().join(', '), `${id}: ${kws.join(', ')} (got ${kwOf(id) || '—'})`);
+}
+ok(byId['satchel-na'] && byId['satchel-na'].range === '6"', 'Satchel Charge alcance 6"');
+ok(/Overcharge/.test(byId['punt-gun-anchor'].note || ''), 'Punt Gun: Overcharge como nota de regla');
+ok(/High Trajectory/.test(byId['trench-mortar-anchor'].note || ''), 'Trench Mortar: High Trajectory como nota de regla');
+ok(['incend-na', 'incend-tp', 'incend-is', 'incend-hl', 'incend-co', 'molotov-tp'].every(id => byId[id].critIgnoreArmour === true),
+   'Liquid Fire: flag critIgnoreArmour en incendiarias y Molotov');
+ok(byId['heavy-shotgun-na'].shortRangeInjuryDice === 2, 'Heavy Shotgun: flag shortRangeInjuryDice = 2 (Tungsten shot)');
+
+console.log('\nGroup 3: motor del Lab');
+const wpn = (id) => W._armouryItemToBattleWeapon(byId[id]);
+ok(typeof W.hasBlastKeyword === 'function' && W.hasBlastKeyword(wpn('frag-na')) && W.hasBlastKeyword(wpn('gas-hl')) &&
+   !W.hasBlastKeyword(wpn('incend-na')), 'hasBlastKeyword reconoce BLAST 2" y BLAST 3"; incendiaria sin BLAST');
+ok(wpn('incend-na').critIgnoreArmour === true && wpn('heavy-shotgun-na').shortRangeInjuryDice === 2,
+   '_armouryItemToBattleWeapon copia los flags');
+const cw = W.companionEquipToBattleWeapon({ name: 'Molotov Cocktail', type: 'grenade' });
+ok(cw && cw.critIgnoreArmour === true, 'companionEquipToBattleWeapon copia critIgnoreArmour');
+
+// Las funciones del script son globales de window: se pueden interceptar.
+const origSR = W.successRollWithBlessing_lab, origIR = W.injuryRoll_lab;
+let lastDiceMod = null, lastInjury = null;
+W.successRollWithBlessing_lab = (a, d) => { lastDiceMod = d; return 'SUCCESS'; };
+W.injuryRoll_lab = (dice, mod, armour, bypass) => { lastInjury = { dice, mod, bypass }; return 'NONE'; };
+const mk = (x) => ({ rangedDice: 0, meleeDice: 0, bloodMarkers: 0, armour: -1, keywords: new Set(), weapons: [],
+  isOut: false, isDown: false, _pos: x == null ? undefined : { x, y: 0 } });
+
+const shotgun = { name: 'Shotgun', isRanged: true, range: 12, diceMod: 1, injuryDice: 0, injuryMod: 0, keywords: new Set(['SHOTGUN', 'IGNORE COVER']) }; // IGNORE COVER: quita el azar de cobertura
+W.resolveRanged_lab(mk(), mk(), shotgun, []);
+ok(lastDiceMod === 1, 'SHOTGUN no suma +1 DICE extra (el +1 ya va en el perfil) → diceMod ' + lastDiceMod);
+
+const molo = wpn('molotov-tp');
+W.applyInjury_lab(mk(), mk(), molo, true, false, []);
+ok(lastInjury && lastInjury.bypass === true, 'Liquid Fire: crítico → IGNORE ARMOUR');
+W.applyInjury_lab(mk(), mk(), molo, false, false, []);
+ok(lastInjury && lastInjury.bypass === false, 'Liquid Fire: sin crítico → armadura normal');
+
+const hs = wpn('heavy-shotgun-na');
+W.applyInjury_lab(mk(0), mk(5), hs, false, false, []);
+ok(lastInjury && lastInjury.dice === 2, 'Tungsten shot: a corta distancia (5" ≤ 6") +2 INJURY DICE → ' + (lastInjury && lastInjury.dice));
+W.applyInjury_lab(mk(0), mk(10), hs, false, false, []);
+ok(lastInjury && lastInjury.dice === 0, 'Tungsten shot: a larga distancia sin bonus');
+W.applyInjury_lab(mk(), mk(), hs, false, false, []);
+ok(lastInjury && lastInjury.dice === 0, 'Tungsten shot: sin posiciones (Lab abstracto) no se aplica');
+W.successRollWithBlessing_lab = origSR; W.injuryRoll_lab = origIR;
+
+console.log('\nGroup 4: toda keyword de la armería tiene texto de consulta (modo mesa / tarjetas)');
+const allKw = new Set();
+Object.values(byId).forEach(it => (it.weaponKeywords || []).forEach(k => allKw.add(k)));
+const noText = [...allKw].filter(k => !W.lookupRuleText(k));
+ok(noText.length === 0, 'sin keywords huérfanas (' + (noText.join(' | ') || 'ninguna') + ')');
+ok(W.lookupRuleText('AMMUNITION').length > 20 && W.lookupRuleText('AMMUNITION (FIRE)') === W.lookupRuleText('AMMUNITION'),
+   'AMMUNITION (X) cae a la definición base');
+ok(/Efecto/.test(W.lookupRuleText('NEGATE GAS')) && /Efecto/.test(W.lookupRuleText('NEGATE SHRAPNEL')) && /Efecto/.test(W.lookupRuleText('NEGATE FIRE')),
+   'NEGATE X con semántica canon ("no le afecta el Efecto")');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
