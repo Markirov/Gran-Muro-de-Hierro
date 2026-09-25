@@ -67,8 +67,8 @@ const gs = find(sil.weapons, 'Greatsword / Greataxe');
 ok(gs && ['+1 INJURY DICE', 'CRITICAL', 'HEAVY'].every(k => find(gs.rules, k)),
    'Greatsword / Greataxe ↔ Great Sword/Axe: +1 INJURY DICE, CRITICAL, HEAVY');
 ok(gs && gs.hand === '2H', 'Greatsword a dos manos');
-// Defenders of the Iron Wall PDF: Anq Guard = HEAVY (DEPLOYABLE es solo de Trench Companion).
-ok(anqa && find(anqa.rules, 'HEAVY'), 'Anqa Guard ↔ Anq Guard: HEAVY');
+// Defenders of the Iron Wall PDF: HEAVY; Changelog 1.0.2 (p.100) añade DEPLOYABLE.
+ok(anqa && find(anqa.rules, 'HEAVY') && find(anqa.rules, 'DEPLOYABLE'), 'Anqa Guard ↔ Anq Guard: HEAVY, DEPLOYABLE');
 
 console.log('\nGroup 3c: datos canon corregidos (Rulebook p.79 / Warbands of TC)');
 ok(shield && find(shield.rules, '-1 INJURY MODIFIER') && !find(shield.rules, '-1 INJURY DICE'),
