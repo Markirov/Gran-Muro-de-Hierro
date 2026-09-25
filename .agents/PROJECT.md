@@ -69,4 +69,4 @@ Bandas reales exportadas de Trench Companion en `Bandas/` (Cazadores del Muro, H
 
 Raíz: `index.html`, `README.md`, `LICENSE`, `package.json`, `verify.sh`, `init.sh`, `Bandas/`, `tests/`, `scripts/` (check-syntax + git hooks), `tracking/`, `archive/`, `.agents/`. Gitignored: `herramientas/` (PDFs canon, guías, SPECs/PLANs/HANDOFFs, samples, legacy), `STLs/`, `assets/wwi-placeholders/`, PDFs generados.
 
-**Ojo:** el repo vive dentro de la carpeta sincronizada de Google Drive (`E:\Drive`). Drive siembra `desktop.ini` en todos los directorios, incluido `.git/`; si aparecen en `.git/refs` o `.git/logs/refs`, git falla con `bad ref refs/desktop.ini` y hay que borrarlos.
+**Nota:** `E:\Drive` fue carpeta sincronizada de Google Drive y dejó `desktop.ini` residuales dentro de `.git/` (ya no sincroniza). Si git da `bad ref refs/desktop.ini`, borrar los `desktop.ini` de `.git/refs` y `.git/logs/refs`.
