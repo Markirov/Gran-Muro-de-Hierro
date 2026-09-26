@@ -6285,7 +6285,7 @@ const DATA = {
             type:'2-Handed', range:'48\"', weaponKeywords:['+1 DICE','CRITICAL','RISKY'] },
           // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
           { id:'grand-cannon-iw', name:'Sultanate Grand Cannon', cost:60, currency:'👑',
-            variantOnly:'iron-wall-def', restriction:'Brazen Bull or stationary only · Limit: 2',
+            variantOnly:'iron-wall-def', restriction:'Brazen Bull or stationary only · Limit: 2 (1 per model)',
             type:'1-Handed', range:'48"', weaponKeywords:['+2 INJURY DICE','DEPLOYABLE','HEAVY','IGNORE ARMOUR'] },
         ],
         melee: [
@@ -6438,6 +6438,10 @@ const DATA = {
           stats:{ movement:'6"/Infantry', ranged:'+2 DICE', melee:'+2 DICE', armour:'0', base:'32mm' },
           keywords:['SULTANATE','ELITE','LEADER','NEGATE FEAR','TOUGH','STRONG'],
           abilities:[],
+          // Usa la entrada del Yüzbaşı → también puede ser Janissary Veteran.
+          upgrades:[{ id:'veteran', name:'Janissary Veteran', cost:10, currency:'👑',
+            addsKeywords:['STRONG'], addsAbilities:['Counter-Charge'],
+            note:'Janissary Veteran (entrada del Yüzbaşı): STRONG y Counter-Charge por +10 👑.' }],
           note:'Comandante del Iron Wall (guardia personal del Sultán). Usa la entrada del Yüzbaşı pero cambia la habilidad Mubarizun por la keyword STRONG, y puede llevar un Alaybozan (armería Iron Sultanate) y un Anq Guard y Explosive Charges (armería Defenders of the Iron Wall) a su coste. Obligatorio: cada banda Defenders incluye 1 Silahdar.' },
         { id:'sipahi-iw', name:'Sipahi', tier:'elite', limit:'0-1', cost:110, currency:'👑',
           variantOnly:'iron-wall-def',
@@ -6491,8 +6495,7 @@ const DATA = {
           summary:'Guarnición del Iron Wall: Silahdar al mando, Janissary Officers, hasta 4 Sappers, Grand Cannons y tiradores expertos en posición elevada.',
           specialRule:'Defenders of the Iron Wall',
           // "Far from the Sublime Gate": sin Lions of Jabir, Yüzbaşí ni
-          // Assassins. (Además no pueden comprar Cloak of Alamut ni Wind
-          // Amulet — restricción de armería, no modelada como forbidden unit.)
+          // Assassins, ni Cloak of Alamut ni Wind Amulet.
           forbiddenUnitIds:['lions','yuzbasi','sult-assassin','janissaries'],
           // Silahdar obligatorio (1 por banda).
           mandatoryUnits:[{ unitId:'silahdar-iw', count:1, max:1 }],
@@ -6500,6 +6503,13 @@ const DATA = {
           unitOverrides:[
             { unitId:'sappers', overrides:{ limit:'0-4' } },
           ],
+          armouryOverrides:{
+            'cloak-alamut-is': { forbidden:true },
+            'wind-amulet-is':  { forbidden:true },
+            // Silahdar: puede llevar Alaybozan (armería Iron Sultanate) y Anq Guard.
+            'alaybozan-is':    { restriction:'Sappers & Silahdar only · Shield Combo' },
+            'anq-guard-iw':    { restriction:'Sultanate Sappers & Silahdar only' },
+          },
           // Janissaries normales prohibidos: solo Janissary Officers (janofficer-iw).
         },
       ],
@@ -16959,14 +16969,39 @@ function getUnitWithVariant(wb, unitId) {
   return merged;
 }
 
-function findBattlekitItem(factionId, kitId) {
+// Pass `wb` to get the item as the warband's active variant sees it
+// (variant.armouryOverrides: cost, restriction, forbidden…).
+function findBattlekitItem(factionId, kitId, wb) {
   const f = DATA.factions[factionId];
   if (!f) return null;
   for (const cat of Object.values(f.armoury)) {
     const found = cat.find(x => x.id === kitId);
-    if (found) return found;
+    if (found) return wb ? variantArmouryItem(wb, found) : found;
   }
   return null;
+}
+
+/**
+ * Item with the active variant's armouryOverrides applied. Always a copy
+ * when overridden; the catalogue is never mutated. Override fields:
+ *   cost, currency, restriction  — replace the base value
+ *   forbidden: true              — the variant cannot take it
+ *   note                         — replaces the rules note
+ */
+function variantArmouryItem(wb, item) {
+  const v = wb ? getActiveVariant(wb) : null;
+  const ov = v && v.armouryOverrides && v.armouryOverrides[item.id];
+  if (!ov) return item;
+  return Object.assign({}, item, ov, { _variantOverride: true });
+}
+
+/** Armoury category list as the warband sees it (overrides applied, forbidden removed). */
+function armouryItemsForWarband(wb, catKey) {
+  const f = DATA.factions[wb.factionId];
+  if (!f || !f.armoury) return [];
+  return (f.armoury[catKey] || [])
+    .map(it => variantArmouryItem(wb, it))
+    .filter(it => !it.forbidden);
 }
 
 /**
@@ -17391,7 +17426,7 @@ function checkBattlekitLegality(wb) {
   return warnings;
 }
 
-function modelCost(model, factionId) {
+function modelCost(model, factionId, wb) {
   // Fase 10 PIVOT v2 — si el modelo viene de Trench Companion, TC es la
   // verdad oficial: confiar en companionCost/companionGlory. Evita
   // discrepancias por contenido regional/custom no presente en DATA.
@@ -17412,7 +17447,7 @@ function modelCost(model, factionId) {
     else if (up.currency === '☼') glory += up.cost || 0;
   }
   for (const kitId of (model.battlekit || [])) {
-    const item = findBattlekitItem(factionId, kitId);
+    const item = findBattlekitItem(factionId, kitId, wb);
     if (item) {
       if (item.currency === '👑') ducados += item.cost;
       else glory += item.cost;
@@ -17424,7 +17459,7 @@ function modelCost(model, factionId) {
 function warbandTotals(wb) {
   let ducados = 0, glory = 0;
   for (const m of wb.models) {
-    const c = modelCost(m, wb.factionId);
+    const c = modelCost(m, wb.factionId, wb);
     ducados += c.ducados;
     glory += c.glory;
   }
@@ -17536,6 +17571,9 @@ const RESTRICTION_UNIT_MAP = {
   'Combat Medic':                'combat-medic',
   'Combat Engineer':             'combat-engineers',
   'Sappers':                     'sappers',
+  'Sultanate Sappers':           'sappers',
+  'Silahdar':                    'silahdar-iw',
+  'Brazen Bull or stationary':   'brazen-bull',
   'Sultanate Assassins':         'sult-assassin',
   'Sultanate Assassin':          'sult-assassin',
   'Brazen Bull':                 'brazen-bull',
@@ -17653,7 +17691,7 @@ function modelHasCategoryItem(wb, model, category, excludeItemId=null) {
 function modelHasHeadgear(wb, model, excludeItemId=null) {
   for (const kid of (model.battlekit || [])) {
     if (kid === excludeItemId) continue;
-    const it = findBattlekitItem(wb.factionId, kid);
+    const it = findBattlekitItem(wb.factionId, kid, wb);
     if (it && parseRestriction(it.restriction).tags.has('Headgear')) return true;
   }
   return false;
@@ -17662,7 +17700,7 @@ function modelHasHeadgear(wb, model, excludeItemId=null) {
 // Does this model have any equipped weapon with the "Bayonet Lug" tag?
 function modelHasBayonetLug(wb, model) {
   for (const kid of (model.battlekit || [])) {
-    const it = findBattlekitItem(wb.factionId, kid);
+    const it = findBattlekitItem(wb.factionId, kid, wb);
     if (it && parseRestriction(it.restriction).tags.has('Bayonet Lug')) return true;
   }
   return false;
@@ -17691,7 +17729,7 @@ function modelEffectivelyHas(wb, model, itemId) {
 function modelBattlekitSpend(wb, model, currency='👑') {
   let total = 0;
   for (const kid of (model.battlekit || [])) {
-    const it = findBattlekitItem(wb.factionId, kid);
+    const it = findBattlekitItem(wb.factionId, kid, wb);
     if (it && it.currency === currency) total += it.cost;
   }
   return total;
@@ -17715,7 +17753,7 @@ function itemHasWeaponKeyword(item, keyword) {
 function modelHasWeaponKeyword(wb, model, keyword, excludeId=null) {
   for (const kid of (model.battlekit || [])) {
     if (excludeId && kid === excludeId) continue;
-    const it = findBattlekitItem(wb.factionId, kid);
+    const it = findBattlekitItem(wb.factionId, kid, wb);
     if (itemHasWeaponKeyword(it, keyword)) return true;
   }
   return false;
@@ -17747,7 +17785,7 @@ function countModelMeleeWeapons(wb, model, excludeId=null) {
   let count1H = 0, count2H = 0;
   for (const kid of (model.battlekit || [])) {
     if (excludeId && kid === excludeId) continue;
-    const it = findBattlekitItem(wb.factionId, kid);
+    const it = findBattlekitItem(wb.factionId, kid, wb);
     if (!it) continue;
     const cat = getArmouryCategory(wb.factionId, kid);
     if (cat !== 'melee') continue;
@@ -17765,7 +17803,7 @@ function countModelRangedWeapons(wb, model, excludeId=null) {
   let count1H = 0, count2H = 0;
   for (const kid of (model.battlekit || [])) {
     if (excludeId && kid === excludeId) continue;
-    const it = findBattlekitItem(wb.factionId, kid);
+    const it = findBattlekitItem(wb.factionId, kid, wb);
     if (!it) continue;
     const cat = getArmouryCategory(wb.factionId, kid);
     if (cat !== 'ranged' && cat !== 'anchoriteRanged') continue;
@@ -17883,6 +17921,10 @@ function checkWeaponSlots(count1H, count2H, max, strongBonus) {
  *   { state: 'hidden',   reason: '…' }            — categorically impossible
  */
 function classifyBattlekitItem(item, model, unit, wb) {
+  item = variantArmouryItem(wb, item);
+  if (item.forbidden) {
+    return { state: 'hidden', reason: 'Prohibido por la variante' };
+  }
   const r = parseRestriction(item.restriction);
   const category = getArmouryCategory(wb.factionId, item.id);
   const access = unit.battlekitAccess || {};
@@ -18000,7 +18042,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   if (r.requiresEquipped) {
     if (!modelEffectivelyHas(wb, model, r.requiresEquipped)) {
       // Transitively check: is the prereq even legal for this unit?
-      const prereqItem = findBattlekitItem(wb.factionId, r.requiresEquipped);
+      const prereqItem = findBattlekitItem(wb.factionId, r.requiresEquipped, wb);
       if (prereqItem) {
         const prereqR = parseRestriction(prereqItem.restriction);
         if (prereqR.eliteOnly || prereqR.allowedUnitIds) {
@@ -18054,7 +18096,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
     // If we're trying to add a HELD item, ensure no 2H weapons present
     if (itemHasHeld) {
       for (const kid of (model.battlekit || [])) {
-        const eit = findBattlekitItem(wb.factionId, kid);
+        const eit = findBattlekitItem(wb.factionId, kid, wb);
         if (!eit) continue;
         if (eit.type === '2-Handed') {
           return { state: 'disabled', reason: 'No compatible con armas 2H equipadas (HELD)' };
@@ -18082,7 +18124,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
     if (modelHasHeld && category === 'shields') {
       // Already carries a 1H weapon? Block shield
       const hasOneH = (model.battlekit || []).some(kid => {
-        const eit = findBattlekitItem(wb.factionId, kid);
+        const eit = findBattlekitItem(wb.factionId, kid, wb);
         return eit && eit.type === '1-Handed' &&
                (getArmouryCategory(wb.factionId, kid) === 'ranged' ||
                 getArmouryCategory(wb.factionId, kid) === 'melee');
@@ -18107,7 +18149,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   if (category === 'shields') {
     const shieldHasCombo = r.tags.has('Shield Combo');
     for (const kid of (model.battlekit || [])) {
-      const eit = findBattlekitItem(wb.factionId, kid);
+      const eit = findBattlekitItem(wb.factionId, kid, wb);
       if (!eit || eit.type !== '2-Handed') continue;
       const er = parseRestriction(eit.restriction);
       if (!shieldHasCombo || !er.tags.has('Shield Combo')) {
@@ -18133,7 +18175,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   if (item.type === '2-Handed') {
     const has2hCombo = r.tags.has('Shield Combo');
     for (const kid of (model.battlekit || [])) {
-      const eit = findBattlekitItem(wb.factionId, kid);
+      const eit = findBattlekitItem(wb.factionId, kid, wb);
       if (!eit) continue;
       if (getArmouryCategory(wb.factionId, kid) === 'shields') {
         const er = parseRestriction(eit.restriction);
@@ -18169,7 +18211,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
       // the STRONG Keyword" → STRONG no convierte ese 2H en 1H.
       const cumbersome2H = (item.type === '2-Handed' && itemHasWeaponKeyword(item, 'CUMBERSOME')) ||
         (model.battlekit || []).some(kid => {
-          const eit = findBattlekitItem(wb.factionId, kid);
+          const eit = findBattlekitItem(wb.factionId, kid, wb);
           return eit && eit.type === '2-Handed' &&
                  getArmouryCategory(wb.factionId, kid) === 'melee' &&
                  itemHasWeaponKeyword(eit, 'CUMBERSOME');
@@ -18232,7 +18274,7 @@ function modelLoadoutSummary(wb, model, unit) {
     hasHeadgear: false,
   };
   for (const kid of (model.battlekit || [])) {
-    const it = findBattlekitItem(wb.factionId, kid);
+    const it = findBattlekitItem(wb.factionId, kid, wb);
     if (!it) continue;
     if (it.currency === '👑') summary.battlekitCost += it.cost;
     else summary.battlekitGlory += it.cost;
@@ -18829,14 +18871,14 @@ function rosterCard(model, unit, wb) {
   card.classList.add('tier-' + (unit.tier || 'mercenary'));
   if (STATE.selectedModelUid === model.uid) card.classList.add('selected');
 
-  const cost = modelCost(model, wb.factionId);
+  const cost = modelCost(model, wb.factionId, wb);
   const costStr = `${cost.ducados ? cost.ducados + ' 👑' : ''}${cost.ducados && cost.glory ? ' · ' : ''}${cost.glory ? cost.glory + ' ☼' : ''}`;
 
   // Battlekit display
   let kitDisplay = '';
   if (model.battlekit && model.battlekit.length) {
     const items = model.battlekit.map(kid => {
-      const it = findBattlekitItem(wb.factionId, kid);
+      const it = findBattlekitItem(wb.factionId, kid, wb);
       return it ? `<span class="eq-item">${it.name}<span class="eq-cost">${it.cost}${it.currency}</span></span>` : '';
     }).join('');
     kitDisplay = `<div class="roster-equipment-list">${items}</div>`;
@@ -19449,7 +19491,7 @@ function renderDetail() {
     let totalAvailable = 0;
     let categoryHTML = '';
     for (const [key, label] of cats) {
-      const items = f.armoury[key] || [];
+      const items = armouryItemsForWarband(wb, key);
       if (!items.length) continue;
       // First, classify all items in this category
       const classified = items.map(item => ({
@@ -20883,7 +20925,7 @@ function _getShoppingCategoryItems(wb, ctx, catKey) {
   if (!wb || !ctx) return [];
   const f = DATA.factions[wb.factionId];
   if (!f || !f.armoury) return [];
-  const raw = f.armoury[catKey] || [];
+  const raw = armouryItemsForWarband(wb, catKey);
   if (ctx.mode === 'pool') return raw.slice();
   // Modo unit: filtrar por classifyBattlekitItem.
   const m = (wb.models || []).find(x => x.uid === ctx.targetModelUid);
@@ -33436,7 +33478,7 @@ function renderQMRoster() {
     if (!u) continue;
     const ms = st.modelStates[m.uid] || emptyModelState();
     const isDead = ms.status === 'dead';
-    const cost = modelCost(m, wb.factionId);
+    const cost = modelCost(m, wb.factionId, wb);
     const card = el('div', 'qm-roster-card' + (isDead ? ' dead' : ''));
     card.innerHTML = `
       <div class="qm-roster-card-row1">
@@ -33458,7 +33500,7 @@ function renderQMRoster() {
     const equipEl = card.querySelector(`#equip-${m.uid}`);
     if (m.battlekit && m.battlekit.length) {
       for (const kid of m.battlekit) {
-        const it = findBattlekitItem(wb.factionId, kid);
+        const it = findBattlekitItem(wb.factionId, kid, wb);
         if (!it) continue;
         const row = el('div', 'qm-equip-row');
         row.innerHTML = `
@@ -33482,7 +33524,7 @@ function renderQMRoster() {
 function qmSellModel(model) {
   const { campaign: c, warband: wb } = QM;
   const u = getUnit(wb.factionId, model.unitId);
-  const cost = modelCost(model, wb.factionId);
+  const cost = modelCost(model, wb.factionId, wb);
   const ratio = c.saleRefundRatio ?? 0.5;
   const refundD = Math.round(cost.ducados * ratio);
   const refundG = Math.round(cost.glory * ratio);
@@ -33522,7 +33564,7 @@ function qmSellModel(model) {
 
 function qmSellEquipment(model, kid) {
   const { campaign: c, warband: wb } = QM;
-  const item = findBattlekitItem(wb.factionId, kid);
+  const item = findBattlekitItem(wb.factionId, kid, wb);
   if (!item) return;
   const ratio = c.saleRefundRatio ?? 0.5;
   const refund = Math.round(item.cost * ratio);
@@ -33573,7 +33615,7 @@ function qmOpenEquipDialog(model) {
   let html = '';
   let totalAvail = 0;
   for (const [key, label] of cats) {
-    const items = f.armoury[key] || [];
+    const items = armouryItemsForWarband(wb, key);
     if (!items.length) continue;
     const classified = items.map(it => ({ item: it, cls: classifyBattlekitItem(it, model, unit, wb) }));
     const visible = classified.filter(x => x.cls.state !== 'hidden');
@@ -33608,7 +33650,7 @@ function qmOpenEquipDialog(model) {
     it.addEventListener('click', () => {
       if (it.dataset.state === 'disabled') return;
       const kid = it.dataset.kit;
-      const item = findBattlekitItem(wb.factionId, kid);
+      const item = findBattlekitItem(wb.factionId, kid, wb);
       if (!item) return;
       const wasEquipped = (model.battlekit || []).includes(kid);
       if (wasEquipped) {
@@ -34732,7 +34774,7 @@ function buildModelCardData(model, wb) {
     const bkIds = Array.isArray(model.battlekit) ? model.battlekit : [];
     equipment = bkIds.map(bid => {
       const it = (typeof findBattlekitItem === 'function')
-        ? findBattlekitItem(wb.factionId, bid) : null;
+        ? findBattlekitItem(wb.factionId, bid, wb) : null;
       return it ? { name: it.name, type: (it.category || ''), keywords: it.weaponKeywords || [] } : { name: bid };
     });
   }
@@ -37126,7 +37168,7 @@ function pdfRenderModel(td, model) {
   const wb = td.warband;
   const unit = getUnit(wb.factionId, model.unitId);
   if (!unit) return;
-  const cost = modelCost(model, wb.factionId);
+  const cost = modelCost(model, wb.factionId, wb);
   const accent = td.accentDark();
 
   // Estimate space — paginate if not enough
@@ -37224,7 +37266,7 @@ function pdfRenderModel(td, model) {
     td.doc.setFontSize(8.5);
     td.setText(PDF_COLORS.ink);
     for (const kid of model.battlekit) {
-      const it = findBattlekitItem(wb.factionId, kid);
+      const it = findBattlekitItem(wb.factionId, kid, wb);
       if (!it) continue;
       td.ensureSpace(4);
       const left = `• ${it.name}`;
@@ -37517,7 +37559,7 @@ function gatherWarbandEquipment(wb) {
   for (const model of wb.models) {
     let oneHandCount = 0;
     for (const kid of (model.battlekit || [])) {
-      const item = findBattlekitItem(wb.factionId, kid);
+      const item = findBattlekitItem(wb.factionId, kid, wb);
       if (!item) continue;
       // Track keywords
       for (const kw of (item.weaponKeywords || [])) result.allKeywords.add(kw);
@@ -38124,7 +38166,7 @@ function gatherWarbandGlossary(wb) {
     kws.forEach(k => allUnitKeywords.add(k));
 
     for (const kid of (model.battlekit || [])) {
-      const item = findBattlekitItem(wb.factionId, kid);
+      const item = findBattlekitItem(wb.factionId, kid, wb);
       if (!item || !item.restriction) continue;
       // Some restrictions are compound ("ELITE & Mech. Heavy Inf. only").
       // We split on common delimiters to extract individual stipulations.
