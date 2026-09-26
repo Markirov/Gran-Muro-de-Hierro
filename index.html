@@ -4329,10 +4329,11 @@ body.table-mode-open { overflow: hidden; }
 .tm-status button[aria-pressed="true"][data-status="up"] { background: var(--faithful-deep); color: var(--faithful-gold-bright); }
 .tm-status button[aria-pressed="true"][data-status="down"] { background: var(--fallen-ember); color: var(--ink-black); }
 .tm-status button[aria-pressed="true"][data-status="out"] { background: var(--fallen-deep); color: var(--parchment-bright); }
-.tm-blood { display: flex; align-items: center; gap: 10px; }
-.tm-blood .tm-label { flex: 1 1 auto; }
-.tm-blood-minus, .tm-blood-plus { min-width: 52px; min-height: 44px; font-size: 1.4rem; background: var(--iron-mid); border: var(--border-iron); border-radius: 4px; }
-.tm-blood-val { min-width: 2ch; text-align: center; font-family: var(--font-display); font-size: 1.8rem; color: var(--fallen-blood-bright); }
+.tm-blood { display: flex; flex-direction: column; gap: 6px; }
+.tm-blood-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.tm-blood-btn { min-height: 44px; font-family: var(--font-display); font-size: 1.3rem; background: var(--iron-mid); border: var(--border-iron); border-radius: 4px; color: inherit; }
+.tm-blood-btn[aria-pressed="true"] { background: var(--fallen-blood-bright); color: #fff; border-color: var(--fallen-blood-bright); }
+.tm-blood-btn:disabled { opacity: 0.45; }
 .tm-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .tm-chip { min-height: 44px; padding: 0 12px; background: var(--iron-mid); border: var(--border-iron); border-radius: 22px; font-family: var(--font-mono) !important; font-size: 0.85rem; }
 .tm-effect[aria-pressed="true"] { background: var(--faithful-deep); border-color: var(--faithful-gold-bright); color: var(--faithful-gold-bright); }
@@ -35515,10 +35516,18 @@ function toggleTableActivated(session, uid) {
   return session;
 }
 
+// Rulebook: un modelo no puede tener más de 6 BLOOD MARKERS.
+const TABLE_MAX_BLOOD = 6;
+
+function setTableBlood(session, uid, n) {
+  const st = _tableModel(session, uid);
+  st.blood = Math.min(TABLE_MAX_BLOOD, Math.max(0, Math.round(Number(n) || 0)));
+  return session;
+}
+
 function adjustTableBlood(session, uid, delta) {
   const st = _tableModel(session, uid);
-  st.blood = Math.max(0, (st.blood || 0) + (Number(delta) || 0));
-  return session;
+  return setTableBlood(session, uid, (st.blood || 0) + (Number(delta) || 0));
 }
 
 function setTableStatus(session, uid, status) {
@@ -35783,9 +35792,8 @@ function _tmCardHtml(model) {
       <div class="tm-status">${statusBtns}</div>
       <div class="tm-blood">
         <span class="tm-label">Blood markers</span>
-        <button type="button" class="tm-blood-minus" aria-label="Quitar blood marker"${dis}>−</button>
-        <span class="tm-blood-val">${st.blood}</span>
-        <button type="button" class="tm-blood-plus" aria-label="Añadir blood marker"${dis}>+</button>
+        <div class="tm-blood-row">${Array.from({ length: TABLE_MAX_BLOOD + 1 }, (_, n) =>
+          `<button type="button" class="tm-blood-btn" data-blood="${n}" aria-pressed="${st.blood === n}" aria-label="${n} blood markers"${dis}>${n}</button>`).join('')}</div>
       </div>
     </div>
     <div class="tm-block">
@@ -35899,8 +35907,7 @@ document.getElementById('btn-table-mode')?.addEventListener('click', () => {
     if (!card) return;
     const uid = card.dataset.uid;
     if (t.classList.contains('tm-activate')) toggleTableActivated(S, uid);
-    else if (t.classList.contains('tm-blood-plus')) adjustTableBlood(S, uid, +1);
-    else if (t.classList.contains('tm-blood-minus')) adjustTableBlood(S, uid, -1);
+    else if (t.classList.contains('tm-blood-btn')) setTableBlood(S, uid, Number(t.dataset.blood));
     else if (t.dataset.status) setTableStatus(S, uid, t.dataset.status);
     else if (t.classList.contains('tm-effect')) toggleTableEffect(S, uid, t.dataset.effect);
     else if (t.classList.contains('tm-spent')) toggleTableSpent(S, uid, t.dataset.ability);

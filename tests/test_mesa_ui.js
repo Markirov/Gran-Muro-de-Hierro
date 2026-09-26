@@ -84,14 +84,17 @@ ok($$('.tm-dot', ov)[0].classList.contains('activated'), 'punto marcado como act
 
 console.log('\nGroup 5: sangre, efectos, usos');
 // Cada toque re-renderiza la ficha: hay que volver a buscarla.
-click($('.tm-blood-plus', c0));
+// Sangre 0-6: una fila de 7 botones, el actual marcado (aria-pressed).
+ok($$('.tm-blood-btn', c0).length === 7, '7 botones de sangre (0-6)');
+ok($$('.tm-blood-btn', c0).map(b => b.dataset.blood).join('') === '0123456', 'valores 0..6 en orden');
+ok(!$('.tm-blood-plus', c0) && !$('.tm-blood-minus', c0), 'sin botones + / −');
+click($('.tm-blood-btn[data-blood="2"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
-click($('.tm-blood-plus', c0));
+ok($('.tm-blood-btn[data-blood="2"]', c0).getAttribute('aria-pressed') === 'true', 'blood 2 marcado');
+ok($$('.tm-blood-btn[aria-pressed="true"]', c0).length === 1, 'solo uno marcado');
+click($('.tm-blood-btn[data-blood="1"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
-ok($('.tm-blood-val', c0).textContent.trim() === '2', 'blood 2');
-click($('.tm-blood-minus', c0));
-c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
-ok($('.tm-blood-val', c0).textContent.trim() === '1', 'blood 1');
+ok($('.tm-blood-btn[data-blood="1"]', c0).getAttribute('aria-pressed') === 'true' && L.loadTableSession(wb).models[uid0].blood === 1, 'blood 1');
 click($('.tm-effect[data-effect="BLES"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
 ok($('.tm-effect[data-effect="BLES"]', c0).getAttribute('aria-pressed') === 'true', 'efecto BLES encendido');
@@ -113,7 +116,7 @@ ok(c0.classList.contains('tm-down'), 'Down → clase tm-down');
 click($('.tm-status [data-status="out"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
 ok(c0.classList.contains('tm-out'), 'Fuera → clase tm-out');
-ok($('.tm-activate', c0).disabled && $('.tm-blood-plus', c0).disabled && $$('.tm-effect', c0).every(b => b.disabled),
+ok($('.tm-activate', c0).disabled && $$('.tm-blood-btn', c0).every(b => b.disabled) && $$('.tm-effect', c0).every(b => b.disabled),
    'Fuera deshabilita activación, sangre y efectos');
 ok($$('.tm-status [data-status]', c0).every(b => !b.disabled), 'el selector de estado sigue activo');
 ok(/0\/8 activadas/.test($('.tm-count', ov).textContent), 'contador excluye Fuera (0/8)');
@@ -132,7 +135,7 @@ confirmAnswer = true;
 click(doc.getElementById('tm-next-turn'));
 ok(/Turno 2/.test($('.tm-turn', ov).textContent), 'confirm aceptado → Turno 2');
 ok($$('.tm-activate', ov).every(b => b.getAttribute('aria-pressed') === 'false'), 'todas desactivadas');
-ok($('.tm-blood-val', $(`.tm-card[data-uid="${uid0}"]`, ov)).textContent.trim() === '1', 'sangre intacta');
+ok($('.tm-blood-btn[data-blood="1"]', $(`.tm-card[data-uid="${uid0}"]`, ov)).getAttribute('aria-pressed') === 'true', 'sangre intacta');
 
 console.log('\nGroup 8: cerrar y reabrir conserva el estado');
 click(doc.getElementById('tm-close'));
@@ -145,7 +148,7 @@ ok($('.tm-effect[data-effect="BLES"]', $(`.tm-card[data-uid="${uid0}"]`, ov)).ge
 console.log('\nGroup 9: nueva partida');
 click(doc.getElementById('tm-reset'));
 ok(/Turno 1/.test($('.tm-turn', ov).textContent), 'Turno 1');
-ok($('.tm-blood-val', $(`.tm-card[data-uid="${uid0}"]`, ov)).textContent.trim() === '0', 'sangre a 0');
+ok($('.tm-blood-btn[data-blood="0"]', $(`.tm-card[data-uid="${uid0}"]`, ov)).getAttribute('aria-pressed') === 'true', 'sangre a 0');
 ok(!wb.tableSession && !JSON.stringify(wb).includes('wf-mesa'), 'la banda no guarda nada del modo mesa');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');

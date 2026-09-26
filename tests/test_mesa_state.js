@@ -15,7 +15,7 @@ const w = dom.window;
 w.alert = () => {}; w.confirm = () => true;
 
 const NAMES = ['newTableSession', 'syncTableSession', 'getTableModelState', 'toggleTableActivated',
-  'adjustTableBlood', 'setTableStatus', 'toggleTableEffect', 'toggleTableSpent', 'advanceTableTurn',
+  'adjustTableBlood', 'setTableBlood', 'setTableStatus', 'toggleTableEffect', 'toggleTableSpent', 'advanceTableTurn',
   'tableActivationCount', 'getTableEffectCodes', 'loadTableSession', 'saveTableSession', 'clearTableSession',
   'importCompanionWarband'];
 w.eval(js.slice(0, bootIdx) + '\n;window.__lib = {' +
@@ -52,6 +52,14 @@ L.adjustTableBlood(s, u0, +1); L.adjustTableBlood(s, u0, +1);
 ok(s.models[u0].blood === 2, '+1 +1 → 2');
 L.adjustTableBlood(s, u0, -5);
 ok(s.models[u0].blood === 0, 'nunca por debajo de 0');
+// Rulebook: un modelo no puede tener más de 6 BLOOD MARKERS.
+L.adjustTableBlood(s, u0, +9);
+ok(s.models[u0].blood === 6, 'nunca por encima de 6');
+ok(typeof L.setTableBlood === 'function', 'setTableBlood existe');
+L.setTableBlood(s, u0, 4);
+ok(s.models[u0].blood === 4, 'setTableBlood fija el valor (4)');
+L.setTableBlood(s, u0, 9); ok(s.models[u0].blood === 6, 'setTableBlood limita a 6');
+L.setTableBlood(s, u0, -2); ok(s.models[u0].blood === 0, 'setTableBlood limita a 0');
 
 console.log('\nGroup 4: estado de combate');
 L.setTableStatus(s, u0, 'down');
