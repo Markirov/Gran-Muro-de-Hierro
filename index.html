@@ -5926,7 +5926,7 @@ const DATA = {
         {
           id:'papal-states',
           name:'Papal States Intervention Force',
-          summary:'Pequeñas fuerzas de élite del Vaticano lideradas por monjes-guerreros y clérigos. Mandato directo del Pontífice.',
+          summary:'Fuerza de élite enviada por el Sumo Pontífice: Trench Cleric al mando (sin Lieutenant obligatorio), presupuesto 500 👑 y 11 ☼, Supreme Pontiff\'s Crucifix gratis y guardia suiza con NEGATE FEAR.',
           specialRule:'Papal States Intervention',
           budget:{ ducados:500, glory:11 },
           forbiddenUnitIds:['trench-moles'],
@@ -5937,7 +5937,7 @@ const DATA = {
         {
           id:'eire-rangers',
           name:'Éire Rangers',
-          summary:'Maestros de la guerra de guerrillas y la infantería ligera. Tradicionales cazadores celtas con bayoneta.',
+          summary:'Infantería ligera y guerrilla: Fianna con INFILTRATOR y SKIRMISHER, Berserker, Hit & Run Tactics y casi sin armadura pesada ni armas HEAVY.',
           specialRule:'Éire Rangers Light Infantry',
           additionalUpgrades:[
             // Berserker for Lieutenant or Fianna (+15 👑)
@@ -5958,13 +5958,13 @@ const DATA = {
         {
           id:'alba',
           name:'Kingdom of Alba Assault Detachment',
-          summary:'Tropas de asalto escocesas con tradiciones bélicas ancestrales. Bagpipes y Highland warriors.',
+          summary:'Asalto cuerpo a cuerpo de las Highlands: STRONG gratis para Lieutenant y Shock Troopers, Rampant Charge, Bagpipes y claymores baratas.',
           specialRule:'Kingdom of Alba Assault',
         },
         {
           id:'prussia',
           name:'Stosstruppen of the Free State of Prussia',
-          summary:'Doctrina prusiana de asalto rápido y dominio de granadas. Movilidad como táctica decisiva.',
+          summary:'Tropas de asalto de élite: 2-8 Shock Troopers, hasta 3 Fireteams, Rapid Assault comprable y granadas con +4" de alcance.',
           specialRule:'Rapid Assault',
           additionalUpgrades:[
             // Shock Troopers can have INFILTRATOR for +10 (Stosstruppen tradition)
@@ -5978,14 +5978,14 @@ const DATA = {
         {
           id:'abyssinia',
           name:'Expeditionary Forces of Abyssinia',
-          summary:'Fuerzas etíopes del Trono Salomónico. Sin Sniper Priests, con curanderos especiales y tradición de Holy Warriors.',
+          summary:'Trono Salomónico: sin Sniper Priests, 0-2 Combat Medics y Holy Warriors, puntería a corta distancia y nobles Chewa en cuerpo a cuerpo.',
           specialRule:'Expeditionary Forces of Abyssinia',
           forbiddenUnitIds:['sniper-priests'],
         },
         {
           id:'red-brigade',
           name:'The Red Brigade (Westfalia)',
-          summary:'Comuna revolucionaria de Westfalia. Igualdad militante y entusiasmo de los nuevos convertidos al socialismo cristiano.',
+          summary:'Hermandad de sangre de New Antioch con perros de trinchera: empieza con BLOOD MARKERS, nunca se retira del cuerpo a cuerpo y recupera el equipo de sus caídos.',
           specialRule:'The Red Brigade',
         },
       ],
@@ -5999,7 +5999,7 @@ const DATA = {
       budget: 700,
       glory: 0,
       flavor: 'Fanatical zealots and self-proclaimed prophets marching to the front.',
-      specialRules: ['Wrath of God (variant)'],
+      specialRules: [],  // Warbands 1.0.2: sin reglas especiales de facción
       armoury: {
         ranged: [
           { id:'auto-pistol-tp',  name:'Automatic Pistol',     cost:20, currency:'👑', restriction:'Limit: 2',
@@ -6202,7 +6202,7 @@ const DATA = {
         {
           id:'sacred-affliction',
           name:'Procession of the Sacred Affliction',
-          summary:'Cofradía flagelante centrada en el cuerpo a cuerpo. Rechazan el Iron Capirote y abrazan el martirio como camino al cielo.',
+          summary:'Cofradía flagelante de cuerpo a cuerpo: sin Iron Capirotes ni Machine Guns, +1 INJURY DICE contra objetivos Down y hasta 1 modelo con Wrath of God.',
           specialRule:'Procession of the Sacred Affliction',
           // Rich set of restrictions:
           //  - cannot have Iron Capirotes
@@ -6229,7 +6229,7 @@ const DATA = {
         {
           id:'st-methodius',
           name:'War Pilgrimage of Saint Methodius',
-          summary:'Orden Ortodoxa de Akakios. Especialistas en Anchorites: hasta 2 modelos con +0 DICE Ranged y armas especiales. Rechazan Communicants y Martyrdom Devices por considerarlos heréticos.',
+          summary:'Orden ortodoxa de Akakios: hasta 2 Anchorite Shrines con Ranged +0 DICE y armería de Anchorite; sin Communicants ni Martyrdom Devices.',
           specialRule:'War Pilgrimage of Saint Methodius',
           forbiddenUnitIds:['communicant'],  // No Communicants
           // Override unit-specific data when this variant is active.
@@ -6242,7 +6242,7 @@ const DATA = {
         {
           id:'tenth-plague',
           name:'Cavalcade of the Tenth Plague',
-          summary:'Apocalípticos que rechazan la doctrina del Meta-Cristo. Sacrifican corderos para apaciguar la ira divina.',
+          summary:'Rechazan la doctrina del Meta-Cristo: Castigators con TOUGH, Sacrificial Lamb, 1 BLESSING MARKER por turno y Communicants robados por 3 ☼.',
           specialRule:'Cavalcade of the Tenth Plague',
           // Limits: max 2 Ecclesiastic Prisoners (instead of normal limit)
           // Heaven Awaits: cannot resurrect Pilgrims as Martyr-Penitents
@@ -6258,7 +6258,7 @@ const DATA = {
       budget: 700,
       glory: 0,
       flavor: 'Alchemists, assassins and soldiers behind the Iron Wall of Dhu al-Qarnayn.',
-      specialRules: ['Pride of Jabir (variant)'],
+      specialRules: [],  // Warbands 1.0.2: sin reglas especiales de facción
       armoury: {
         ranged: [
           { id:'alaybozan-is',    name:'Alaybozan',            cost:9,  currency:'👑', restriction:'Unique · Sappers only · Shield Combo',
@@ -6457,7 +6457,7 @@ const DATA = {
         {
           id:'fidai-alamut',
           name:"Fida'i of Alamut – Cabal of Assassins",
-          summary:'Cábala secreta de la Orden de los Asesinos. Misiones encubiertas, dervishes giratorios y maestros del veneno.',
+          summary:'Cábala de asesinos de Alamut: Master Assassin al mando, hasta 2 Sultanate Assassins con Art of Assassination, Acolytes infiltrados y Dervishes.',
           specialRule:"Fida'i of Alamut",
           forbiddenUnitIds:['yuzbasi','jabirean','janissaries','lions','brazen-bull'],
           additionalUpgrades:[
@@ -6472,7 +6472,7 @@ const DATA = {
         {
           id:'house-wisdom',
           name:'The House of Wisdom',
-          summary:'Sabios y alquimistas dedicados a recuperar conocimiento perdido. Liderados por Jabireans con guardianes Kavass.',
+          summary:'Expedición de los sabios: 1-2 Jabirean Alchemists con sus secretos, Takwin Homunculi, Kavasses, Fāris y hasta 3 Lions of Jabir.',
           specialRule:'House of Wisdom',
           forbiddenUnitIds:['yuzbasi','janissaries','sult-assassin'],
           mandatoryUnits:[{ unitId:'jabirean', count:1, max:2 }],
@@ -6488,7 +6488,7 @@ const DATA = {
         {
           id:'iron-wall-def',
           name:'Defenders of the Iron Wall',
-          summary:'Guarnición permanente del Iron Wall. Tiradores expertos, sapper corps reforzado y comandantes Silahdar.',
+          summary:'Guarnición del Iron Wall: Silahdar al mando, Janissary Officers, hasta 4 Sappers, Grand Cannons y tiradores expertos en posición elevada.',
           specialRule:'Defenders of the Iron Wall',
           // "Far from the Sublime Gate": sin Lions of Jabir, Yüzbaşí ni
           // Assassins. (Además no pueden comprar Cloak of Alamut ni Wind
@@ -6513,7 +6513,7 @@ const DATA = {
       budget: 700,
       glory: 0,
       flavor: 'Damned humans serving the demonic nobility of the Seven Circles.',
-      specialRules: ['Hellbound Soul Contract'],
+      specialRules: [],  // Warbands 1.0.2: sin reglas especiales de facción
       armoury: {
         ranged: [
           { id:'amr-hl',          name:'Anti-Materiel Rifle',  cost:3,  currency:'☼', restriction:'Limit: 1',
@@ -6667,7 +6667,7 @@ const DATA = {
         {
           id:'trench-ghosts',
           name:'Trench Ghosts',
-          summary:'Sombras semicorpóreas de muertos en batalla. Lentos pero aterradores. Sin Mercenarios, sin Hellbound Soul Contracts.',
+          summary:'Espectros semicorpóreos: FEAR, NEGATE DIFFICULT TERRAIN y NEGATE GAS para todos, -1 INJURY DICE contra disparos y sin Mercenarios ni modelos ARTIFICIAL.',
           specialRule:'Trench Ghosts',
           forbiddenUnitIds:[],
           // Many restrictions: no ARTIFICIAL units, no Mercenaries, no Hellbound Soul Contracts
@@ -6677,7 +6677,7 @@ const DATA = {
         {
           id:'avarice-knights',
           name:'Knights of Avarice',
-          summary:'Adoradores de Mammón obsesionados con la riqueza. Sin armas con FIRE/SHRAPNEL, modelos elitistas (mín 80 👑).',
+          summary:'Adoradores de Mammón: nada con FIRE ni SHRAPNEL, modelos de al menos 80 👑 (salvo Wretched), Goetic Warlocks y Price of Greed.',
           specialRule:'Knights of Avarice',
           forbiddenUnitIds:['death-commando'],
           // Many other rules: Patron always Mammon, Goetic Warlocks as Mercs, no models <80 👑 (except Wretched), no FIRE/SHRAPNEL
@@ -6685,7 +6685,7 @@ const DATA = {
         {
           id:'naval-raiders',
           name:'Heretic Naval Raiders',
-          summary:'Marinería hereje en misiones rápidas tras las líneas. Tropas ligeras, especialistas en asalto cercano.',
+          summary:'Infantería de marina hereje: +1 DICE a la Risky de Dash, Submachine Guns a 25 👑, hasta 3 infiltrados y sin War Wolf.',
           specialRule:'Heretic Naval Raiders',
           forbiddenUnitIds:['war-wolf'],
           additionalUpgrades:[
@@ -6714,7 +6714,7 @@ const DATA = {
       budget: 700,
       glory: 0,
       flavor: 'Reanimated horrors and cultists of Beelzebub, Lord of the Flies.',
-      specialRules: ['INFECTION MARKERS', 'Morale Penalty vs. Faithful'],
+      specialRules: ['INFECTION MARKERS', 'Morale'],
       armoury: {
         ranged: [
           { id:'blunderbuss-bg',  name:'Blunderbuss',          cost:5,  currency:'👑', restriction:'Shield Combo',
@@ -6851,7 +6851,7 @@ const DATA = {
         {
           id:'great-hegemon',
           name:'Dirge of the Great Hegemon',
-          summary:'Cofradía de luto por su Hegemón caído. Plague Knights al mando, ejército de Bereaved (Thralls reformados).',
+          summary:'Cortejo fúnebre de un Hegemón caído: Executor al mando, Bereaved con armas a distancia y Command Bereaved ACTION.',
           specialRule:'Dirge of the Great Hegemon',
           forbiddenUnitIds:['lord-tumours','amalgam'],
           mandatoryUnits:[{ unitId:'plague-knights', count:1 }],
@@ -6859,7 +6859,7 @@ const DATA = {
         {
           id:'great-hunger',
           name:'The Great Hunger',
-          summary:'Variante centrada en el Antipope corrupto que devora a sus propios y crece con cada banquete. Énfasis en Plague Knights y Bereaved como acólitos. Reglas oficiales en The-Great-Hunger.pdf — consulta el PDF para detalles canon de Hambruna y mecánicas asociadas.',
+          summary:'Horda famélica guiada por una Matagot Hag: cada turno elige un efecto del Hambre que convierte los INFECTION MARKERS propios en ventaja.',
           specialRule:'The Great Hunger',
           mandatoryUnits:[{ unitId:'plague-knights', count:1 }],
         },
@@ -6874,7 +6874,7 @@ const DATA = {
       budget: 700,
       glory: 0,
       flavor: 'The demonic Princes of the Seven Deadly Sins and their hellish legions.',
-      specialRules: ['Choose Sin (Wrath/Envy/Lust/Pride/Sloth/Gluttony/Greed)', 'Goetic Powers'],
+      specialRules: ['Seven Deadly Sins', 'Goetic Powers'],
       armoury: {
         ranged: [
           { id:'arquebus-co',     name:'Arquebus',             cost:8,  currency:'👑', restriction:'Unique',
@@ -8049,184 +8049,184 @@ const FACTION_RULES_LIBRARY = {
   'New Antioch Fireteams': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Las bandas de New Antioch luchan en equipos de fuego coordinados. Cuando 2 o más modelos NEW ANTIOCH amigos a 6" o menos atacan al mismo objetivo enemigo en la misma activación, pueden combinar disparos: tras la primera tirada de éxito, los demás suman +1 DICE a sus Success Rolls. La sinergia representa fuego de supresión y disciplina militar moderna. Cuando dos modelos del mismo Fireteam ambos infligen un BLOOD MARKER al mismo objetivo, hace una Bloodbath Roll adicional (consultar reglas).',
+    summary: 'Una banda de New Antioch (y sus variantes) puede tener hasta 2 Fireteams de 2 modelos cualesquiera, que ganan FIRETEAM gratis. Concentrated Attack: si un modelo de un Fireteam impacta a un objetivo que ya impactó su compañero antes en la misma activación conjunta, puedes gastar 3 BLOOD MARKERS para convertir la Injury Roll del segundo ataque en una Bloodbath Roll, aunque el objetivo no esté Down.',
   },
 
   // ----- Trench Pilgrims -----
   'Wrath of God': {
     type: 'special-rule',
     faction: 'trench-pilgrims',
-    summary: 'Los Trench Pilgrims canalizan la furia divina. Una vez por partida, el War Prophet puede declarar Wrath of God antes de su Activación: hasta el final del turno, todos los PILGRIM amigos a 12" o menos ganan +1 INJURY DICE en cuerpo a cuerpo y tratan los Risky Success Rolls como Success Rolls normales. Representa el éxtasis fanático de los peregrinos en sus momentos más exaltados.',
+    summary: 'Regla de la Procession of the Sacred Affliction (no de los Trench Pilgrims normales): hasta 1 Castigator, Trench Pilgrim o Martyr Penitent puede tenerla por 15 👑. Nunca recibe BLOOD MARKERS, tiene NEGATE FEAR, no puede ser Broken on the Wheel, no puede llevar armas a distancia ni Armour (sí Shield) y su base pasa a 32mm.',
   },
 
   // ----- Iron Sultanate -----
   'Pride of Jabir': {
     type: 'special-rule',
     faction: 'iron-sultanate',
-    summary: 'El alquimista jabireano carga su munición con compuestos especiales. El Jabirean Alchemist puede asignar Alchemical Ammunition gratis a un modelo amigo SULTANATE al inicio de la partida (consumible, un disparo). Además, los modelos con Keyword ALCHEMIST pueden re-rollear 1 Risky Success Roll fallida por partida.',
+    summary: 'Regla de la variante House of Wisdom: la banda puede tener 0-3 Lions of Jabir.',
   },
 
   // ----- Heretic Legions -----
   'Hellbound Soul Contract': {
     type: 'special-rule',
     faction: 'heretic-legions',
-    summary: 'Los soldados del Infierno han firmado contratos con los Príncipes Demoníacos. Cualquier Heretic Trooper o Legionnaire que tenga un Hellbound Soul Contract equipado, cuando es Out of Action, puede gastar el contrato: en vez de caer, hace una Risky Success Roll. Si tiene éxito, sigue en pie con 1 BLOOD MARKER. El contrato se consume tras usarse.',
+    summary: 'Battlekit de las Heretic Legions (Heretic Troopers y Legionnaires, Limit: 3). Fiery Exodus: si el modelo queda Out of Action, antes de retirarlo pon 1 BLOOD MARKER a cada enemigo a 1" o menos (salvo los que tengan NEGATE FIRE).',
   },
 
   // ----- Black Grail -----
   'Infection Markers': {
     type: 'special-rule',
     faction: 'black-grail',
-    summary: 'Las bandas del Black Grail propagan enfermedades. Los modelos enemigos en contacto con Hounds, Heralds o Thralls reciben INFECTION MARKERS al final de cada activación. Por cada INFECTION MARKER acumulado, el modelo afectado pierde -1 DICE en sus Success Rolls. Los marcadores no se acumulan si el modelo tiene NEGATE GAS.',
+    summary: 'INFECTION MARKERS: algunas armas del Black Grail tienen la keyword INFECTION MARKERS y ponen INFECTION MARKERS en lugar de BLOOD MARKERS. Morale: el rival añade -1 DICE a todos sus Morale Checks salvo que su banda sea de la Court of the Seven-Headed Serpent o del Cult of the Black Grail.',
   },
   'Morale Penalty vs. Faithful': {
     type: 'special-rule',
     faction: 'black-grail',
-    summary: 'Los Faithful temen al Black Grail. Cuando un modelo BLACK GRAIL hace una carga contra un modelo de banda Faithful (NA, Pilgrims, Sultanate), el atacado debe primero hacer un test de Moral con -1 DICE. Si falla, retrocede o queda paralizado.',
+    summary: 'Morale: el rival añade -1 DICE a todos sus Morale Checks salvo que su banda sea de la Court of the Seven-Headed Serpent o del Cult of the Black Grail.',
   },
 
   // ----- Court of Serpent -----
   'Goetic Powers (Faction Rule)': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'El Court canaliza el Pecado elegido al crear la banda (Wrath/Envy/Lust/Pride/Sloth/Gluttony/Greed). Cada Pecado otorga distintas Goetic Abilities (pasivas) y Goetic Spells (activadas) que se aplican a los modelos DEMONIC y ELITE de la banda. Los detalles de cada Pecado están en su variante específica.',
+    summary: 'Seven Deadly Sins: antes de reclutar eliges a qué Pecado se dedica la banda (Wrath, Envy, Lust, Pride, Sloth, Gluttony o Greed). Goetic Powers: los modelos ELITE pueden tenerlos (el número figura en su Warband Entry); son Goetic Abilities (como una habilidad normal) o Goetic Spells, que no requieren Success Roll: se pagan retirando tantos BLOOD MARKERS como su coste de modelos sin BLACK GRAIL ni DEMONIC (amigos o enemigos, en cualquier parte). No se puede lanzar el mismo hechizo más de una vez por activación; algunos requieren una Cast Spell ACTION.',
   },
 
   // ----- Variants -----
   'Fireteams (Papal States)': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Variante Papal States: además del Fireteam estándar, los modelos amigos a 4" del Lieutenant tratan los Bloodbath Rolls con +1 DICE. Representa la disciplina militar del Vaticano.',
+    summary: 'No existe en Warbands 1.0.2: una Papal States Intervention Force usa los Fireteams normales de New Antioch.',
   },
   'Papal States Intervention': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Banda pequeña pero de élite. Presupuesto reducido (500 👑 + 11 ☼) compensado con Trench Cleric obligatorio (con LEADER y la habilidad Arise and be Healed!), guardia suiza con NEGATE FEAR gratis, y el Supreme Pontiff\'s Crucifix gratuito.',
+    summary: 'Far from Home: sin Trench Moles. Lector: debe incluir 1 Trench Cleric (y no necesita Lieutenant); ese Cleric tiene LEADER y Arise and be Healed! ACTION (Risky; con éxito, él o un amigo a 3" se levanta gratis y retira hasta D3 BLOOD y/o INFECTION MARKERS). Specialist Force: 500 👑 y 11 ☼ para empezar la campaña, +4 ☼ en cada Reinforcements y Threshold 200 👑 menor; como latecomer o en partida suelta, 200 👑 menos y 11 ☼ más. Supreme Blessing: el Supreme Pontiff\'s Crucifix de un modelo es gratis al crear la banda. Swiss Guard: el Lieutenant y hasta 4 modelos pueden tener NEGATE FEAR gratis.',
   },
   'Rapid Assault (Stosstruppen)': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Variante Prusiana: todos los modelos NEW ANTIOCH de la banda ganan +1" de Movimiento durante el primer turno. Las granadas usadas en el primer turno suman +1 DICE a Success Rolls. Refleja la doctrina alemana de asalto rápido.',
+    summary: 'Athleticism: el Lieutenant y los Shock Troopers pueden comprar Rapid Assault por +5 👑 cada uno (+1 DICE a la Risky Success Roll de su Dash ACTION).',
   },
   'Rapid Assault': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Variante Stosstruppen prusiana centrada en la doctrina de asalto rápido. Los Shock Troopers pueden ser Infiltrators (+10 👑). Especialistas en granadas y velocidad táctica.',
+    summary: 'Athleticism: Lieutenant y Shock Troopers pueden tener Rapid Assault por +5 👑 (+1 DICE a la Risky de Dash). Expert Fireteams: hasta 3 Fireteams. Feldkaplane: los Trench Clerics pueden llevar 1 dosis de Holy Smoke. Forward Positions: hasta 2 Shock Troopers con INFILTRATOR por +10 👑. Lightly-armoured: solo el Lieutenant y la Mechanized Heavy Infantry llevan Reinforced o Machine Armour. Light Melee: los Shock Troopers pierden Assault Drill (siguen costando 45). Masters of the Grenade: +4" de alcance a todas las granadas. Specialised Equipment: Submachine Guns Limit: 4, Automatic Pistols sin ELITE only, Machine Guns Limit: 1, sin Grenade Launchers ni Martyrdom Pills. Troop Selection: 2-8 Shock Troopers, sin Trench Moles, máximo 1 Sniper Priest y 1 Mechanized Heavy Infantry.',
   },
   'Masters of the Grenade (Stosstruppen)': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Variante Prusiana: los modelos pueden equipar hasta 2 piezas de granada (en vez de 1) sin contar contra HEAVY si una de ellas es Frag o Incendiary. Especialistas históricos en lanzamiento de granadas.',
+    summary: 'Masters of the Grenade: +4" al alcance de todas las granadas de los modelos de una banda Stosstruppen.',
   },
   'Éire Rangers Light Infantry': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Variante Éire: maestros de la guerra de guerrillas. Solo MHI puede llevar armas HEAVY o armaduras Reinforced/Machine. Lieutenant tiene SKIRMISHER en vez de Hold Your Fire!. Hit & Run: -1 DICE a melee contra Rangers en retirada.',
+    summary: 'Anointed Ammunition: Armour-Piercing Bullets a 5 👑 (Limit: 2). Berserker: el Lieutenant o un Fianna puede ser Berserker por +15 👑 (sin Armour, sí Shield; NEGATE FEAR; nunca recibe BLOOD MARKERS). Carnyx: un Musical Instrument puede tener FEAR gratis. Fianna: los Shock Troopers pueden tener INFILTRATOR y SKIRMISHER por +10 👑. Patrón siempre Learned Saint. Hit & Run Tactics: -1 DICE a los ataques cuerpo a cuerpo contra un modelo de la banda que se retira. Light Infantry: solo 1 Mechanized Heavy Infantry pero hasta 4 Combat Engineers y 4 Satchel Charges; máximo 3 Great Swords/Axes (ninguna en la MHI); solo la MHI lleva armas HEAVY (salvo Great Swords/Axes y Satchel Charges) y Reinforced o Machine Armour. Loose Formation: el Lieutenant cambia Hold Your Fire! por SKIRMISHER. Strong in Faith: 0-2 Trench Clerics con Arise and be Healed! y Away Serpents! en lugar de Onward Christian Soldiers.',
   },
   'Kingdom of Alba Assault': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Variante escocesa con tropas de asalto Highland. Bagpipes en lugar de Carnyx. Reglas específicas para Highland warriors y tradiciones tribales.',
+    summary: 'Bagpipes: un Musical Instrument puede ser Bagpipes gratis; los amigos a 8" tienen NEGATE FEAR. Brave: +1 DICE a los Morale Checks. Celtic Machine Armour: la Machine Armour mantiene Charge Bonus D6". Claymore Smiths: Great Sword/Axe a 7 👑. Cold Steel: la primera compra de cada arma cuerpo a cuerpo cuesta la mitad. Dum-Dum Ammunition: Dum-Dum Bullets a 5 👑 (Limit: 3). Highland Strength: Lieutenant y Shock Troopers con STRONG gratis. Lightly-armoured: solo Lieutenant y MHI llevan Reinforced o Machine Armour. Melee-focused: la MHI tiene Melee +1 DICE y Ranged +0 DICE. Rampant Charge: IGNORE DEFENDED OBSTACLE. Strained Supply: Automatic Shotgun, Grenade Launcher, Machine Gun, Sniper Rifle y Submachine Gun con Limit: 1. Armería propia: Lochaber Axe.',
   },
   'Expeditionary Forces of Abyssinia': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Fuerzas etíopes. Sin Sniper Priests. Hasta 2 Combat Medics (Misericordia con Limit: 2). MHI no puede llevar Machine Armour. Permite incluir hasta 2 Holy Warriors (Trench Cleric reskin con Blessed Psalm/Arise and be Healed!).',
+    summary: 'Abyssinian Healers: 0-2 Combat Medics y Misericordia con Limit: 2. Chieftain Panoply: la MHI no puede llevar Machine Armour. Faith of Ethiopia: sin Sniper Priests. Holy Warriors: 0-1 Trench Cleric y 0-2 Holy Warriors (entrada de Trench Cleric con Blessed Psalm ACTION y Arise and be Healed! ACTION). Short-Range Marksmanship: +1 DICE a los disparos a Short Range del Lieutenant y los Yeomen (no con granadas ni armas HEAVY). Vanguard Forces: sin Trench Moles; hasta 4 Yeomen con Flanking por +5 👑. Warrior Nobles: Shock Troopers y ELITE con Chewa por +5 👑 (+1 DICE en cuerpo a cuerpo por cada otro amigo a 1" del objetivo, máx. +2). Weapons of Mobile Warfare: máximo 3 armas a distancia HEAVY (sin contar Satchel Charges). Armería propia: Shotel, Holy Water of Lalibela, Anfarro, Tabot.',
   },
   'The Red Brigade': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Variante revolucionaria de Westfalia. Comuna militante con énfasis en el socialismo cristiano y la fraternidad de armas.',
+    summary: 'Wear and Tear: empieza cada partida con 1 BLOOD MARKER por cada 200 👑 completos del coste de la banda; los reparte el rival (1 por modelo mientras haya modelos sin marcadores, máx. 2 por modelo). No Retreat: nadie puede salir voluntariamente del cuerpo a cuerpo salvo los Mercy Dogs y quien arrastren. Trench Dogs (35 👑; no más perros que otros modelos): Guard, Mercy o Attack Dog por +5 👑. Glory Hounds: los perros ganan 2 ☼ por Glorious Deed. Remember the Fallen: tras la batalla, en vez de Exploración o Reinforcements, recupera el equipo de sus caídos. Live off the Land: no puede pedir Reinforcements dos partidas seguidas. Guns Blazing: el Lieutenant puede comprar Gunslinger por +5 👑. Displeasure of the Church: máximo 2 clérigos (1 Trench Cleric y 1 Sniper Priest, o 2 Sniper Priests). 0-1 Crimson Communicant (75 👑).',
   },
   'Procession of the Sacred Affliction': {
     type: 'special-rule',
     faction: 'trench-pilgrims',
-    summary: 'Cofradía flagelante. Sin Iron Capirotes (incluyendo a los Ecclesiastic Prisoners). Sin Machine Guns. Punt Guns con Limit: 1. Anti-Tank Hammers sin ELITE only. Holy Icon Shields a 20 👑 sin ELITE only. Hasta 1 modelo con Wrath of God (NEGATE FEAR, sin BLOOD MARKERS, sin Ranged ni Armor). Hasta 3 Pilgrims/Martyr-Penitents con Zealot Strength. +1 INJURY DICE en melee contra objetivos Down.',
+    summary: 'Face thy Fears: sin Iron Capirotes (los Ecclesiastic Prisoners tampoco lo tienen y cuestan lo mismo). Hammer and the Anvil: Anti-Tank Hammers sin ELITE only. Melee-focused: sin Machine Guns y Punt Guns con Limit: 1. Punishing Millstones: +1 INJURY DICE a los ataques cuerpo a cuerpo contra objetivos Down (no los Ecclesiastic Prisoners). Reliquary Armoury: Holy Icon Shields a 20 👑 sin ELITE only. Wrath of God: hasta 1 Castigator, Trench Pilgrim o Martyr Penitent por 15 👑 (sin BLOOD MARKERS, NEGATE FEAR, sin armas a distancia ni Armour, base 32mm). Zealot Strength: hasta 3 Trench Pilgrims y/o Martyr Penitents. Armería propia: Holy Icon Armour.',
   },
   'War Pilgrimage of Saint Methodius': {
     type: 'special-rule',
     faction: 'trench-pilgrims',
-    summary: 'Orden Ortodoxa especializada en Anchorites. Hasta 2 Anchorite Shrines (Anchorite Cloister) con Ranged +0 DICE en lugar de "-" y acceso a Anchorite Ranged Weapons + Anchorite Battlekit. Sin Communicants ni Ammo Monks (Communicant Heresy). Stigmatic Nuns deben llevar Standard Armour y máx 3 (Chaste Order). Sin Martyrdom Devices en Ecclesiastic Prisoners ni "Broken on the Wheel" (Mortal Sin). Trench Pilgrims no pueden resucitar como Martyr-Penitents (Treasure in Heaven). Patron siempre Learned Saint.',
+    summary: 'Anchorite Armoury: los Anchorite Shrines tienen Ranged +0 DICE y acceden a Anchorite Ranged Weapons y Anchorite Battlekit. Anchorite Cloister: hasta 2 Anchorite Shrines. Chaste Order: las Stigmatic Nuns deben llevar Standard Armour y como máximo 3. Communicant Heresy: sin Ammo Monks, Communicants ni Communicant Anti-Tank Hunters. Patrón siempre Learned Saint. Mortal Sin: los Ecclesiastic Prisoners no llevan Martyrdom Device y nadie puede ser Broken on the Wheel. Treasure in Heaven: los Trench Pilgrims no resucitan como Martyr Penitents.',
   },
   'Cavalcade of the Tenth Plague': {
     type: 'special-rule',
     faction: 'trench-pilgrims',
-    summary: 'Apocalípticos que rechazan al Meta-Cristo. Hasta 0-2 Ecclesiastic Prisoners (en vez del límite normal). Trench Pilgrims no pueden resucitar como Martyr-Penitents. Communicants cuestan 3 ☼ en lugar de 👑. Cualquier PILGRIM puede tener Sacrificial Lamb por 5 👑 (1er BLOOD MARKER ignorado). War Prophet con Day of his Wrath ACTION (Injury Roll a distancia con IGNORE ARMOUR). Favour of the Lord: 1 BLESSING MARKER por turno.',
+    summary: 'Blood of the Lamb: los Castigators tienen TOUGH gratis. Day of His Wrath: el War Prophet cambia Laying on of Hands por Day of his Wrath ACTION (Risky; con Success, Injury Roll con IGNORE ARMOUR a 1 enemigo a 3"; con Critical, además +1 INJURY DICE). Favour of the Lord: al empezar cada turno puedes poner 1 BLESSING MARKER a un modelo de la banda. Heaven Awaits: los Trench Pilgrims no resucitan como Martyr Penitents. Only the Righteous: cualquier PILGRIM (salvo Ecclesiastic Prisoners) puede llevar Sacrificial Lamb por 5 👑. Stolen Communicants: los Communicants cuestan 3 ☼ en vez de ducados. The Unclean: 0-2 Ecclesiastic Prisoners.',
   },
   "Fida'i of Alamut": {
     type: 'special-rule',
     faction: 'iron-sultanate',
-    summary:"Banda secreta liderada por Master Assassin (95 👑, LEADER + TOUGH). Sin Yüzbaşí, Jabirean, Janissaries, Lions ni Brazen Bull. Hasta 2 Sultanate Assassins. Cada Assassin/Master Assassin puede tener una habilidad única (Hallucinogen Disguise, Mirage of Time, Secret Paths o Thunderbolt of Alamut). Hasta 3 Azebs Assassin Acolytes (INFILTRATOR +10 👑). Hasta 4 Dervishes (usan Janissary entry pero IGNORE OFF-HAND, Whirling Dervish). 1 Killing Squad Fireteam.",
+    summary: 'Alamut Alone: sin Yüzbaşı, Jabirean Alchemist, Janissaries, Lions of Jabir ni Brazen Bulls. Art of Assassination: cada Assassin puede tener una habilidad distinta: Hallucinogen Disguise (20 👑), Mirage of Time (15 👑, -1 DICE a los ataques contra él), Secret Paths (10 👑, entra desde un borde a partir del turno 2) o Thunderbolt of Alamut (20 👑, +2" Movement y +1 DICE a la Risky de Dash). Assassin Acolytes: hasta 3 Azebs con INFILTRATOR por +10 👑. Dervishes: 0-4, entrada de Janissary sin Reinforced Armour y con IGNORE OFF-HAND WEAPON y Whirling Dervish (-1 DICE a los disparos contra él) en lugar de STRONG. Flock of Assassins: 0-2 Sultanate Assassins y 1 Master Assassin (obligatorio; entrada de Sultanate Assassin con LEADER y TOUGH, 95 👑). Killing Squad: 1 Fireteam. Armería propia: Bow of Alamut, Golden Khanjar, Hashashin Leaf.',
   },
   'House of Wisdom': {
     type: 'special-rule',
     faction: 'iron-sultanate',
-    summary: 'Sabios y alquimistas. 1-2 Jabirean Alchemists obligatorios. Alchemist Armour con Limit: 2 (en vez de 1). Hasta 3 Azebs Kavasses (+5 👑, melee +0 pero pierden Light Skirmisher). Sin Yüzbaşí, Janissaries ni Sultanate Assassins. Hasta 2 Faris (Janissary entry con ELITE gratis). Hasta 3 Lions of Jabir. Cada Alchemist puede tener una habilidad única (Medicine, Cartography & Geometry, etc.).',
+    summary: 'Alchemists: 1-2 Jabirean Alchemists y Alchemist Armour con Limit: 2. Kavasses: hasta 3 Azebs con Melee +0 DICE por +5 👑 (pierden Light Skirmisher). Noble Guardians: 0-2 Fāris (entrada de Janissary con ELITE gratis). Pride of Jabir: 0-3 Lions of Jabir. Private Venture: sin Yüzbaşı, Janissaries ni Sultanate Assassins. Secrets of the House of Wisdom: cada Alchemist puede tener una habilidad distinta (Medicine, Cartography & Geometry, Secrets of Takwin, Chemistry & Alchemy, Philosophy, Poetry and Theology). Takwin Homunculus: uno por Alchemist (40 👑, con Alchemical Formulas). Weapon Collections: al crear la banda, 1 Battlekit de New Antioch y 1 de Trench Pilgrims. Armería propia: Elixir of Al-Khidr, Fire Shield.',
   },
   'Defenders of the Iron Wall': {
     type: 'special-rule',
     faction: 'iron-sultanate',
-    summary: 'Guarnición permanente del Iron Wall. Sin Lions, Yüzbaşí ni Sultanate Assassins (ni Cloak of Alamut/Wind Amulet). Silahdar obligatorio (Yüzbaşí entry con STRONG en vez de Mubarizun, acceso a Alaybozan/Anqā Guard/Explosive Charges). Hasta 2 Janissaries (con ELITE gratis). Hasta 4 Sultanate Sappers. 0-2 Sultanate Grand Cannons (60 👑, asignables a Brazen Bull o como gun battery). +2 DICE en disparos con Elevated Position. Siege Jezzails: +1 DICE si hay aliado a 1". Hasta 1 Sipahi Automaton Cavalry (110 👑).',
+    summary: 'Far from the Sublime Gate: sin Lions of Jabir, Yüzbaşı ni Assassins, y sin Cloak of Alamut ni Wind Amulet. Grand Cannons: 0-2 Sultanate Grand Cannons (60 👑), dados a un Brazen Bull (máx. 1 cada uno) o como gun battery. Janissary Officers: 0-2 Janissaries con ELITE gratis. Marksmanship of the Iron Wall: +2 DICE en vez de +1 con Elevated Position. Sappers Corps: 0-4 Sultanate Sappers. Siege Jezzail Teams: +1 DICE al disparar un Siege Jezzail con un amigo a 1". Silahdar: 1 obligatorio (entrada de Yüzbaşı con STRONG en vez de Mubarizun; puede llevar Alaybozan, Anq Guard y Explosive Charges). Sipahi: hasta 1 Sipahi Automaton Cavalry por 110 👑 (entrada de Mamluk Faris, sin cambiar su Battlekit).',
   },
   'Trench Ghosts': {
     type: 'special-rule',
     faction: 'heretic-legions',
-    summary: 'Sombras semicorpóreas. Sin Mercenarios. Sin modelos ARTIFICIAL ni Hellbound Soul Contracts ni Infernal Brands. Anointed Heavy Infantry permitidos pero sin Infernal Brand (a 95 👑). Barbed Wire Banshee (en vez de Chorister, +1 INJURY DICE a 8" enemigos). Sarcophagus Mine (30 👑, Heretic Troopers only, Limit: 2). Semi-corporeal: -1 INJURY DICE en disparos. Slow and Creeping: Movement 3" en Dash, -1 DICE a ataques contra modelos en Retreat. FEAR + NEGATE DIFFICULT TERRAIN + NEGATE GAS para todos los modelos.',
+    summary: 'Barbed Wire Banshee: puede sustituir al Chorister (mismo perfil y coste); en vez de Unholy Hymns, +1 INJURY DICE a las tiradas contra enemigos a 8". Enemies of All: sin Mercenarios. Lost Souls: sin modelos ARTIFICIAL, Hellbound Soul Contracts ni Infernal Brands (los Anointed no tienen Infernal Brand y siguen costando 95). Semi-corporeal: -1 INJURY DICE a las Injury Rolls de disparos contra modelos de la banda. Slow and Creeping: Dash como si tuvieran 3"/Infantry y -1 DICE a sus ataques contra un enemigo que se retira. Undead Horror: todos tienen FEAR, NEGATE DIFFICULT TERRAIN y NEGATE GAS. Armería propia: Sarcophagus Mine, Tank Palanquin.',
   },
   'Knights of Avarice': {
     type: 'special-rule',
     faction: 'heretic-legions',
-    summary: 'Adoradores de Mammón. Sin Death Commandos. Patron siempre Mammon. Hasta 2 Goetic Warlocks como mercenarios (el primero a 110 👑 en vez de ☼). Sin armas con FIRE/SHRAPNEL (excepto Grenade Launcher modificado: +GAS, IGNORE ARMOUR, -1 INJURY DICE). Sin modelos <80 👑 (excepto Wretched). Heretic Priest tiene Price of Greed ACTION (en vez de Puppet Master): Injury Roll a distancia con bonus por -INJURY MODIFIERS del objetivo. Coin Hammer (Limit 2, 2H melee con +1 INJURY DICE, HEAVY, BLESSING en hits) y Golden Calf Altar disponibles. Al crear banda: 1 Battlekit gratis del Armoury de NA + 1 del IS.',
+    summary: 'Corrupt Merchants: al crear la banda, 1 Battlekit de New Antioch y 1 del Iron Sultanate. Gas Bombs: las Artillery Witches cambian Infernal Bombs por Gas Bombs. Goetic Warlocks: hasta 2 como Mercenarios; el primero cuesta 110 👑 en vez de Glory. Infernal Rivalry: sin Death Commandos. Mammon\'s Chosen: ningún modelo con su Battlekit por debajo de 80 👑 salvo Wretched. Preserve the Loot: nada con FIRE o SHRAPNEL; el Grenade Launcher cambia SHRAPNEL por -1 INJURY DICE, GAS e IGNORE ARMOUR. Price of Greed: el Heretic Priest cambia Puppet Master por Price of Greed ACTION (Risky; Injury Roll a un enemigo a 12" en Line of Sight, +1 INJURY DICE con Critical y +1 INJURY DICE por cada -1 INJURY MODIFIER del objetivo). Patrón siempre Mammon. Armería propia: Coin Hammer, Golden Calf Altar, Standard of Mammon, Tarnished Armour.',
   },
   'Heretic Naval Raiders': {
     type: 'special-rule',
     faction: 'heretic-legions',
-    summary: 'Marinería hereje. Sin War Wolf. Submachine Guns a 25 👑. Hasta 2 Anointed y 1 Artillery Witch máximo. +1 DICE a la Risky Success Roll de Dash ACTION. Hasta 3 modelos no-ELITE pueden ser Unseen Advance (+10 👑, INFILTRATOR).',
+    summary: 'Close Assault Weapons: Submachine Guns a 25 👑. Fast as Lightning: +1 DICE a la Risky Success Roll de Dash. Let Sleeping Dogs Lie: sin War Wolf. Light Troops: máximo 2 Anointed y 1 Artillery Witch (aunque la banda valga 1.000 👑 o más). Unseen Advance: hasta 3 modelos sin ELITE con INFILTRATOR por +10 👑.',
   },
   'Dirge of the Great Hegemon': {
     type: 'special-rule',
     faction: 'black-grail',
-    summary: 'Cofradía de luto. Sin Lord of Tumours ni Amalgam. Hasta 2 Plague Knights. Executor obligatorio (Plague Knight con Ranged +1 DICE, LEADER, TOUGH, 80 👑). Hasta 2 Hounds of the Black Grail y 2 Heralds of Beelzebub. Bereaved (Thralls reformados): Ranged +0 DICE, 30 👑, acceso a Ranged Weapons/Grenades/Music/Flag. Sin Beelzebub\'s Axe ni Black Grail Shield. Putrid Shotguns Limit: 3. Viscera Cannon Limit: 3 sin ELITE only. Plague Knights/Executor con Command Bereaved ACTION (gastar INFECTION MARKERS para activar Bereaved adicionalmente).',
+    summary: 'The Executor: 1 obligatorio (entrada de Plague Knight con Ranged +1 DICE, LEADER y TOUGH, 80 👑); además 0-2 Plague Knights. The Fallen: sin Lord of Tumours ni Amalgam. The Lost: 0-2 Hounds y 0-2 Heralds of Beelzebub. The Bereaved: los Grail/Fly Thralls tienen Ranged +0 DICE, cuestan 30 👑 y pueden llevar armas a distancia, granadas, Musical Instrument o Troop Flag. Dishonoured: sin Beelzebub\'s Axe ni Black Grail Shield. Hegemon\'s Last Blessing: Putrid Shotgun Limit: 3 y Viscera Cannon Limit: 3 sin ELITE only. Hegemon\'s Will: Executor y Plague Knights tienen Command Bereaved ACTION (retira INFECTION MARKERS de enemigos; por cada uno, un Bereaved a 18" hace Charge, Fight, Move o Shoot, máx. 1 orden por turno). Armería propia: Broken Crown, Urn of the Bitter Ashes.',
   },
   'The Great Hunger': {
     type: 'special-rule',
     faction: 'black-grail',
-    summary: 'Variante Creature Caster (línea de miniaturas). Reglas específicas no incluidas en el Warbands PDF. Consultar fuentes oficiales del producto.',
+    summary: 'Eternal Appetence: al empezar cada turno eliges un efecto del Hambre (Agonised Churning, Ruinous Masticating, Spasmodic Wretching o Vile Craving) que usa los INFECTION MARKERS de los amigos a 8" de una Matagot Hag. Butcher Knights: 0-2 Plague Knights (base 32/40mm) con Ravenous Infection gratis y rangos propios (Butcher King, Knight Companion of the Feast, Knight of Twin Cleavers). Cradle of Filth: 0-3 Cradle Thralls (Ravenous con INFILTRATOR, 2 ☼, no cuentan para la Field Strength). Desiccated Husks: 0-2 (Corpse Guard con CRITICAL y More Worm Than Man). Excruciating Hunger: lista de armas y equipo prohibidos. The Great Maw: 0-1 si el resto vale 1.000 👑 o más (Lord of Tumours sin LEADER). Spawn of Gluttony: 1 Matagot Hag obligatoria; sin Lord of Tumours, Corpse Guards, Grail Thralls, Heralds of Beelzebub ni Amalgam.',
   },
   'Sin: Wrath': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'Pecado de la Ira. Bonificadores ofensivos. Aura of Wrath en el Desecrated Saint: +1 DICE a melee y al Risky Success Roll de Dash ACTION para aliados a 8".',
+    summary: 'La banda está dedicada a Wrath (Seven Deadly Sins). Aura of Wrath del Desecrated Saint: +1 DICE a los ataques cuerpo a cuerpo y a la Risky de Dash de los amigos a 8" (incluido él). Da acceso a los Goetic Powers de Wrath.',
   },
   'Sin: Envy': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'Pecado de la Envidia. Aura of Envy en el Desecrated Saint: enemigos a 12" no pueden cargar a aliados que están a 1" de un modelo enemigo (les obliga a buscar otro objetivo).',
+    summary: 'La banda está dedicada a Envy (Seven Deadly Sins). Aura of Envy del Desecrated Saint: los enemigos a 12" no pueden cargar a un modelo de su banda que esté a 1" de un modelo de la banda del que carga. Da acceso a los Goetic Powers de Envy.',
   },
   'Sin: Lust': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'Pecado de la Lujuria. Aura of Lust en el Desecrated Saint: anula keywords/reglas de la armadura enemiga (no IMPERVIOUS) a 4". No afecta el tamaño de base.',
+    summary: 'La banda está dedicada a Lust (Seven Deadly Sins). Aura of Lust del Desecrated Saint: a enemigos a 4" con Armour no IMPERVIOUS puedes anularles keywords y reglas de esa armadura (salvo las del tamaño de base). Da acceso a los Goetic Powers de Lust.',
   },
   'Sin: Pride': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'Pecado de la Soberbia. Aura of Pride en el Desecrated Saint: 1 BLOOD MARKER automático a cada enemigo a 8" al final de cada activación del Saint.',
+    summary: 'La banda está dedicada a Pride (Seven Deadly Sins). Aura of Pride del Desecrated Saint: al terminar su activación, 1 BLOOD MARKER a cada enemigo a 8". Da acceso a los Goetic Powers de Pride.',
   },
   'Sin: Sloth': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'Pecado de la Pereza. Aura of Sloth en el Desecrated Saint: enemigos a 8" tratan Minor Hits como Down. Afecta incluso a modelos con Machine Armour.',
+    summary: 'La banda está dedicada a Sloth (Seven Deadly Sins). Aura of Sloth del Desecrated Saint: los enemigos a 8" tratan los Minor Hit como Down (también los que convierten Down en Minor Hit, como la Machine Armour). Da acceso a los Goetic Powers de Sloth.',
   },
   'Sin: Gluttony': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'Pecado de la Gula. Aura of Gluttony en el Desecrated Saint: -1 DICE a tiradas de enemigos a 8" (excepto BLACK GRAIL/ARTIFICIAL).',
+    summary: 'La banda está dedicada a Gluttony (Seven Deadly Sins). Aura of Gluttony del Desecrated Saint: -1 DICE a las tiradas de enemigos a 8" salvo BLACK GRAIL o ARTIFICIAL. Da acceso a los Goetic Powers de Gluttony.',
   },
   'Sin: Greed': {
     type: 'special-rule',
     faction: 'court-serpent',
-    summary: 'Pecado de la Avaricia. Aura of Greed en el Desecrated Saint: enemigos a 12" que cargan deben apuntar al Saint si está en LoS y alcanzable sin terreno peligroso.',
+    summary: 'La banda está dedicada a Greed (Seven Deadly Sins). Aura of Greed del Desecrated Saint: los enemigos a 12" que carguen deben cargarle si está a 12", en su Line of Sight y alcanzable sin terreno Dangerous ni Climb, Jump, Jump Down o Diving Charge. Da acceso a los Goetic Powers de Greed.',
   },
 };
 
@@ -34442,51 +34442,79 @@ function getImplicitAbilities(model) {
 const VARIANT_FACTION_RULES = {
   'iron-sultanate:iron-wall-def': [
     { name: 'Siege Jezzail Teams',
-      desc: '+1 DICE en Siege Jezzail si hay aliado a 1" o menos.' },
+      desc: '+1 DICE al disparar un Siege Jezzail si hay un amigo a 1" o menos.' },
     { name: 'Marksmanship of the Iron Wall',
-      desc: '+2 DICE (en vez de +1) en Ranged con Elevated Position.' },
+      desc: '+2 DICE (en vez de +1) a los disparos con Elevated Position.' },
   ],
   'new-antioch:alba': [
-    { name: 'Hold the Line',
-      desc: 'Aliados a 6" no chequean Morale por aliados caídos.' },
+    { name: 'Brave',
+      desc: '+1 DICE a los Morale Checks de la banda.' },
     { name: 'Rampant Charge',
-      desc: 'IGNORE DEFENDED OBSTACLE al hacer charge.' },
+      desc: 'Todos los modelos tienen IGNORE DEFENDED OBSTACLE.' },
     { name: 'Bagpipes',
-      desc: '+1 DICE a Morale de aliados a 8".' },
+      desc: 'Los amigos a 8" del modelo con Bagpipes tienen NEGATE FEAR.' },
+    { name: 'Celtic Machine Armour',
+      desc: 'La Machine Armour mantiene Charge Bonus D6".' },
   ],
   'new-antioch:prussia': [
     { name: 'Rapid Assault',
-      desc: '+1 DICE al Risky Roll de Dash para Lt y Shock Troopers.' },
+      desc: 'Solo si se compra (+5 👑, Lieutenant y Shock Troopers): +1 DICE a la Risky de Dash.' },
     { name: 'Masters of the Grenade',
-      desc: '+4" de alcance a granadas (de 6"/8"/10" → 10"/12"/14").' },
+      desc: '+4" al alcance de todas las granadas.' },
   ],
   'new-antioch:eire-rangers': [
     { name: 'Hit & Run Tactics',
-      desc: '-1 DICE a los Melee Attacks de enemigos contra Rangers en Retreat.' },
-    { name: 'Light Infantry',
-      desc: 'Solo MHI puede portar HEAVY/Reinforced; resto sin armadura pesada.' },
+      desc: '-1 DICE a los ataques cuerpo a cuerpo contra un modelo de la banda que se está retirando.' },
+    { name: 'Loose Formation',
+      desc: 'El Lieutenant tiene SKIRMISHER en lugar de Hold Your Fire!.' },
+  ],
+  'new-antioch:abyssinia': [
+    { name: 'Short-Range Marksmanship',
+      desc: '+1 DICE a los disparos a Short Range del Lieutenant y los Yeomen (no granadas ni armas HEAVY).' },
+  ],
+  'new-antioch:papal-states': [
+    { name: 'Lector',
+      desc: 'El Trench Cleric tiene LEADER y Arise and be Healed! ACTION.' },
+  ],
+  'trench-pilgrims:sacred-affliction': [
+    { name: 'Punishing Millstones',
+      desc: '+1 INJURY DICE a los ataques cuerpo a cuerpo contra objetivos Down (no Ecclesiastic Prisoners).' },
+  ],
+  'trench-pilgrims:tenth-plague': [
+    { name: 'Favour of the Lord',
+      desc: 'Al empezar cada turno, 1 BLESSING MARKER a un modelo de la banda.' },
+    { name: 'Blood of the Lamb',
+      desc: 'Los Castigators tienen TOUGH.' },
+  ],
+  'iron-sultanate:fidai-alamut': [
+    { name: 'Whirling Dervish',
+      desc: 'Dervishes: -1 DICE a los disparos contra ellos.' },
+  ],
+  'heretic-legions:trench-ghosts': [
+    { name: 'Semi-corporeal',
+      desc: '-1 INJURY DICE a las Injury Rolls de disparos contra modelos de la banda.' },
+    { name: 'Slow and Creeping',
+      desc: 'Dash como 3"/Infantry; -1 DICE a sus ataques contra un enemigo que se retira.' },
+    { name: 'Undead Horror',
+      desc: 'Todos tienen FEAR, NEGATE DIFFICULT TERRAIN y NEGATE GAS.' },
+  ],
+  'heretic-legions:naval-raiders': [
+    { name: 'Fast as Lightning',
+      desc: '+1 DICE a la Risky Success Roll de Dash.' },
+  ],
+  'black-grail:great-hegemon': [
+    { name: 'Hegemon\'s Will',
+      desc: 'Executor y Plague Knights: Command Bereaved ACTION (gasta INFECTION MARKERS de enemigos para dar órdenes a Bereaved a 18").' },
   ],
   'new-antioch:red-brigade': [
     { name: 'Wear and Tear',
-      desc: '1 BLOOD MARKER inicial por cada 200 👑 de coste total de la banda.' },
+      desc: 'Empieza con 1 BLOOD MARKER por cada 200 👑 completos de la banda; los reparte el rival (máx. 2 por modelo).' },
     { name: 'No Retreat',
-      desc: 'La banda no puede Retreat salvo si una regla especial la fuerza.' },
-  ],
-  'iron-sultanate:fidai-alamut': [
-    { name: "Fida'i of Alamut",
-      desc: 'INFILTRATOR + bonus melee +1 INJURY MOD para Assassin Acolytes.' },
-  ],
-  'iron-sultanate:house-wisdom': [
-    { name: 'House of Wisdom',
-      desc: '+1 DICE Ranged a todo modelo de la banda (researched marksmanship).' },
-  ],
-  'black-grail:great-hegemon': [
-    { name: 'Dirge of the Great Hegemon',
-      desc: '+1 INJURY MOD a Plague Knights y Bereaved.' },
+      desc: 'Nadie sale voluntariamente del cuerpo a cuerpo salvo los Mercy Dogs y quien arrastren.' },
   ],
   'black-grail:great-hunger': [
-    { name: 'The Great Hunger',
-      desc: 'Antipope absorbe 1 BLOOD MARKER propio al matar enemigo.' },
+    { name: 'Eternal Appetence',
+      desc: 'Al empezar cada turno eliges un efecto del Hambre (Agonised Churning, Ruinous Masticating, Spasmodic Wretching o Vile Craving) para los amigos a 8" de una Matagot Hag.' },
   ],
 };
 
@@ -38042,11 +38070,10 @@ function gatherWarbandSpecialRules(wb) {
 
   // Faction rule — find the entry whose `faction` field matches and is a
   // base rule (not variant). Pick the first base one matching.
+  // Warbands of TC 1.0.2: Trench Pilgrims, Iron Sultanate y Heretic Legions
+  // no tienen reglas especiales de facción (solo sus variantes).
   const baseRulesByFaction = {
     'new-antioch':     'New Antioch Fireteams',
-    'trench-pilgrims': 'Wrath of God',
-    'iron-sultanate':  'Pride of Jabir',
-    'heretic-legions': 'Hellbound Soul Contract',
     'black-grail':     'Infection Markers',
     'court-serpent':   'Goetic Powers (Faction Rule)',
   };

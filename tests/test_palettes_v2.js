@@ -118,7 +118,7 @@ group('Group 9: VARIANT_FACTION_RULES Alba SPEC v2', () => {
   const r = getVariantFactionRules({ factionId:'new-antioch', variantId:'alba' });
   ok(Array.isArray(r), 'Alba rules array');
   ok(r.some(x => /bagpipes/i.test(x.name)), 'incluye Bagpipes');
-  ok(r.some(x => /hold the line/i.test(x.name)), 'incluye Hold the Line');
+  ok(r.some(x => /brave/i.test(x.name)) && !r.some(x => /hold the line/i.test(x.name)), 'incluye Brave (Hold the Line no existe en 1.0.2)');
   ok(r.some(x => /rampant charge/i.test(x.name)), 'incluye Rampant Charge');
 });
 

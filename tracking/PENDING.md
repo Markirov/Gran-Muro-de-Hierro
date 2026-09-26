@@ -6,7 +6,10 @@
 
 
 ## 🟡 Media Prioridad
-- [ ] **Revisar textos de reglas de variante y habilidades de unidades contra los PDF** (Lead Developer, baja): el modo mesa también muestra `VARIANT_FACTION_RULES` y las habilidades de cada unidad; no se han auditado en la revisión de keywords del 2026-09-26. Keywords `CAVALRY` y `ALCHEMIST` de la app no aparecen en los PDF disponibles.
+- [ ] **Contenido de variantes 1.0.2 que falta en la app** (Marcos decide si se añade): las reglas de variante ya tienen su texto canon, pero no existen como datos: armas/equipo *Lochaber Axe* (Alba), *Tank-Splitter Sword* y *Holy Smoke* (Stosstruppen), *Shotel*, *Holy Water of Lalibela*, *Anfarro*, *Tabot* (Abyssinia), *Holy Icon Armour* (Procession), *Bow of Alamut*, *Golden Khanjar*, *Hashashin Leaf* (Fida'i), *Elixir of Al-Khidr* (House of Wisdom); mejoras compradas *Chewa* y *Flanking* (Abyssinia); unidades *Takwin Homunculus* (House of Wisdom), *Master Assassin* y *Dervishes* (Fida'i), *Executor* (Dirge); Great Hunger: *Matagot Hag*, *Cradle Thralls*, *Desiccated Husks*, *Great Maw*.
+- [ ] **BLOOD MARKERS en el motor del Lab** (Marcos decide): el motor aplica -1 DICE fijo por marcador; en canon es el rival quien decide gastarlos (+/-1 DICE o convertir Injury en Bloodbath). Modelarlo cambia los resultados del Lab.
+- [ ] **Autocannon del Anchorite:** añadir la nota canon "cuenta como 1-Handed si lo usa un Anchorite".
+- [ ] **Keyword `ALCHEMIST`:** no aparece en los PDF 1.0.2; confirmar su origen o retirarla.
 
 - [ ] **PDFs canon fuera de su sitio** (Marcos): `herramientas/pdfs-reglamento/` está vacío (solo `trench-crusade-tarjetas.pdf`); los PDFs del reglamento están en `E:\_DUPLICADOS_PDF_revisar\` con el prefijo `E__Drive_Trench Crusade_herramientas_pdfs-reglamento_` (parece una limpieza de duplicados). Devolverlos a `herramientas/pdfs-reglamento/` para que la regla D.5 apunte a un sitio real.
 - [ ] **Probar el modo mesa en partida real** (Marcos): usarlo en el Android durante 1-2 partidas y anotar aquí lo que falte o sobre. Ideas ya aparcadas en `IDEAS.md`.
@@ -20,6 +23,8 @@
 ---
 
 ## ✅ Completado
+
+- [x] **Revisar textos de reglas de variante y habilidades de unidades contra los PDF** → **Cerrado 2026-09-26:** habilidades (42 reescritas) y reglas de facción/variantes reescritas desde Warbands 1.0.2. `CAVALRY` eliminada (inventada). Ver DONE.
 
 - [x] **Huecos de datos canon vistos en el modo mesa** (Domain & Product Owner → verificar en PDF): (1) `Anqa Guard` (Companion, Silahdar de Caza2) no existe en la armería de Forge — ¿es el `Takwin Anqā Bird` u otra pieza? (2) `Jezzail` (Iron Sultanate) tiene `weaponKeywords: []` en la armería; confirmar en el PDF si tiene keywords base. (3) `Greatsword / Greataxe` sale sin keywords con la variante Iron Wall ("Greatsword sin HEAVY"): confirmar que no le queda ninguna. El Lead Developer corrige los datos tras la verificación. → **Cerrado 2026-09-25** con los PDFs canon: (1) es el `Anq Guard` de la armería Iron Wall (alias de nombre); (2) Jezzail sin keywords es correcto; (3) Great Sword/Axe tiene +1 INJURY DICE, CRITICAL, HEAVY — el fallo era de emparejado de nombre. Ver DONE.
 - [x] **Modo mesa: toda la información de reglas en la ficha** (petición de Marcos): bloques visibles Armas (keywords explicadas + restricciones), Equipo (keywords + habilidades que concede) y Habilidades (con descripción, sin repetir las del equipo). Sin inventar textos que no estén en los datos.
