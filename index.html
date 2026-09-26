@@ -9200,34 +9200,29 @@ function modelHasNegateFear(bm) {
 }
 
 /**
- * Probabilistic check: does this attacker fail their attack on a fearful
- * target due to FEAR? (Sim-only abstraction: a Risky Success Roll fails
- * about 30% of the time on raw 2d6, which is the rulebook's effective
- * miss rate when charging into FEAR.)
- *
- * Returns true if the attack is forfeit due to fear, false otherwise.
- *  - Target without `fear` flag: always returns false.
- *  - Attacker with NEGATE FEAR: always returns false (immune).
- *  - Otherwise: ~30% chance true.
+ * FEAR (Keyword Glossary, Rulebook 1.0.2): -1 DICE a los ataques cuerpo a
+ * cuerpo contra un modelo con FEAR. Los modelos que causan FEAR son inmunes,
+ * igual que los que tienen NEGATE FEAR.
  *
  * @param {Object} attacker  battle model
  * @param {Object} target    battle model (the target being engaged)
- * @returns {boolean}
+ * @returns {number} -1 o 0 (modificador de DICE)
  */
-function modelFearMissesAttack(attacker, target) {
-  if (!target || !target.fear) return false;
-  if (modelHasNegateFear(attacker)) return false;
+function modelFearDiceMod(attacker, target) {
+  if (!target || !target.fear) return 0;
+  if (attacker && (attacker.fear || (attacker.keywords && attacker.keywords.has('FEAR')))) return 0;
+  if (modelHasNegateFear(attacker)) return 0;
   // Onward Christian Soldiers! aura: if attacker is NEW ANTIOCH and any
   // friendly Cleric with onwardChristianSoldiers is alive on its band,
   // attacker gets effective NEGATE FEAR (canon: aura at 8" range, abstracted
   // to band-wide because we don't model space).
-  if (attacker._band && attacker.keywords && attacker.keywords.has('NEW ANTIOCH')) {
+  if (attacker && attacker._band && attacker.keywords && attacker.keywords.has('NEW ANTIOCH')) {
     const cleric = attacker._band.find(m =>
       m && !m.isOut && m.onwardChristianSoldiers
     );
-    if (cleric) return false;
+    if (cleric) return 0;
   }
-  return Math.random() < 0.30;
+  return -1;
 }
 
 /**
@@ -9836,6 +9831,7 @@ function companionModelToBattleModel(cm) {
     regenerate: [...kws].some(k => k.startsWith('REGENERATE')) ? 1 : 0,
     negateFire: kws.has('NEGATE FIRE') || kws.has('NEGATE_FIRE'),
     negateGas:  kws.has('NEGATE GAS')  || kws.has('NEGATE_GAS'),
+    negateShrapnel: kws.has('NEGATE SHRAPNEL') || kws.has('NEGATE_SHRAPNEL'),
     negateHeavy: modelHasNegateHeavyForBattle({ keywords: kws }),
     marksmanshipIronWall: abilityIds.has('rl_marksmanshipoftheironwall'),
     siegeTeam: abilityIds.has('rl_siegejezzailteams'),
@@ -11085,13 +11081,13 @@ function scaleEnemyBand(enemyName, targetCost) {
 
 function rollD6_lab() { return Math.floor(Math.random() * 6) + 1; }
 
-function rollDicePool_lab(modifier) {
-  const nDice = 2 + Math.abs(modifier);
+function rollDicePool_lab(modifier, keep = 2) {
+  const nDice = keep + Math.abs(modifier);
   const rolls = [];
   for (let i = 0; i < nDice; i++) rolls.push(rollD6_lab());
   rolls.sort((a, b) => a - b);
-  const chosen = modifier >= 0 ? rolls.slice(-2) : rolls.slice(0, 2);
-  return { sum: chosen[0] + chosen[1], dice: chosen };
+  const chosen = modifier >= 0 ? rolls.slice(-keep) : rolls.slice(0, keep);
+  return { sum: chosen.reduce((a, b) => a + b, 0), dice: chosen };
 }
 
 function successRoll_lab(modifier = 0, risky = false) {
@@ -11123,8 +11119,9 @@ function successRollWithBlessing_lab(attacker, modifier = 0, risky = false) {
   return successRoll_lab(modifier + 1, risky);
 }
 
-function injuryRoll_lab(injuryDice, injuryMod, armour, bypassArmour = false) {
-  const { sum } = rollDicePool_lab(injuryDice);
+// DEADLY (Rulebook 1.0.2): la Injury Roll se tira con 3D6 (se quedan 3 dados).
+function injuryRoll_lab(injuryDice, injuryMod, armour, bypassArmour = false, deadly = false) {
+  const { sum } = rollDicePool_lab(injuryDice, deadly ? 3 : 2);
   let final = sum + injuryMod;
   if (!bypassArmour) final += armour;
   if (final <= 1) return 'NO_EFFECT';
@@ -11232,23 +11229,23 @@ function bestWeapon_lab(attacker, target, type, phase) {
       }
       if (w.keywords.has('CRITICAL')) s += 0.5;
       // CLEAVE: extra attacks. Strong vs DOWN targets (extra hits to finish)
-      const hasCleave = w.keywords.has('CLEAVE') || w.keywords.has('CLEAVE 2');
-      if (hasCleave) s += 1;
+      const hasCleave = keywordValue_lab(w, 'CLEAVE') > 1;
+      if (hasCleave) s += keywordValue_lab(w, 'CLEAVE') - 1;
       if (hasCleave && target.isDown) s += 1.5;  // remate bonus
       // BLAST scales with target density (we don't know neighbours here, so
       // use a generic heuristic — already handled at applyInjury_lab time)
       if (hasBlastKeyword(w)) s += 1.5;
-      if (w.keywords.has('AUTOMATIC 2') || w.keywords.has('AUTOMATIC 3')) s += 1.5;
+      if (keywordValue_lab(w, 'AUTOMATIC') > 1) s += 1.5;
       // FIRE: small bonus, but useless vs NEGATE FIRE
       if (w.keywords.has('FIRE')) s += target.negateFire ? 0 : 0.5;
       // GAS: useless vs NEGATE GAS
       if (w.keywords.has('GAS') && target.negateGas) s -= 0.3;
       // FLAMETHROWER: auto-hit, very strong
       if (w.keywords.has('FLAMETHROWER')) s += 2;
-      // TOUGH targets: prefer weapons with +INJURY DICE (they negate -1 from TOUGH)
-      if (target.tough && w.injuryDice > 0) s += 0.5 * w.injuryDice;
-      // High BLOOD MARKERS on target → prefer DEADLY (extra BM places more damage)
-      if (target.bloodMarkers >= 2 && w.keywords.has('DEADLY')) s += 1;
+      // DEADLY: Injury Roll con 3D6
+      if (w.keywords.has('DEADLY')) s += 1;
+      // RELOAD: pierde el resto de la activación
+      if (w.keywords.has('RELOAD')) s -= 0.5;
       // RISKY: small penalty (~30% miss probability is non-trivial)
       if (w.keywords.has('RISKY')) s -= 0.5;
       return s;
@@ -11262,6 +11259,44 @@ function hasBlastKeyword(weapon) {
   if (!weapon || !weapon.keywords) return false;
   for (const k of weapon.keywords) if (/^BLAST( |$)/.test(String(k))) return true;
   return false;
+}
+
+/** Valor X de una keyword paramétrica (CLEAVE 3 → 3, AUTOMATIC 5 → 5); 0 si no está. */
+function keywordValue_lab(weapon, name) {
+  if (!weapon || !weapon.keywords) return 0;
+  const re = new RegExp('^' + name + ' \\(?(\\d+)\\)?$');
+  for (const k of weapon.keywords) { const m = String(k).match(re); if (m) return parseInt(m[1], 10); }
+  return 0;
+}
+
+/** FIRE / GAS / SHRAPNEL (Rulebook 1.0.2): tras la Injury Roll, 1 BLOOD MARKER
+ *  extra junto al objetivo aunque la tirada no tenga efecto. NEGATE X lo anula. */
+function extraBloodFromKeywords_lab(target, weapon) {
+  if (!target || target.isOut || target.wrathOfGod) return;
+  for (const k of ['FIRE', 'GAS', 'SHRAPNEL']) {
+    if (!weapon.keywords.has(k)) continue;
+    if (target.keywords && (target.keywords.has('NEGATE ' + k) || target.keywords.has('NEGATE_' + k))) continue;
+    if ((k === 'FIRE' && target.negateFire) || (k === 'GAS' && target.negateGas) || (k === 'SHRAPNEL' && target.negateShrapnel)) continue;
+    target.bloodMarkers = Math.min(6, target.bloodMarkers + 1);
+  }
+}
+
+/** TOUGH (Rulebook 1.0.2): el primer Out of Action se trata como Down. */
+function toughSavesOut_lab(target) {
+  if (!target || !target.tough || target._toughUsed) return false;
+  target._toughUsed = true;
+  return true;
+}
+
+/** Resultado de una Injury Roll en un modelo alcanzado de rebote (BLAST). */
+function applySecondaryHit_lab(e, weapon, result) {
+  if (result === 'OUT' && toughSavesOut_lab(e)) result = 'DOWN';
+  if (result === 'BLOOD') e.bloodMarkers = Math.min(6, e.bloodMarkers + 1);
+  else if (result === 'DOWN') {
+    if (e.isDown) e.bloodMarkers = Math.min(6, e.bloodMarkers + 2);
+    else { e.bloodMarkers = Math.min(6, e.bloodMarkers + 1); e.isDown = true; }
+  } else if (result === 'OUT') { e.isOut = true; e.isDown = true; }
+  extraBloodFromKeywords_lab(e, weapon);
 }
 
 /** Short Range canon: objetivo a la mitad del alcance o menos. Solo se
@@ -11293,10 +11328,7 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
   // for melee attacks against Down targets. The flag is set on every
   // model in the band except Ecclesiastic Prisoners (canon explicit).
   if (isMelee && target.isDown && attacker.punishingMillstones) injuryDice += 1;
-  if (target.tough) injuryDice -= 1;
   if (target.artificialLife) injuryDice -= 1;
-  if (weapon.keywords.has('FIRE') && target.negateFire) injuryDice -= 1;
-  if (weapon.keywords.has('GAS') && target.negateGas) injuryDice -= 1;
   // Trench Ghosts variant: Semi-corporeal — -1 INJURY DICE for ranged hits.
   // Canon: Add -1 INJURY DICE for Injury Rolls caused by Ranged Attacks
   // that hit a model from a Trench Ghost Warband.
@@ -11309,9 +11341,11 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
       (isCritical && !!weapon.critIgnoreArmour),
     attacker
   );
-  let result = injuryRoll_lab(injuryDice, injuryMod, target.armour, bypass);
+  const deadly = weapon.keywords.has('DEADLY');
+  let result = injuryRoll_lab(injuryDice, injuryMod, target.armour, bypass, deadly);
   // Court Sloth — Minor Hits cuentan como DOWN si attacker tiene flag.
   result = applySlothMinorAsDown(result, attacker);
+  if (result === 'OUT' && toughSavesOut_lab(target)) result = 'DOWN';
 
   // Track per-model stats: damage dealt / damage taken / kills.
   // BLOOD = 1 marker, DOWN = 1 (or 2 if already down), OUT = 3 (worth a kill).
@@ -11339,7 +11373,6 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
   if (result === 'BLOOD') {
     if (!blocksBloodMarkers) {
       target.bloodMarkers = Math.min(6, target.bloodMarkers + 1);
-      if (weapon.keywords.has('DEADLY')) target.bloodMarkers = Math.min(6, target.bloodMarkers + 1);
       // Court Pride — attacker bloodMarkerOnHit añade +1 extra.
       applyPrideOnBlood(target, attacker);
     }
@@ -11349,9 +11382,6 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
     } else {
       if (!blocksBloodMarkers) target.bloodMarkers = Math.min(6, target.bloodMarkers + 1);
       target.isDown = true;
-    }
-    if (weapon.keywords.has('DEADLY') && !blocksBloodMarkers) {
-      target.bloodMarkers = Math.min(6, target.bloodMarkers + 1);
     }
   } else if (result === 'OUT') {
     // Memento Mori (canon, War Prophet only): the FIRST time this model
@@ -11379,6 +11409,8 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
     }
   }
 
+  extraBloodFromKeywords_lab(target, weapon);
+
   // Track kill: target newly went Out from this attacker's strike
   if (!wasOutBefore && target.isOut && attacker._stats) {
     attacker._stats.kills += 1;
@@ -11394,34 +11426,12 @@ function applyInjury_lab(attacker, target, weapon, isCritical, isMelee, allEnemi
     shuffle_lab(others).slice(0, n).forEach(e => {
       if (Math.random() < 0.5) {
         let id = weapon.injuryDice;
-        if (e.tough) id -= 1;
         if (e.artificialLife) id -= 1;
-        const r = injuryRoll_lab(id, weapon.injuryMod, e.armour, bypass);
-        if (r === 'BLOOD') e.bloodMarkers = Math.min(6, e.bloodMarkers + 1);
-        else if (r === 'DOWN') {
-          if (e.isDown) e.bloodMarkers = Math.min(6, e.bloodMarkers + 2);
-          else { e.bloodMarkers = Math.min(6, e.bloodMarkers + 1); e.isDown = true; }
-        } else if (r === 'OUT') { e.isOut = true; e.isDown = true; }
+        applySecondaryHit_lab(e, weapon, injuryRoll_lab(id, weapon.injuryMod, e.armour, bypass, deadly));
       }
     });
   }
 
-  // Simplified FLAMETHROWER: hits target plus 1-2 others (line attack)
-  if (weapon.keywords.has('FLAMETHROWER')) {
-    const others = allEnemies.filter(e => e !== target && !e.isOut);
-    const n = others.length >= 5 ? 2 : 1;
-    shuffle_lab(others).slice(0, n).forEach(e => {
-      let id = weapon.injuryDice;
-      if (e.tough) id -= 1;
-      if (e.negateFire) id -= 1;
-      const r = injuryRoll_lab(id, weapon.injuryMod, e.armour, bypass);
-      if (r === 'BLOOD') e.bloodMarkers = Math.min(6, e.bloodMarkers + 1);
-      else if (r === 'DOWN') {
-        if (e.isDown) e.bloodMarkers = Math.min(6, e.bloodMarkers + 2);
-        else { e.bloodMarkers = Math.min(6, e.bloodMarkers + 1); e.isDown = true; }
-      } else if (r === 'OUT') { e.isOut = true; e.isDown = true; }
-    });
-  }
 }
 
 function resolveRanged_lab(attacker, target, weapon, allEnemies) {
@@ -11491,13 +11501,14 @@ function resolveRanged_lab(attacker, target, weapon, allEnemies) {
 
   const risky = weapon.keywords.has('RISKY');
 
-  // AUTOMATIC X: take X attacks
-  let nAttacks = 1;
-  if (weapon.keywords.has('AUTOMATIC 2')) nAttacks = 2;
-  else if (weapon.keywords.has('AUTOMATIC 3')) nAttacks = 3;
+  // AUTOMATIC X: X ataques. FLAMETHROWER: Success automático (sin Success
+  // Roll, nunca Critical). RELOAD: la activación termina tras el ataque.
+  const nAttacks = keywordValue_lab(weapon, 'AUTOMATIC') || 1;
+  const flamethrower = weapon.keywords.has('FLAMETHROWER');
+  if (weapon.keywords.has('RELOAD')) attacker._activationEnded = true;
   for (let i = 0; i < nAttacks; i++) {
     if (target.isOut) return;
-    const r = successRollWithBlessing_lab(attacker, diceMod, risky);
+    const r = flamethrower ? 'SUCCESS' : successRollWithBlessing_lab(attacker, diceMod, risky);
     if (r === 'FAILURE') {
       if (hasBlastKeyword(weapon)
           && weapon.keywords.has('SCATTER')
@@ -11511,15 +11522,6 @@ function resolveRanged_lab(attacker, target, weapon, allEnemies) {
 }
 
 function resolveMelee_lab(attacker, target, weapon, charged) {
-  // FEAR (canon): if attacker charges a target with FEAR and the attacker
-  // does NOT have NEGATE FEAR, take a Risky Success Roll. On failure, the
-  // attack is forfeit. We approximate this with a single ~30% miss roll
-  // applied at the start of the engagement (covering all attacks of the
-  // weapon, not per-attack — the rulebook's Risky Roll is per-charge).
-  if (charged && modelFearMissesAttack(attacker, target)) {
-    return;  // attacker fails to attack due to fear
-  }
-
   // MINED detonation on charge (canon): when a model moves into contact
   // with a MINED terrain piece, the mine detonates → Injury Roll with
   // SHRAPNEL. NEGATE MINED bypasses. Combat Engineer / Sapper with Defuse
@@ -11555,6 +11557,7 @@ function resolveMelee_lab(attacker, target, weapon, charged) {
   }
 
   let diceMod = attacker.meleeDice + weapon.diceMod - attacker.bloodMarkers;
+  diceMod += modelFearDiceMod(attacker, target);  // FEAR: -1 DICE cuerpo a cuerpo
   if (attacker.counterCharge && charged) diceMod += 1;
   if (target.block && charged) diceMod -= 1;
   // Terrain cover modifier on charges: a defender behind cover gives -1
@@ -11570,10 +11573,8 @@ function resolveMelee_lab(attacker, target, weapon, charged) {
       isCharge: true,
     });
   }
-  // CLEAVE / CLEAVE 2: extra attacks
-  let nAttacks = 1;
-  if (weapon.keywords.has('CLEAVE 2')) nAttacks = 2;
-  else if (weapon.keywords.has('CLEAVE')) nAttacks = 2;
+  // CLEAVE (X): X ataques cuerpo a cuerpo.
+  const nAttacks = keywordValue_lab(weapon, 'CLEAVE') || 1;
   // CUMBERSOME (canon): -1 INJURY MODIFIER on charge attacks. Doesn't reduce
   // attack volume — the penalty is to the injury roll itself.
   const cumbPenalty = (charged && weapon.keywords.has('CUMBERSOME')) ? -1 : 0;
