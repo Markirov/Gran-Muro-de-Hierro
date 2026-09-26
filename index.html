@@ -6162,7 +6162,12 @@ const DATA = {
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'0', base:'25mm' },
           keywords:['PILGRIM'],
           abilities:['Resurrection'],
-          note:'Solo por Resurrection: un Trench Pilgrim muerto tras una partida vuelve como Martyr Penitent por 45 👑 en el siguiente Quartermaster Step. Añade -1 INJURY DICE a las Injury Rolls contra él. Conserva Battlekit y Zealot Strength; pierde Scars, Experience y Advancements. Las Martyrdom Pills no le afectan.' },
+          note:'Solo por Resurrection: un Trench Pilgrim muerto tras una partida vuelve como Martyr Penitent por 45 👑 en el siguiente Quartermaster Step. Añade -1 INJURY DICE a las Injury Rolls contra él. Conserva Battlekit y Zealot Strength; pierde Scars, Experience y Advancements. Las Martyrdom Pills no le afectan.',
+          upgrades:[
+            { id:'zealot-strength-martyr', name:'Zealot Strength', cost:5, currency:'👑',
+              addsKeywords:['STRONG'],
+              note:'Hasta 1 Trench Pilgrim o Martyr Penitent de la banda (en total) puede tener STRONG por +5 👑 (cambia base a 32mm).' },
+          ] },
         { id:'stigmatic-nuns', name:'Stigmatic Nuns', tier:'troops', limit:'0-4', cost:50, currency:'👑',
           stats:{ movement:'8"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'25mm' },
           keywords:['PILGRIM','REGENERATE 1'],
@@ -7110,7 +7115,7 @@ const ABILITY_LIBRARY = {
   // ----- New Antioch -----
   'Hold Your Fire! ACTION': {
     type: 'action',
-    summary: 'Apunta a un enemigo en línea de visión: el oponente debe activarlo a continuación. La Activación del Lieutenant termina al usarse.',
+    summary: 'Elige 1 enemigo en Line of Sight del Lieutenant que el rival pueda activar. La activación del Lieutenant termina y el rival debe activar ese modelo.',
   },
   'Absolute Faith': {
     type: 'passive',
@@ -7122,7 +7127,7 @@ const ABILITY_LIBRARY = {
   },
   'God is With Us! ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll +2 DICE para inspirar a aliados cercanos (consultar reglas para el efecto exacto).',
+    summary: 'Risky Success Roll. Si falla, no pasa nada y la activación del Trench Cleric termina. Con Success o Critical, pon 1 BLESSING MARKER junto al Trench Cleric o a un modelo amigo a 6" o menos.',
   },
   'Onward Christian Soldiers!': {
     type: 'passive',
@@ -7130,7 +7135,7 @@ const ABILITY_LIBRARY = {
   },
   'Trench Moles': {
     type: 'passive',
-    summary: 'Despliegue por túneles: pueden empezar la batalla en posiciones más avanzadas (consultar reglas de despliegue).',
+    summary: 'Hasta 2 Yeomen pueden ser Trench Moles con la keyword INFILTRATOR por +10 👑 cada uno. Puedes tener un 3.º si el resto de la banda (con su Battlekit) suma 1.000 👑 o más.',
   },
   'Assault Drill': {
     type: 'passive',
@@ -7146,15 +7151,15 @@ const ABILITY_LIBRARY = {
   },
   'Set Mine ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll +2 DICE. Si tiene éxito: la pieza de terreno gana MINED.',
+    summary: 'En contacto con una pieza de terreno de hasta 8"x8" sin MINED: Success Roll con +2 DICE. Si falla, no pasa nada; con Success o Critical, la pieza gana la keyword MINED.',
   },
   'Defuse Mine': {
     type: 'passive',
-    summary: 'Pueden intentar desactivar minas con Risky Success Roll. El que las puso desactiva automáticamente.',
+    summary: 'Al mover el modelo a contacto con un Marker o terreno MINED puede intentar desactivarlo: Risky Success Roll. Si falla, la mina detona y su activación termina; con Success o Critical no detona y pierde MINED. El modelo que puso la mina la desactiva sin tirar.',
   },
   'Fortify ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll +2 DICE. Si tiene éxito: gana COVER hasta moverse.',
+    summary: 'Risky Success Roll. Si falla, la activación termina. Con Success o Critical, el modelo tiene la keyword COVER hasta que se mueva de su posición.',
   },
   'Expert Medic': {
     type: 'passive',
@@ -7168,7 +7173,7 @@ const ABILITY_LIBRARY = {
   // ----- Trench Pilgrims -----
   'Loudspeakers ACTION': {
     type: 'action',
-    summary: 'El War Prophet hace Risky Success Roll +2 DICE. Si tiene éxito: todos los modelos amigos a 8" o menos pueden moverse hasta 3" hacia el enemigo más cercano visible. Si llegan a 1" cuenta como Charge.',
+    summary: 'Risky Success Roll con +2 DICE. Si falla, la activación del War Prophet termina. Con Success o Critical, todos los modelos amigos a 8" o menos pueden moverse hasta 3", acabando lo más cerca posible del enemigo más cercano que vieran al empezar; si llegan a 1" de un enemigo cuentan como carga. Si no ven enemigos, se mueven libremente.',
   },
   'Laying on of Hands ACTION': {
     type: 'action',
@@ -7188,7 +7193,7 @@ const ABILITY_LIBRARY = {
   },
   'Enforced Orthodoxy ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll +2 DICE. Si tiene éxito: efecto disciplinario sobre la banda (consultar reglas).',
+    summary: 'Risky Success Roll con +1 DICE. Si falla, la activación del Castigator termina. Con Success o Critical, todos los modelos amigos Down a 8" o menos se levantan sin gastar movimiento.',
   },
   'Resurrection': {
     type: 'campaign',
@@ -7196,15 +7201,15 @@ const ABILITY_LIBRARY = {
   },
   'Agile': {
     type: 'passive',
-    summary: '+1 DICE al Risky Success Roll al saltar/escalar.',
+    summary: '+1 DICE a la Risky Success Roll cuando el modelo trepa (Climb), salta (Jump), hace una Diving Charge o una Dash ACTION.',
   },
   'Awaited': {
     type: 'passive',
-    summary: 'Cuando un Ecclesiastic Prisoner queda Out of Action, hay efectos especiales (consultar reglas).',
+    summary: 'Un Ecclesiastic Prisoner que queda Out of Action al activarse su Martyrdom Device no cuenta para los Morale Checks de la banda.',
   },
   'Broken on the Wheel': {
     type: 'campaign',
-    summary: 'Antes del despliegue, designa 1 Trench Pilgrim o Ecclesiastic Prisoner como víctima atada a la rueda. Las heridas que sufra el Anchorite van a la víctima en su lugar (Armour 0, sin NEGATE SHRAPNEL ni TOUGH, Down→Minor Hit). El primer Out of Action se trata como No Effect; tras eso la víctima muere y el Anchorite recupera Armour -3, NEGATE SHRAPNEL y TOUGH (TOUGH se aplica a partir del SIGUIENTE Out of Action). En campaña la víctima se elimina de forma permanente pero su Battlekit puede redistribuirse.',
+    summary: 'Al empezar cada partida, antes del despliegue, puedes romper en la rueda a 1 Trench Pilgrim o Ecclesiastic Prisoner: sale de la banda para siempre (en campaña su Battlekit puede pasar a otros en el siguiente Quartermaster Step). Hasta que el Anchorite Shrine sufra un Out of Action tiene Armour 0, no tiene NEGATE SHRAPNEL ni TOUGH y trata los Down como Minor Hit. Ese primer Out of Action cuenta como No Effect: se retiran sus BLOOD MARKERS y desde entonces tiene Armour -3, NEGATE SHRAPNEL y TOUGH (TOUGH se aplica al siguiente Out of Action).',
   },
   'Symphony of Slaughter': {
     type: 'passive',
@@ -7212,33 +7217,33 @@ const ABILITY_LIBRARY = {
   },
   'Iron Capirote': {
     type: 'passive',
-    summary: 'Capucha de hierro que cubre la cabeza, parte del equipo permanente del modelo.',
+    summary: 'Headgear con las keywords NEGATE FEAR y NEGATE SHRAPNEL.',
   },
 
   // ----- Iron Sultanate -----
   'Mubarizun': {
     type: 'passive',
-    summary: 'El Yüzbaşı se enfrenta a los enemigos más temibles en combate singular. Añade +1 INJURY DICE a sus ataques cuerpo a cuerpo si el objetivo tiene la keyword TOUGH.',
+    summary: 'Añade +1 INJURY DICE a los ataques del Yüzbaşı si el objetivo tiene la keyword TOUGH.',
   },
   'Mastery of the Elements': {
     type: 'passive',
-    summary: 'Cada turno cambia el efecto de sus armas entre Fire, Gas o Shrapnel.',
+    summary: 'Al desplegarlo por primera vez en la partida, puedes dar FIRE, GAS o SHRAPNEL (la misma) a todas sus armas a distancia y cuerpo a cuerpo. Elemental Change ACTION: Risky Success Roll; si falla, su activación termina; con Success o Critical cambias esa keyword por una de las otras dos.',
   },
   'Temporal Assassin': {
     type: 'passive',
-    summary: 'Tras determinar el Charge Bonus, manipula el tiempo: efecto especial de carga (consultar reglas).',
+    summary: 'Tras el Charge Bonus, si aún no ha hecho una Fight ACTION en su activación, puede elegir un segundo enemigo como objetivo de la carga. Carga al primero y hace una Fight ACTION; después se redespliega a 1" del segundo y hace otra Fight ACTION contra él, con la misma arma. No puede hacer más Fight ACTIONS en esa activación.',
   },
   'Light Skirmishers': {
     type: 'passive',
-    summary: 'Cualquier número de Azebs pueden tener la palabra clave SKIRMISHER sin coste adicional.',
+    summary: 'Cualquier número de Azebs puede tener la keyword SKIRMISHER por +5 👑 cada uno.',
   },
   'Sapper Set Mine ACTION': {
     type: 'action',
-    summary: 'Como Combat Engineer Set Mine: Risky Success Roll +2 DICE. Si tiene éxito: terreno gana MINED.',
+    summary: 'En contacto con una pieza de terreno de hasta 8"x8" sin MINED: Success Roll con +2 DICE. Si falla, no pasa nada; con Success o Critical, la pieza gana la keyword MINED.',
   },
   'Lion Agile': {
     type: 'passive',
-    summary: '+1 DICE al Risky Success Roll cuando un Lion salta/escala.',
+    summary: '+1 DICE a la Risky Success Roll cuando el Lion of Jabir trepa (Climb), salta (Jump), hace una Diving Charge o una Dash ACTION.',
   },
   'Teeth and Claws': {
     type: 'passive',
@@ -7262,13 +7267,13 @@ const ABILITY_LIBRARY = {
   },
   'Strong in Faith': {
     type: 'passive',
-    summary: 'Bonificadores especiales por la fuerte convicción religiosa de la unidad (consultar reglas).',
+    summary: 'Una banda Éire Rangers puede tener 0-2 Trench Clerics, que cambian Onward Christian Soldiers por: Arise and be Healed! ACTION (Risky; con éxito, el Cleric o un amigo a 3" se levanta gratis y retira hasta D3 BLOOD y/o INFECTION MARKERS) y Away Serpents! ACTION (elige 1 enemigo a 12"; Risky, con -1 DICE si su base es de 40mm o más; con éxito queda Down).',
   },
 
   // ----- Heretic Legions -----
   'Puppet Master ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll +2 DICE. Si tiene éxito: control mental sobre un objetivo (consultar reglas).',
+    summary: 'Risky Success Roll. Si falla, la activación del Heretic Priest termina. Con Success o Critical, elige 1 modelo (amigo o enemigo, no él mismo) a 12" o menos y en Line of Sight y muévelo D6" en línea recta en cualquier dirección: puede acabar a 1" de un enemigo, retirarse, trepar o saltar, pero no hacer una Diving Charge ni contar como carga.',
   },
   'Stealth Generator': {
     type: 'passive',
@@ -7280,23 +7285,23 @@ const ABILITY_LIBRARY = {
   },
   'Heretic Legionnaires': {
     type: 'passive',
-    summary: 'Puedes mejorar Heretic Troopers a Legionnaires con bonificadores (consultar reglas).',
+    summary: 'Puedes mejorar Heretic Troopers a Heretic Legionnaires por +10 👑 cada uno, sin que haya más Legionnaires que Troopers. El Legionnaire cambia su Ranged o su Melee de 0 a +1.',
   },
   'Assault Beast': {
     type: 'passive',
-    summary: 'War Wolf tiene 2 armas cuerpo a cuerpo de serie sin coste adicional.',
+    summary: 'El War Wolf lleva dos armas cuerpo a cuerpo (Chainsaw Mouth y Shredding Claws). Ataca una vez con cualquiera o dos veces: primero Chainsaw Mouth y luego Shredding Claws con el modificador Off-Hand. Ambas son RISKY: si falla cualquier Success Roll, su activación termina.',
   },
   'Chattel': {
     type: 'campaign',
-    summary: 'En campaña, los Wretched pueden venderse en el Quartermaster Step (consultar reglas).',
+    summary: 'En campaña, los Wretched se pueden vender en el Quartermaster Step por 25 👑 más la mitad del coste de su Battlekit.',
   },
   'Abiotic Life': {
     type: 'passive',
-    summary: '-1 INJURY DICE en tiradas de lesión contra este modelo.',
+    summary: 'Añade -1 INJURY DICE a las Injury Rolls contra la Artillery Witch por ataques con la keyword GAS.',
   },
   'Tormentor Chains': {
     type: 'passive',
-    summary: 'Cadenas que pueden equiparse como Glory Item de la Death Commando.',
+    summary: 'Glory Item del Rulebook 1.0.2 (1-Handed, 10", ASSAULT, IGNORE COVER, IGNORE LONG RANGE, SHRAPNEL). Dragged Forwards: con Success o Critical no hay Injury Roll; pon 1 BLOOD MARKER más 1 por SHRAPNEL y arrastra al objetivo hasta 12" en línea recta hacia el atacante. Deadly Embrace: los enemigos a 1" del portador no pueden retirarse.',
   },
 
   // ----- Black Grail -----
@@ -7314,7 +7319,7 @@ const ABILITY_LIBRARY = {
   },
   'Plague Knight Ranks': {
     type: 'campaign',
-    summary: 'Sistema de progresión específico de Plague Knights: pueden subir de rango en campaña con beneficios especiales (consultar la sección "Plague Knight Ranks" del rulebook).',
+    summary: 'Cada Plague Knight puede tener uno de estos rangos. Plague Almoner (10 👑): las Bloodbath Rolls de sus ataques cuestan 1 marcador menos. Knight Companion of the Fly (5 👑): +1 DICE a su Ranged o a su Melee. Knight of the Rotten Cross (5 👑, Limit: 1): puede comprar 1 arma a distancia o cuerpo a cuerpo de las armerías de New Antioch o Heretic Legions (no se vende ni se reasigna).',
   },
   'Black Grail Bodyguard': {
     type: 'passive',
@@ -7334,7 +7339,7 @@ const ABILITY_LIBRARY = {
   },
   'Frightening Speed': {
     type: 'passive',
-    summary: 'Añade +1 DICE al Risky Success Roll cuando el Hound of the Black Grail hace un Dash ACTION. Además, no halve el Movement del Hound al levantarse al inicio de su Activación.',
+    summary: '+1 DICE a la Risky Success Roll de su Dash ACTION. Además, su Movement no se reduce a la mitad al levantarse al inicio de una activación.',
   },
   'Infected Proboscis': {
     type: 'passive',
@@ -7342,21 +7347,21 @@ const ABILITY_LIBRARY = {
   },
   'Maddening Buzzing': {
     type: 'passive',
-    summary: 'Las Success Rolls de los modelos enemigos a 8" o menos del Herald se convierten en Risky Success Rolls (sin efecto adicional si ya eran Risky).',
+    summary: 'Hasta 1 Herald of Beelzebub puede tenerla por +10 👑. Las Success Rolls de los enemigos a 8" o menos se convierten en Risky Success Rolls (sin efecto extra si ya lo eran).',
   },
   'Six-armed Monstrosity': {
     type: 'passive',
-    summary: 'El Amalgam puede equipar hasta 6 armas a 1 mano y hacer un ataque cuerpo a cuerpo con cada una en su Activación (1 Fight ACTION por arma). No puede usar Shield Combo.',
+    summary: 'Puede hacer 1 Shoot ACTION por activación con cada arma a distancia equipada y 1 Fight ACTION con cada arma cuerpo a cuerpo. El modificador Off-Hand no se aplica a sus ataques cuerpo a cuerpo.',
   },
 
   // ----- Court of Serpent -----
   'Goetic Powers': {
     type: 'passive',
-    summary: 'El modelo puede tener Goetic Abilities y/o Goetic Spells según su tipo y el Pecado al que esté dedicada la banda. Cada Power tiene un coste y reglas propias (consultar la lista Goetic Powers para los disponibles según el Pecado).',
+    summary: 'Los modelos ELITE de una banda de la Court of the Seven-Headed Serpent pueden tener Goetic Powers (el número figura en su Warband Entry). Se dividen en Goetic Abilities y Goetic Spells; ver la Goetic Powers List.',
   },
   'Law of Hell': {
     type: 'passive',
-    summary: 'Cuando un Wretched deja a un enemigo Out of Action en cuerpo a cuerpo, su alma queda atrapada: el Wretched gana +1 al Charge Bonus durante el resto de la partida (efecto de cosecha de almas, consultar reglas exactas).',
+    summary: 'Si un ataque de un Wretched deja Out of Action a un enemigo con la keyword ELITE, el Wretched gana su libertad: se retira de la partida, deja de contar para los Morale Checks y sale de la hoja de banda.',
   },
   'Poison Stingers': {
     type: 'passive',
@@ -7376,13 +7381,13 @@ const ABILITY_LIBRARY = {
   },
   'Demonic Aura': {
     type: 'passive',
-    summary: 'El Desecrated Saint tiene un aura especial determinada por el Pecado de su banda (Wrath, Envy, Lust, Pride, Sloth, Gluttony, Greed). Cada Pecado da un efecto distinto a 8"-12" según la regla específica del aura (consultar la sección Demonic Aura para el detalle).',
+    summary: 'Según el Pecado de la banda. Wrath: +1 DICE a ataques cuerpo a cuerpo y a la Risky de Dash de amigos a 8" (incluido él). Envy: los enemigos a 12" no pueden cargar a un modelo de su banda que esté a 1" de un modelo de la banda del que carga. Lust: a enemigos a 4" con Armour no IMPERVIOUS puedes anularles keywords y reglas de esa armadura (salvo las del tamaño de base). Pride: al terminar su activación, 1 BLOOD MARKER a cada enemigo a 8". Sloth: los enemigos a 8" tratan los Minor Hit como Down. Gluttony: -1 DICE a las tiradas de enemigos a 8" salvo BLACK GRAIL o ARTIFICIAL. Greed: los enemigos a 12" que carguen deben cargarle si está a 12", en su Line of Sight y alcanzable sin terreno Dangerous ni Climb, Jump, Jump Down o Diving Charge.',
   },
 
   // ----- Mercenaries -----
   'Mercenary': {
     type: 'campaign',
-    summary: 'Modelo contratado por Glory points. Reglas y restricciones particulares: consulta el rulebook.',
+    summary: 'Se pagan con Glory Points. No se benefician de las reglas especiales de facción de la banda (sí de habilidades de otros modelos que afecten a amigos). Su Battlekit no se puede quitar ni perder y no pueden tener otro; la armadura ya va en su perfil. En campaña cuentan como cualquier otro modelo: Threshold y Field Strength, Glorious Deeds, Trauma si son ELITE, ascensos y experiencia.',
   },
   'Battlefield Vivisection': {
     type: 'campaign',
@@ -7410,11 +7415,11 @@ const ABILITY_LIBRARY = {
   },
   'Goetic Gaze ACTION': {
     type: 'action',
-    summary: 'Success Roll: si tiene éxito, aplica efectos goéticos sobre un objetivo (consultar reglas).',
+    summary: 'Success Roll. Si falla, no pasa nada. Con Success, pon 1 BLOOD MARKER a un enemigo a 24" o menos en Line of Sight; con Critical, 2.',
   },
   'Goetic Portal ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll +1 DICE: si tiene éxito, redespliega al Warlock a 6" o menos de su posición.',
+    summary: 'Risky Success Roll con +1 DICE. Si falla, la activación termina. Con Success o Critical, redespliega al Warlock a 6" o menos de su posición (aunque esté Down o trabado, y puede acabar a 1" de un enemigo). Si estaba a 1" de enemigos de base 32mm o menor, puede llevarse uno y desplegarlo a 1" de él.',
   },
   'Automaton Destrier': {
     type: 'passive',
@@ -7426,15 +7431,15 @@ const ABILITY_LIBRARY = {
   },
   'Sworn Brethren': {
     type: 'campaign',
-    summary: 'Al reclutar un Mamluk Faris se aplican reglas especiales de hermandad (consultar reglas).',
+    summary: 'Al reclutar un Mamluk Faris puedes formar un FIRETEAM con 1 modelo ELITE de tu banda (ambos ganan FIRETEAM). Es adicional a los demás Fireteams; si el compañero es de New Antioch, solo él puede usar Concentrated Attack.',
   },
   'Ammunition Sacrament ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll: si tiene éxito, equipa munición especial a 1 aliado a 1" en línea de visión (elige tipo).',
+    summary: 'Risky Success Roll. Si falla, la activación termina. Con Success o Critical, elige 1 amigo a 1" en Line of Sight y un Sacramento hasta el final de su siguiente activación: Bullet of the Guided Path (+1 DICE a sus ataques a distancia), Cartridge of his Wrath (sus armas a distancia sin BLAST ni FLAMETHROWER ganan BLAST 2" y SHRAPNEL) o Echo of his Word (+1 INJURY DICE a sus ataques a distancia).',
   },
   'Eye of God': {
     type: 'passive',
-    summary: 'Re-roll a tiradas falladas. Si algún dado relanzado saca 1: el Observer cae Down y termina su activación.',
+    summary: 'Puedes repetir las Success Rolls y Risky Success Rolls fallidas del Observer. Si algún dado repetido saca 1, la tirada es Failure, el Observer queda Down y su activación termina.',
   },
   'Lightning Speed': {
     type: 'passive',
@@ -7446,7 +7451,7 @@ const ABILITY_LIBRARY = {
   },
   'Voice of God ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll. Si éxito: elige 1 modelo (amigo o enemigo) en cualquier parte del tablero que NO se haya activado este Turn. La Activación del Observer termina y el modelo elegido se activa inmediatamente. Permite encadenar 2 activaciones de tu lado fuera del orden alterno normal — devastador con un ELITE potente.',
+    summary: 'Risky Success Roll. Si falla, la activación del Observer termina. Con Success o Critical, elige 1 modelo (amigo o enemigo) en cualquier parte que no se haya activado este turno: la activación del Observer termina y la de ese modelo empieza de inmediato.',
   },
   'Slow': {
     type: 'passive',
@@ -7454,11 +7459,11 @@ const ABILITY_LIBRARY = {
   },
   'Vengeful Scripture ACTION': {
     type: 'action',
-    summary: 'Success Roll: pica 1 enemigo a 18" en LoS y aplica efectos basados en escritura sagrada/profana (consultar reglas).',
+    summary: 'Elige 1 enemigo a 18" o menos en Line of Sight y haz una Success Roll (+2 DICE si está a 9" o menos; +1 DICE si no). Si falla, no pasa nada. Con Success, Injury Roll al enemigo con +1 INJURY MODIFIER por cada BLOOD MARKER que tenga. Con Critical, además IGNORE ARMOUR y +1 INJURY DICE por cada BLOOD MARKER.',
   },
   'Devour the Guilty ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll contra 1 modelo a 1" con base ≤40mm. Si es enemigo, efectos especiales de devorar (consultar reglas).',
+    summary: 'Elige 1 modelo a 1" con base de 40mm o menos: si es enemigo, Risky Success Roll (si falla, su activación termina); si es amigo, Success Roll con +1 DICE. Con éxito lo devora: queda dentro (cuenta como Down para Morale), puede hacer Fight ACTIONS solo contra el Sin Eater con -3 DICE, recibe 1 BLOOD MARKER en cada activación del Sin Eater y queda Out of Action al llegar a 6. Si el Sin Eater cae Out of Action, sale Down a 1". Purge ACTION: Success Roll con +4 DICE para soltarlo Down a 1".',
   },
   'Dignified Conduct': {
     type: 'passive',
