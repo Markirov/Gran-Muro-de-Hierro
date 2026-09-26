@@ -7059,44 +7059,46 @@ const DATA = {
   },
 
   // ============= MERCENARIES (priced in Glory ☼) =============
+  // Mercenarios: todos 0-1; hiredBy = facciones que pueden contratarlo
+  // (sin hiredBy = cualquier banda, p. ej. Scripture Guardian).
   mercenaries: [
-    { id:'combat-biologist', name:'Combat Biologist', cost:3, currency:'☼',
+    { id:'combat-biologist', name:'Combat Biologist', cost:3, currency:'☼', limit:'0-1', hiredBy:['new-antioch','iron-sultanate'],
       stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'-1', base:'32mm' },
       keywords:['NEGATE FEAR'],
       abilities:['Battlefield Vivisection','Gather Knowledge','Prize Specimens'] },
-    { id:'antitank-comm', name:'Communicant Anti-Tank Hunter', cost:5, currency:'☼',
+    { id:'antitank-comm', name:'Communicant Anti-Tank Hunter', cost:5, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
       stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-1', base:'40mm' },
       keywords:['REGENERATE 1','STRONG','TOUGH'],
       abilities:['Iron Fists'] },
-    { id:'goetic-warlock', name:'Goetic Warlock', cost:4, currency:'☼',
+    { id:'goetic-warlock', name:'Goetic Warlock', cost:4, currency:'☼', limit:'0-1', hiredBy:['heretic-legions','court-serpent'],
       stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-2', base:'40mm' },
       keywords:['ARTIFICIAL','DEMONIC','FEAR'],
       abilities:['Barbed Embrace','Iron-Clawed Hands','Goetic Gaze ACTION','Goetic Portal ACTION'] },
-    { id:'mamluk-faris', name:'Mamluk Faris', cost:4, currency:'☼',
+    { id:'mamluk-faris', name:'Mamluk Faris', cost:4, currency:'☼', limit:'0-1', hiredBy:['new-antioch','iron-sultanate'],
       stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-2 (-3)', base:'32mm' },
       keywords:['IGNORE OFF-HAND WEAPON'],
       abilities:['Automaton Destrier','Martial Prowess','Sworn Brethren'] },
-    { id:'ammo-monk', name:'Mendelist Ammo Monk', cost:2, currency:'☼',
+    { id:'ammo-monk', name:'Mendelist Ammo Monk', cost:2, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
       stats:{ movement:'6"/Infantry', ranged:'-1 DICE', melee:'-1 DICE', armour:'0', base:'25mm' },
       keywords:[],
       abilities:['Ammunition Sacrament ACTION'] },
-    { id:'observer', name:'Observer', cost:3, currency:'☼',
+    { id:'observer', name:'Observer', cost:3, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
       stats:{ movement:'8"/Infantry', ranged:'+1 DICE', melee:'+2 DICE', armour:'-1', base:'32mm' },
       keywords:[],
       abilities:['Eye of God','Lightning Speed','Temporal Fugue','Voice of God ACTION'] },
-    { id:'scripture-guardian', name:'Scripture Guardian', cost:7, currency:'☼',
+    { id:'scripture-guardian', name:'Scripture Guardian', cost:7, currency:'☼', limit:'0-1',
       stats:{ movement:'6"/Infantry', ranged:'-', melee:'+1 DICE', armour:'-2', base:'40mm' },
       keywords:['GOLEM'],
       abilities:['Slow','Vengeful Scripture ACTION'] },
-    { id:'sin-eater', name:'Sin Eater', cost:6, currency:'☼',
+    { id:'sin-eater', name:'Sin Eater', cost:6, currency:'☼', limit:'0-1', hiredBy:['heretic-legions','black-grail','court-serpent'],
       stats:{ movement:'6"/Infantry', ranged:'-', melee:'+2 DICE', armour:'-2', base:'50mm' },
       keywords:['DEMONIC','FEAR','STRONG','TOUGH'],
       abilities:['Devour the Guilty ACTION'] },
-    { id:'st-cosmas', name:'Sister of Saint Cosmas', cost:2, currency:'☼',
+    { id:'st-cosmas', name:'Sister of Saint Cosmas', cost:2, currency:'☼', limit:'0-1', hiredBy:['trench-pilgrims'],
       stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+0 DICE', armour:'-1', base:'25mm' },
       keywords:['NEGATE FEAR'],
       abilities:['Expert Medic','Finish the Fallen'] },
-    { id:'witchburner', name:'Witchburner', cost:5, currency:'☼',
+    { id:'witchburner', name:'Witchburner', cost:5, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
       stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'-2', base:'32mm' },
       keywords:['ELITE','NEGATE FEAR'],
       abilities:['Dignified Conduct','Divine Judgement ACTION'] },
@@ -17445,9 +17447,22 @@ function unitCountInWarband(wb, unitId) {
   return wb.models.filter(m => m.unitId === unitId).length;
 }
 
+// Canon (Warbands 1.0.2): cada Mercenario indica qué facciones pueden contratarlo.
+function mercNotHireable(wb, unit) {
+  return !!(unit && Array.isArray(unit.hiredBy) && !unit.hiredBy.includes(wb.factionId));
+}
+
+// Canon (Starting a Warband): máximo 6 modelos ELITE en la banda.
+function eliteCapReached(wb, unit) {
+  return !!unit && unit.tier === 'elite' &&
+         countEliteInWarband(wb) >= CAMPAIGN_TABLES.promotionRules.maxElites;
+}
+
 function canAddUnit(wb, unit) {
   // Check variant prohibition first (so we can show why)
   if (unitForbiddenByVariant(wb, unit.id)) return false;
+  if (mercNotHireable(wb, unit)) return false;
+  if (eliteCapReached(wb, unit)) return false;
   // Use the variant-overridden limit if defined (e.g. Anchorite Shrine 0-2 in St. Methodius)
   const override = variantUnitOverride(wb, unit.id);
   const limStr = (override && override.limit) || unit.limit;
@@ -17469,9 +17484,19 @@ function canAddUnitWithWarning(wb, unit) {
   const lim = parseLimit(limStr);
   const count = unitCountInWarband(wb, unit.id);
   const exceedsLimit = lim && count >= lim.max;
+  const notHireable = mercNotHireable(wb, unit);
+  const eliteFull = eliteCapReached(wb, unit);
 
   // Banda Companion → permitir todo, solo advertir.
   if (wb.companionSource) {
+    if (notHireable) {
+      return { canAdd: true,
+        warning: (unit.name || unit.id) + ' no puede contratarse en esta facción. Trench Companion lo gestiona — Forge solo informa.' };
+    }
+    if (eliteFull) {
+      return { canAdd: true,
+        warning: 'La banda ya tiene 6 ELITE (máximo canon). Trench Companion lo gestiona — Forge solo informa.' };
+    }
     if (forbiddenBy) {
       return { canAdd: true,
         warning: 'La variante ' + forbiddenBy + ' no permite ' + (unit.name || unit.id) +
@@ -17488,6 +17513,10 @@ function canAddUnitWithWarning(wb, unit) {
   // Banda local → bloqueo estricto (modo offline / Nueva Manual).
   if (forbiddenBy) return { canAdd: false,
     warning: 'La variante ' + forbiddenBy + ' no permite ' + (unit.name || unit.id) + '.' };
+  if (notHireable) return { canAdd: false,
+    warning: (unit.name || unit.id) + ' no puede contratarse en esta facción.' };
+  if (eliteFull) return { canAdd: false,
+    warning: 'Máximo 6 modelos ELITE en la banda.' };
   if (exceedsLimit) return { canAdd: false,
     warning: 'Límite alcanzado (' + count + '/' + lim.max + ').' };
   return { canAdd: true };
@@ -18012,16 +18041,16 @@ function classifyBattlekitItem(item, model, unit, wb) {
     }
   }
 
-  // ---- HELD: if model already has a HELD item, it can only carry
-  // 1-handed weapons or a single shield. No 2-handed, no shield-with-weapon.
-  // Implementation: if any equipped item has HELD, then deny:
-  //   - any 2-Handed weapon (ranged or melee)
-  //   - any shield IF model already has a 1-handed weapon
-  //   - any 1-handed weapon IF model already has a shield
+  // ---- HELD (canon): "a model that has this Keyword can only be equipped
+  // with or use either a 1-Handed Weapon or a Shield". Sin armas 2H, sin
+  // arma + escudo (aunque tenga Shield Combo) y como mucho UNA arma 1H.
+  // Las granadas no cuentan.
   // ----
   const modelHasHeld = modelHasWeaponKeyword(wb, model, 'HELD');
   const itemHasHeld = itemHasWeaponKeyword(item, 'HELD');
   if (modelHasHeld || itemHasHeld) {
+    const weaponsNow = countModelMeleeWeapons(wb, model).total +
+                       countModelRangedWeapons(wb, model).total;
     // If we're trying to add a HELD item, ensure no 2H weapons present
     if (itemHasHeld) {
       for (const kid of (model.battlekit || [])) {
@@ -18031,6 +18060,19 @@ function classifyBattlekitItem(item, model, unit, wb) {
           return { state: 'disabled', reason: 'No compatible con armas 2H equipadas (HELD)' };
         }
       }
+      if (weaponsNow > 1) {
+        return { state: 'disabled', reason: 'HELD: solo un arma 1H o un Escudo (quita armas primero)' };
+      }
+      const hasShieldNow = (model.battlekit || []).some(kid =>
+        getArmouryCategory(wb.factionId, kid) === 'shields');
+      if (hasShieldNow && weaponsNow > 0) {
+        return { state: 'disabled', reason: 'HELD: no puede llevar arma y escudo' };
+      }
+    }
+    // HELD ya equipado: solo cabe una arma
+    if (modelHasHeld && weaponsNow >= 1 &&
+        (category === 'melee' || category === 'ranged' || category === 'anchoriteRanged')) {
+      return { state: 'disabled', reason: 'HELD: solo un arma 1H o un Escudo' };
     }
     // If model has HELD already, any 2H is forbidden
     if (modelHasHeld && item.type === '2-Handed') {
@@ -18123,8 +18165,17 @@ function classifyBattlekitItem(item, model, unit, wb) {
     if (category === 'melee') {
       const newCount1H = melee.count1H + (item.type === '1-Handed' ? 1 : 0);
       const newCount2H = melee.count2H + (item.type === '2-Handed' ? 1 : 0);
+      // CUMBERSOME (canon): "require two hands to use, even if the model has
+      // the STRONG Keyword" → STRONG no convierte ese 2H en 1H.
+      const cumbersome2H = (item.type === '2-Handed' && itemHasWeaponKeyword(item, 'CUMBERSOME')) ||
+        (model.battlekit || []).some(kid => {
+          const eit = findBattlekitItem(wb.factionId, kid);
+          return eit && eit.type === '2-Handed' &&
+                 getArmouryCategory(wb.factionId, kid) === 'melee' &&
+                 itemHasWeaponKeyword(eit, 'CUMBERSOME');
+        });
       const check = checkWeaponSlots(newCount1H, newCount2H,
-                                     limits.meleeMax, limits.strongBonus);
+                                     limits.meleeMax, limits.strongBonus && !cumbersome2H);
       if (!check.allowed) {
         return { state: 'disabled', reason: check.reason };
       }
@@ -18412,7 +18463,7 @@ function renderUnitCatalogue() {
 function unitCatalogueCard(unit, wb, isMerc=false) {
   const card = el('div', 'unit-card');
   card.dataset.tier = unit.tier || 'mercenary';
-  const can = isMerc ? true : canAddUnit(wb, unit);
+  const can = canAddUnit(wb, unit);
   if (!can) card.dataset.disabled = 'true';
   const forbiddenBy = isMerc ? null : unitForbiddenByVariant(wb, unit.id);
 
@@ -33267,7 +33318,7 @@ function renderQMRecruit() {
   pane.innerHTML = html;
 
   const renderUnit = (u, container, isMerc) => {
-    const can = isMerc ? true : canAddUnit(wb, u);
+    const can = canAddUnit(wb, u);
     const card = el('div', 'unit-card');
     card.dataset.tier = u.tier || 'mercenary';
     if (!can) card.dataset.disabled = 'true';
