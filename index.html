@@ -7852,7 +7852,7 @@ const WEAPON_KEYWORD_LIBRARY = {
   },
   'FIRE': {
     type: 'effect',
-    summary: 'Ataque incendiario. Si causa un BLOOD MARKER, el objetivo gana el FIRE MARKER: al inicio de cada activación posterior sufre tirada de Injury extra hasta apagarlo.',
+    summary: 'Tras la Injury Roll contra el objetivo, aunque no tenga efecto, pon 1 BLOOD MARKER adicional (salvo NEGATE FIRE).',
   },
   'FLAMETHROWER': {
     type: 'effect',
@@ -7946,7 +7946,7 @@ const WEAPON_KEYWORD_LIBRARY = {
   },
   'Consumable': {
     type: 'stipulation',
-    summary: 'Equipo de un solo uso: tras emplearlo en partida, se gasta y desaparece. Hay que volver a comprarlo entre batallas en campaña.',
+    summary: 'Este Battlekit se retira del Roster de la banda al final de la partida en que se usa.',
   },
   'Unique': {
     type: 'stipulation',
@@ -7954,7 +7954,7 @@ const WEAPON_KEYWORD_LIBRARY = {
   },
   'Headgear': {
     type: 'stipulation',
-    summary: 'Pieza de cabeza: solo se puede equipar una pieza Headgear por modelo (cascos, capirotes, máscaras).',
+    summary: 'Un modelo no puede tener más de una pieza de Headgear (aunque tenga más de una cabeza).',
   },
 
   // --- Combat keywords (model-level) ---
@@ -8237,27 +8237,27 @@ const FACTION_RULES_LIBRARY = {
 const GENERAL_TERMS_LIBRARY = {
   'Success Roll': {
     type: 'game-term',
-    summary: 'Tirada estándar para resolver acciones inciertas (disparar, golpear, perform an ability). Se lanzan los DICE indicados (3 base + modificadores) y cada 4+ es un éxito. Un único 6 cuenta como Critical Success.',
+    summary: 'Tira 2D6; por cada +DICE añade un dado y quédate con los 2 más altos, por cada -DICE añade uno y quédate con los 2 más bajos (+DICE y -DICE se anulan por parejas). Suma los 2 dados: 2-6 Failure, 7-11 Success, 12+ Critical Success.',
   },
   'Risky Success Roll': {
     type: 'game-term',
-    summary: 'Variante del Success Roll donde un 1 cuenta como fallo automático con consecuencias adversas (típicamente la activación termina, o el modelo cae Down). Las armas RISKY y ciertas habilidades requieren este tipo de tirada.',
+    summary: 'Se tira igual que una Success Roll, pero si es una Failure la activación del modelo termina inmediatamente. Si se hacía como parte de una ACTION fuera de su activación, esa ACTION termina.',
   },
   'Critical Success': {
     type: 'game-term',
-    summary: 'Cuando una Success Roll obtiene un 6 (o más, con modificadores), el resultado es un éxito crítico. Por defecto añade +1 INJURY DICE a la Injury Roll. Las armas con CRITICAL añaden +2 INJURY DICE en su lugar.',
+    summary: 'Resultado de 12+ en una Success Roll. En un ataque, impacta y la Injury Roll recibe +1 INJURY DICE (las armas con CRITICAL tienen efectos extra según su keyword).',
   },
   'Bloodbath Roll': {
     type: 'game-term',
-    summary: 'Tirada extra que ocurre cuando dos modelos del mismo Fireteam ambos colocan un BLOOD MARKER en el mismo objetivo en la misma activación. Lanzas 2D6 e infliges efectos adicionales según el resultado. Solo aplica con la regla New Antioch Fireteams.',
+    summary: 'Al hacer una Injury Roll contra un enemigo puedes gastar 6 BLOOD MARKERS del objetivo (3 si está Down) para convertirla en Bloodbath Roll: tira 3D6 y suma los 3 (con INJURY DICE te quedas con los 3 más altos o más bajos). Con DEADLY, 4D6.',
   },
   'Charge Bonus': {
     type: 'game-term',
-    summary: 'Cuando un modelo carga al cuerpo a cuerpo, lanzas D6 (D3 si lleva Machine Armour por la regla Bulky) y añades el resultado en pulgadas a su movimiento de carga. Algunas habilidades (Shock Charge, Counter-Charge) modifican esta tirada.',
+    summary: 'Al cargar, tira D6 y súmalo al Movement del modelo, hasta un máximo de 12". Un modelo que se levanta de Down lo tiene a la mitad; con Machine Armour (Bulky) es D3.',
   },
   'Injury Roll': {
     type: 'game-term',
-    summary: 'Tras un éxito en Success Roll, se hace una Injury Roll para determinar si el ataque hace daño. Lanzas DICE base + modificadores del arma, y restas modificadores de armadura. El resultado consulta la tabla de heridas (BLOOD MARKER, Down, Out of Action).',
+    summary: 'Tira 2D6 con los +/- INJURY DICE (2 más altos o más bajos), suma los dados y aplica los INJURY MODIFIERS (máximo -3 en total). Tabla: 1 o menos No Effect; 2-6 Minor Hit (1 BLOOD MARKER); 7-8 Down (1 BLOOD MARKER, 2 si ya estaba Down); 9+ Out of Action. Modificadores habituales: +1 INJURY DICE por BLOOD MARKER gastado, -1 por BLESSING MARKER gastado, +1 por Critical Success, +1 en melee contra un Down, y la armadura del modelo.',
   },
   'BLOOD MARKER': {
     type: 'marker',
@@ -8271,41 +8271,37 @@ const GENERAL_TERMS_LIBRARY = {
     type: 'marker',
     summary: 'Funciona como un BLOOD MARKER (se gasta para modificar Success Rolls e Injury Rolls o para una Bloodbath Roll, y se puede combinar con BLOOD MARKERS). Un modelo puede tener hasta 6 de cada. Las reglas que retiran BLOOD MARKERS no retiran INFECTION MARKERS salvo que lo digan. The Infection Spreads: si un modelo con INFECTION MARKERS se activa, recibe 1 más antes de hacer ninguna ACTION.',
   },
-  'FIRE MARKER': {
-    type: 'marker',
-    summary: 'Marcador de fuego: el modelo está ardiendo. Al inicio de cada una de sus activaciones, sufre 1 Injury Roll automática (sin modificadores) y debe gastar acción para apagar el fuego. Persiste hasta apagarlo o quedar Down.',
-  },
   'MINED': {
     type: 'tag',
     summary: 'Pieza de terreno minada. Cuando un modelo se mueve hasta tocarla (sin tener NEGATE MINED), detona automáticamente: tirada de Injury con SHRAPNEL contra el modelo. Combat Engineers pueden colocar y desactivar MINED.',
   },
   'Out of Action': {
     type: 'game-term',
-    summary: 'Estado de un modelo cuando acumula suficientes BLOOD MARKERS o sufre una herida grave: queda fuera de la partida. En campaña tira en la tabla de Lesiones tras la batalla (Recovery, Light Wound, Old Battle Wound, Captured, Dead).',
+    summary: 'Resultado 9+ en la Injury Roll: el modelo se retira del campo de batalla. En campaña, tras la partida: los Troops hacen una Survival Roll (D6; con 1-2 mueren y salen del Roster) y los ELITE tiran D66 en la Trauma Table y reciben una Battle Scar (a la tercera, Unfit for Duty).',
   },
   'Down': {
     type: 'game-term',
-    summary: 'Estado intermedio: el modelo está caído pero no fuera de combate. Mientras está Down no puede atacar, mover ni reaccionar. Otro modelo amigo puede usar Treat ACTION para levantarlo. Un nuevo BLOOD MARKER mientras Down lo deja Out of Action.',
+    summary: 'Resultado 7-8 en la Injury Roll: 1 BLOOD MARKER y el modelo queda Down. Si le pasa durante su activación, esta termina. -1 DICE a sus Success Rolls; +1 INJURY DICE a los ataques cuerpo a cuerpo contra él; no puede moverse salvo si cae. Se levanta en su siguiente activación con el Movement a la mitad (también el Charge Bonus).',
   },
   'Activation': {
     type: 'game-term',
-    summary: 'Cada turno los jugadores activan modelos uno a uno alternando. En su activación, un modelo puede hacer una acción de movimiento + una acción (Shoot/Fight/Ability) o dos acciones de movimiento. Las acciones que terminan la activación impiden seguir actuando.',
+    summary: 'Los jugadores activan por turnos un modelo que no se haya activado, hasta activarlos todos. El modelo activado puede hacer cada ACTION una vez, en cualquier orden: Move, Charge o Retreat (solo una de las tres); Dash; Shoot; Fight; y otras ACTIONS propias. No puede Shoot y Charge/Fight en la misma activación salvo con un arma ASSAULT.',
   },
   'Treat ACTION': {
     type: 'game-term',
-    summary: 'Acción para curar a un aliado caído (Down). Requiere estar a 1" del objetivo y tener Medi-kit equipado. Risky Success Roll: si tiene éxito, retira un BLOOD MARKER del objetivo o lo levanta de Down.',
+    summary: 'La concede el Medi-kit. Risky Success Roll: con Failure la activación termina; con Success o Critical Success, retira 1 BLOOD MARKER del modelo o de un amigo a 1", o levanta a un amigo Down a 1".',
   },
   'Dash ACTION': {
     type: 'game-term',
-    summary: 'Acción de movimiento extra: el modelo mueve su Movement de nuevo, pero ese turno no puede hacer otras acciones (Shoot, Fight). Útil para reposicionar rápidamente. No disponible si llevas un arma HEAVY usada o eres CUMBERSOME.',
+    summary: 'Se puede hacer además de un Move, Charge o Retreat. Tras una Risky Success Roll superada, el modelo mueve su Movement en cualquier dirección (no puede cargar ni retirarse); si falla, su activación termina.',
   },
   'Standfast': {
     type: 'effect',
-    summary: 'Asociada a Machine Armour: el modelo no puede ser desplazado por carga ni efectos de empuje. Reemplaza el Charge Bonus de un atacante por D3 en lugar de D6. Representa la inercia de la armadura mecanizada.',
+    summary: 'Regla de la Machine Armour (y del Tank Palanquin): cuando el modelo sufre un resultado Down en la Injury Roll, se trata como Minor Hit.',
   },
   'Bulky': {
     type: 'effect',
-    summary: 'Asociada a Machine Armour: cambia el tamaño de base del modelo a 40mm (si era menor). El modelo no puede equipar Trench Shield. Su Charge Bonus es D3 en vez de D6. Limita la maniobrabilidad por el peso.',
+    summary: 'Regla de la Machine Armour: la base pasa a 40mm salvo que ya sea de 40mm o mayor, no puede llevar Trench Shield y su Charge Bonus es D3" en vez de D6".',
   },
 };
 
@@ -8326,19 +8322,19 @@ for (const k of Object.keys(GENERAL_TERMS_LIBRARY)) {
 const STIPULATION_LIBRARY = {
   'ELITE only': {
     type: 'stipulation',
-    summary: 'Solo modelos con la keyword ELITE pueden equipar este item. Los Troops y Mercenaries no tienen acceso.',
+    summary: 'Solo se puede comprar para modelos con la keyword ELITE ("X only": solo modelos de la Warband Entry X o con la keyword X).',
   },
   'Mech. Heavy Inf. only': {
     type: 'stipulation',
-    summary: 'Solo modelos Mechanized Heavy Infantry pueden equipar este item. Su armadura ya está integrada en su perfil.',
+    summary: 'Solo se puede comprar para modelos de la Warband Entry Mechanized Heavy Infantry ("X only").',
   },
   'ELITE & Mech. Heavy Inf. only': {
     type: 'stipulation',
-    summary: 'Solo modelos ELITE o Mechanized Heavy Infantry pueden equipar este item. Combina ambas restricciones.',
+    summary: 'Solo se puede comprar para modelos ELITE o Mechanized Heavy Infantry.',
   },
   'Limit: N': {
     type: 'stipulation',
-    summary: 'La banda no puede llevar más de N copias totales de este item. Aplica a la banda completa, no por modelo. Si el item tiene "Limit: 2 excl. MHI" significa que los Mech. Heavy Inf. no cuentan contra ese límite.',
+    summary: 'La banda no puede tener más de N piezas de este Battlekit en total. Si se pierden durante la campaña, se pueden comprar para reponerlas. "Limit: 1 excluding Mechanized Heavy Infantry": las de la MHI no cuentan.',
   },
   'Unique': {
     type: 'stipulation',
@@ -8346,11 +8342,15 @@ const STIPULATION_LIBRARY = {
   },
   'Consumable': {
     type: 'stipulation',
-    summary: 'Este item se gasta tras un solo uso en la partida (típicamente granadas, drogas, ammo especial). Tras usarse no puede emplearse de nuevo en la misma partida.',
+    summary: 'Este Battlekit se retira del Roster de la banda al final de la partida en que se usa.',
   },
   'Shield Combo': {
     type: 'stipulation',
     summary: 'Un modelo puede llevar un escudo y un arma de 2 manos a la vez si ambos tienen la estipulación Shield Combo.',
+  },
+  'Headgear': {
+    type: 'stipulation',
+    summary: 'Un modelo no puede tener más de una pieza de Headgear (aunque tenga más de una cabeza).',
   },
   'Bayonet Lug': {
     type: 'stipulation',
@@ -37928,7 +37928,7 @@ function pdfRenderWeaponsNotes(td, eq) {
  *   {
  *     factionTags:    [{ name, summary }],   // NEW ANTIOCH, ELITE, LEADER...
  *     modelKeywords:  [{ name, summary }],   // TOUGH, FEAR, FLYING...
- *     markers:        [{ name, summary }],   // BLOOD MARKER, FIRE MARKER, MINED...
+ *     markers:        [{ name, summary }],   // BLOOD MARKER, INFECTION MARKER, MINED...
  *     weaponKeywords: [{ name, summary }],   // CLEAVE, BLAST, RELOAD...
  *     stipulations:   [{ name, summary }],   // ELITE only, Limit: N, Bayonet Lug...
  *   }
@@ -37990,7 +37990,7 @@ function gatherWarbandGlossary(wb) {
   // Markers: scan our paraphrases for marker references and include the
   // ones that show up in keywords or weapon-keywords. Also always include
   // markers tied to faction (BLACK GRAIL → INFECTION MARKER) or weapons
-  // (FIRE keyword → FIRE MARKER, etc).
+  // (INFECTION MARKERS, MINED...).
   const markersToInclude = new Set();
   // Always include BLOOD MARKER if any model is mortal (which is all of them)
   markersToInclude.add('BLOOD MARKER');
@@ -38003,8 +38003,6 @@ function gatherWarbandGlossary(wb) {
   // INFECTION: if Black Grail or Hounds with INFECTION upgrade or any GAS weapon
   if (wb.factionId === 'black-grail') markersToInclude.add('INFECTION MARKER');
   if (allUnitKeywords.has('INFECTION MARKERS')) markersToInclude.add('INFECTION MARKER');
-  // FIRE: if any weapon has FIRE
-  if (eq.allKeywords.has('FIRE')) markersToInclude.add('FIRE MARKER');
   // MINED: if Combat Engineers in band or any weapon/ability mentions MINED
   if (wb.models.some(m => m.unitId === 'combat-engineers' || m.unitId === 'sappers')) {
     markersToInclude.add('MINED');
