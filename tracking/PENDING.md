@@ -8,7 +8,6 @@
 ## 🟡 Media Prioridad
 - [ ] **Contenido de variantes 1.0.2 que falta en la app** (Marcos decide si se añade): las reglas de variante ya tienen su texto canon, pero no existen como datos: armas/equipo *Lochaber Axe* (Alba), *Tank-Splitter Sword* y *Holy Smoke* (Stosstruppen), *Shotel*, *Holy Water of Lalibela*, *Anfarro*, *Tabot* (Abyssinia), *Holy Icon Armour* (Procession), *Bow of Alamut*, *Golden Khanjar*, *Hashashin Leaf* (Fida'i), *Elixir of Al-Khidr* (House of Wisdom); mejoras compradas *Chewa* y *Flanking* (Abyssinia); unidades *Takwin Homunculus* (House of Wisdom), *Master Assassin* y *Dervishes* (Fida'i), *Executor* (Dirge); Great Hunger: *Matagot Hag*, *Cradle Thralls*, *Desiccated Husks*, *Great Maw*.
 - [ ] **BLOOD MARKERS en el motor del Lab** (Marcos decide): el motor aplica -1 DICE fijo por marcador; en canon es el rival quien decide gastarlos (+/-1 DICE o convertir Injury en Bloodbath). Modelarlo cambia los resultados del Lab.
-- [ ] **Autocannon del Anchorite:** añadir la nota canon "cuenta como 1-Handed si lo usa un Anchorite".
 - [ ] **Keyword `ALCHEMIST`:** no aparece en los PDF 1.0.2; confirmar su origen o retirarla.
 
 - [ ] **PDFs canon fuera de su sitio** (Marcos): `herramientas/pdfs-reglamento/` está vacío (solo `trench-crusade-tarjetas.pdf`); los PDFs del reglamento están en `E:\_DUPLICADOS_PDF_revisar\` con el prefijo `E__Drive_Trench Crusade_herramientas_pdfs-reglamento_` (parece una limpieza de duplicados). Devolverlos a `herramientas/pdfs-reglamento/` para que la regla D.5 apunte a un sitio real.

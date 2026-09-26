@@ -46,7 +46,7 @@ ok(!((ano.battlekitAccess || {}).forbidCategories || []).includes('armour'), 'An
 console.log('\nGroup 4: armería sin perfil emparejado en la auditoría');
 const arm = (fid, id) => Object.values(D.factions[fid].armoury).flat().find(i => i.id === id);
 const ac = arm('trench-pilgrims', 'autocannon-anchor');
-ok(ac.type === '2-Handed', 'Autocannon: 2-Handed');
+ok(ac.type === '1-Handed' && /1-Handed cuando las usa el Anchorite/.test(ac.note), 'Autocannon: 1-Handed en el Anchorite (perfil 2-Handed en nota)');
 ok(ac.weaponKeywords.join() === '+1 INJURY DICE,AUTOMATIC 3,HEAVY', 'Autocannon: perfil Bursts');
 ok(/Full Auto/.test(ac.note || '') && /AUTOMATIC 5/.test(ac.note || '') && /RELOAD/.test(ac.note || '') && /RISKY/.test(ac.note || ''),
    'Autocannon: perfil Full Auto en la nota');
