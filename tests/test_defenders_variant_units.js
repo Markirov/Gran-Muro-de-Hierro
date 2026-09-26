@@ -62,7 +62,7 @@ group('Group 1: variant units present in DATA', () => {
 
   ok(byId['sipahi-iw'].cost === 110, 'Sipahi cost 110');
   ok(byId['sipahi-iw'].variantOnly === 'iron-wall-def', 'Sipahi gated to iron-wall-def');
-  ok(byId['sipahi-iw'].stats.movement === '10"/Cavalry', 'Sipahi uses Mamluk Faris movement');
+  ok(byId['sipahi-iw'].stats.movement === '6"/Infantry', 'Sipahi uses Mamluk Faris movement (Warbands 1.0.2)');
   ok(byId['sipahi-iw'].equipmentLocked === true, 'Sipahi equipment locked');
   ok(byId['sipahi-iw'].limit === '0-1', 'Sipahi limit 0-1');
 

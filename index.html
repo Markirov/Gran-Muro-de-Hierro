@@ -6436,8 +6436,8 @@ const DATA = {
           note:'Comandante del Iron Wall (guardia personal del Sultán). Usa la entrada del Yüzbaşı pero cambia la habilidad Mubarizun por la keyword STRONG, y puede llevar un Alaybozan (armería Iron Sultanate) y un Anq Guard y Explosive Charges (armería Defenders of the Iron Wall) a su coste. Obligatorio: cada banda Defenders incluye 1 Silahdar.' },
         { id:'sipahi-iw', name:'Sipahi', tier:'elite', limit:'0-1', cost:110, currency:'👑',
           variantOnly:'iron-wall-def',
-          stats:{ movement:'10"/Cavalry', ranged:'+0 DICE', melee:'+2 DICE', armour:'0', base:'40mm' },
-          keywords:['SULTANATE','CAVALRY'],
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-2 (-3)', base:'32mm' },
+          keywords:['IGNORE OFF-HAND WEAPON'],
           abilities:['Automaton Destrier','Martial Prowess','Sworn Brethren'],
           equipmentLocked:true,
           note:'Caballería autómata Sipahi sirviendo como infantería en el Iron Wall. Usa las características del Mamluk Faris. No puedes modificar su equipo de ninguna forma. Máximo 1. No impide reclutar además un Mamluk Faris como mercenario.' },
@@ -7469,7 +7469,7 @@ const ABILITY_LIBRARY = {
     summary: 'Risky Success Roll a 24" sin LoS: pone 1 BLOOD MARKER al enemigo (2 si es BLACK GRAIL, DEMONIC o HERETIC).',
   },
 
-  /* ─── KEYWORDS CORE TC (resúmenes canon) ─── */
+  /* ─── KEYWORDS CORE TC: el texto se sincroniza con KEYWORD_GLOSSARY ─── */
   'TOUGH': {
     type: 'keyword',
     summary: '−1 INJURY DICE a las tiradas de lesión contra este modelo.',
@@ -7500,49 +7500,13 @@ const ABILITY_LIBRARY = {
     type: 'keyword',
     summary: 'Construcción/criatura artificial: inmune a FEAR, INFECTION MARKERS y efectos psicológicos.',
   },
-  'FAST': {
-    type: 'keyword',
-    summary: '+2" al stat Movement.',
-  },
-  'LEAP': {
-    type: 'keyword',
-    summary: 'Puede saltar 1" de hueco sin Risky Roll. Atraviesa obstáculos pequeños sin penalización.',
-  },
-  'AGILE': {
-    type: 'keyword',
-    summary: 'Ignora penalizaciones de terreno difícil.',
-  },
   'SKIRMISHER': {
     type: 'keyword',
     summary: '+1" al stat Movement. Puede moverse a través de modelos amigos.',
   },
-  'DEAD-EYE': {
-    type: 'keyword',
-    summary: 'Re-roll fallos en ataques a distancia.',
-  },
-  'CAVALRY': {
-    type: 'keyword',
-    summary: 'Movimiento de caballería: ignora penalización por terreno abierto en Charge.',
-  },
   'FLYING': {
     type: 'keyword',
     summary: 'Movimiento aéreo: ignora terreno y obstáculos en movimiento normal.',
-  },
-  'FANATIC': {
-    type: 'keyword',
-    summary: 'Inmune a Morale Checks. No huye ni recibe penalizaciones psicológicas.',
-  },
-  'BERSERKER': {
-    type: 'keyword',
-    summary: 'En Melee gana +1 DICE adicional cuando otros amigos están en estado Down u Out of Action.',
-  },
-  'NIMBLE': {
-    type: 'keyword',
-    summary: 'Re-roll fallos en Risky Rolls de Dash y movimiento.',
-  },
-  'TARGETED HIT': {
-    type: 'keyword',
-    summary: 'En ataques a distancia, ignora COVER de objetivos elegidos por el dado más alto.',
   },
 
   /* ─── FACTION TAGS (sin desc canon, kind interno) ─── */
@@ -8059,6 +8023,16 @@ const WEAPON_KEYWORD_LIBRARY = {
     const t = glossaryText(k);
     if (t) KEYWORD_LIBRARY[k] = t;
   }
+  // Chips de keywords de fichas y modo mesa (ABILITY_LIBRARY) y términos en
+  // mayúsculas de GENERAL_TERMS_LIBRARY. Los marcadores conservan su texto
+  // largo (reglas de Placing/Spending del Rulebook 1.0.2).
+  for (const lib of [ABILITY_LIBRARY]) {
+    for (const k of Object.keys(lib)) {
+      if (k !== k.toUpperCase() || lib[k].type === 'tier' || lib[k].type === 'marker') continue;
+      const t = glossaryText(k);
+      if (t) lib[k] = Object.assign({}, lib[k], { summary: t });
+    }
+  }
 })();
 
 /* ======================================================================
@@ -8282,15 +8256,15 @@ const GENERAL_TERMS_LIBRARY = {
   },
   'BLOOD MARKER': {
     type: 'marker',
-    summary: 'Marcador colocado junto a un modelo herido. Cada BLOOD MARKER aplica -1 DICE acumulativo a las Success Rolls del modelo. Si acumula tantos como su umbral de Out of Action, queda fuera de combate. Los efectos DEADLY añaden marcadores extra.',
+    summary: 'Se coloca 1 junto a un modelo cada vez que sufre una herida (máximo 6). Cuando tiras una Success Roll para ese modelo, tu rival puede gastar los que quiera: -1 DICE por marcador gastado. O, cuando tu rival hace una Injury Roll contra él, puede gastarlos: +1 INJURY DICE por marcador. Los marcadores gastados se retiran.',
   },
   'BLESSING MARKER': {
     type: 'marker',
-    summary: 'Marcador positivo: representa bendición divina, suerte, o efecto sobrenatural beneficioso. Puede gastarse para re-rollear una tirada o añadir +DICE según la fuente. Algunas habilidades específicas crean BLESSING MARKERS (ej. Combat Biologist).',
+    summary: 'Funciona como un BLOOD MARKER pero a tu favor (máximo 6). Al tirar una Success Roll para el modelo puedes gastar los que quieras: +1 DICE por marcador. O, cuando el rival hace una Injury Roll contra él, puedes gastarlos: -1 INJURY DICE por marcador. Los marcadores gastados se retiran.',
   },
   'INFECTION MARKER': {
     type: 'marker',
-    summary: 'Marcador del Black Grail: representa enfermedad contagiosa. Cada marcador acumulado en un modelo aplica -1 DICE a sus Success Rolls hasta que se cure. Modelos con NEGATE GAS no acumulan estos marcadores.',
+    summary: 'Funciona como un BLOOD MARKER (se gasta para modificar Success Rolls e Injury Rolls o para una Bloodbath Roll, y se puede combinar con BLOOD MARKERS). Un modelo puede tener hasta 6 de cada. Las reglas que retiran BLOOD MARKERS no retiran INFECTION MARKERS salvo que lo digan. The Infection Spreads: si un modelo con INFECTION MARKERS se activa, recibe 1 más antes de hacer ninguna ACTION.',
   },
   'FIRE MARKER': {
     type: 'marker',
@@ -8335,6 +8309,15 @@ const GENERAL_TERMS_LIBRARY = {
    Equipment stipulations that appear in the `restriction` field of items.
    Used by the PDF glossary "Estipulaciones de equipo" subsection.
    ====================================================================== */
+// Términos en mayúsculas de GENERAL_TERMS_LIBRARY con entrada en el glosario
+// (p. ej. MINED). Los marcadores conservan su texto largo (Placing/Spending,
+// Rulebook 1.0.2).
+for (const k of Object.keys(GENERAL_TERMS_LIBRARY)) {
+  if (k !== k.toUpperCase() || GENERAL_TERMS_LIBRARY[k].type === 'marker') continue;
+  const t = glossaryText(k);
+  if (t) GENERAL_TERMS_LIBRARY[k] = Object.assign({}, GENERAL_TERMS_LIBRARY[k], { summary: t });
+}
+
 const STIPULATION_LIBRARY = {
   'ELITE only': {
     type: 'stipulation',

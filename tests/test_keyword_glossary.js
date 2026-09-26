@@ -18,7 +18,8 @@ const W = dom.window;
 W.alert = () => {};
 W.eval(js.slice(0, bootIdx) + '\n;window.__lib = { DATA, WEAPON_KEYWORD_LIBRARY, KEYWORD_LIBRARY,' +
   ' KEYWORD_GLOSSARY: typeof KEYWORD_GLOSSARY !== "undefined" ? KEYWORD_GLOSSARY : null,' +
-  ' glossaryEntryFor: typeof glossaryEntryFor === "function" ? glossaryEntryFor : null, lookupRuleText };');
+  ' glossaryEntryFor: typeof glossaryEntryFor === "function" ? glossaryEntryFor : null, lookupRuleText };' +
+  'window.__AL = { ABILITY_LIBRARY, GENERAL_TERMS_LIBRARY, STIPULATION_LIBRARY };');
 const L = W.__lib;
 
 let pass = 0, fail = 0;
@@ -77,6 +78,21 @@ ok(L.WEAPON_KEYWORD_LIBRARY['CLEAVE 2'].summary === T('CLEAVE 2'), 'WEAPON_KEYWO
 ok(L.WEAPON_KEYWORD_LIBRARY['DEADLY'].summary === T('DEADLY'), 'WEAPON_KEYWORD_LIBRARY["DEADLY"] sincronizado');
 ok(L.KEYWORD_LIBRARY['TOUGH'] === T('TOUGH') && L.KEYWORD_LIBRARY['FEAR'] === T('FEAR'), 'KEYWORD_LIBRARY TOUGH / FEAR sincronizados');
 
+// Modo mesa lee ABILITY_LIBRARY directamente (chips de keywords de la ficha).
+const AL = W.__AL;
+const stale = [];
+for (const [libName, lib] of Object.entries(AL)) {
+  for (const k of Object.keys(lib)) {
+    if (k !== k.toUpperCase() || !L.glossaryEntryFor(k) || /^(tier|marker)$/.test(lib[k].type)) continue;
+    if ((lib[k].summary || '') !== T(k)) stale.push(libName + '.' + k);
+  }
+}
+ok(stale.length === 0, 'toda keyword en ABILITY / GENERAL_TERMS / STIPULATION usa el texto del glosario (' + (stale.join(', ') || 'ok') + ')');
+ok(/primera vez/.test(AL.ABILITY_LIBRARY.TOUGH.summary) && /NEGATE HEAVY/.test(AL.ABILITY_LIBRARY.STRONG.summary),
+   'ABILITY_LIBRARY: TOUGH (Out of Action → Down) y STRONG (NEGATE HEAVY) 1.0.2');
+const INVENTED = ['FAST', 'LEAP', 'AGILE', 'DEAD-EYE', 'FANATIC', 'BERSERKER', 'NIMBLE', 'TARGETED HIT'];
+ok(INVENTED.every(k => !AL.ABILITY_LIBRARY[k]), 'sin keywords inventadas (no existen en Rulebook ni Warbands 1.0.2)');
+
 console.log('\nGroup 4: reglas especiales de armas corregidas (Warbands of TC)');
 ok(/6"/.test(T('High Trajectory')) && !/Line of Sight: el objetivo no necesita/.test(T('High Trajectory')), 'High Trajectory: mínimo 6", no ignora LoS');
 ok(/BLAST 3"/.test(T('Overcharge')) && /RELOAD/.test(T('Overcharge')) && /BLOOD MARKER/.test(T('Overcharge')), 'Overcharge completo');
@@ -93,7 +109,7 @@ for (const f of Object.values(L.DATA.factions)) {
   for (const u of (f.units || [])) (u.keywords || []).forEach(k => used.add(k));
 }
 // Keywords de facción/tipo que no están en los PDF de reglas disponibles (no se inventa texto).
-const NO_PDF = new Set(['CAVALRY', 'ALCHEMIST']);
+const NO_PDF = new Set(['ALCHEMIST']);
 const orphan = [...used].filter(k => !NO_PDF.has(k) && !T(k));
 ok(orphan.length === 0, 'toda keyword usada tiene texto (' + (orphan.join(' | ') || 'ninguna') + ')');
 
