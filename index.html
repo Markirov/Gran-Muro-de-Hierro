@@ -6158,6 +6158,11 @@ const DATA = {
               addsKeywords:['STRONG'],
               note:'Hasta 1 Trench Pilgrim de la banda puede tener STRONG por +5 👑 (cambia base a 32mm).' },
           ] },
+        { id:'martyr-penitent', name:'Martyr Penitent', tier:'troops', limit:null, cost:45, currency:'👑',
+          stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'0', base:'25mm' },
+          keywords:['PILGRIM'],
+          abilities:['Resurrection'],
+          note:'Solo por Resurrection: un Trench Pilgrim muerto tras una partida vuelve como Martyr Penitent por 45 👑 en el siguiente Quartermaster Step. Añade -1 INJURY DICE a las Injury Rolls contra él. Conserva Battlekit y Zealot Strength; pierde Scars, Experience y Advancements. Las Martyrdom Pills no le afectan.' },
         { id:'stigmatic-nuns', name:'Stigmatic Nuns', tier:'troops', limit:'0-4', cost:50, currency:'👑',
           stats:{ movement:'8"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'25mm' },
           keywords:['PILGRIM','REGENERATE 1'],
@@ -6797,10 +6802,18 @@ const DATA = {
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
           keywords:['BLACK GRAIL','ELITE','FEAR','NEGATE GAS'],
           abilities:['Black Grail Bodyguard','Parasite Host','Undead Fortitude'] },
-        { id:'thralls', name:'Grail/Fly Thralls', tier:'troops', limit:null, cost:25, currency:'👑',
+        // Warbands 1.0.2: entrada "Grail Thralls / Fly Thralls" con dos perfiles; aquí dos unidades.
+        // El id 'thralls' se conserva para Fly Thralls (bandas guardadas).
+        { id:'grail-thralls', name:'Grail Thralls', tier:'troops', limit:null, cost:25, currency:'👑',
+          stats:{ movement:'5"/Infantry', ranged:'-', melee:'-1 DICE', armour:'0', base:'25mm' },
+          keywords:['BLACK GRAIL','FEAR','NEGATE GAS'],
+          abilities:['Overwhelming Horde','Undead Fortitude'],
+          battlekitNote:'No puede tener Battlekit' },
+        { id:'thralls', name:'Fly Thralls', tier:'troops', limit:null, cost:25, currency:'👑',
           stats:{ movement:'6"/Flying', ranged:'-', melee:'-1 DICE', armour:'0', base:'25mm' },
           keywords:['BLACK GRAIL','FEAR','FLYING','NEGATE GAS'],
-          abilities:['Overwhelming Horde','Disease Carrier'] },
+          abilities:['Overwhelming Horde'],
+          battlekitNote:'No puede tener Battlekit' },
         { id:'hounds-bg', name:'Hounds of the Black Grail', tier:'troops', limit:'0-3', cost:55, currency:'👑',
           stats:{ movement:'8"/Infantry', ranged:'-', melee:'+1 DICE', armour:'0', base:'30x60mm' },
           keywords:['BLACK GRAIL','FEAR','NEGATE GAS'],
@@ -7179,7 +7192,7 @@ const ABILITY_LIBRARY = {
   },
   'Resurrection': {
     type: 'campaign',
-    summary: 'Si un Trench Pilgrim muere tras una partida en campaña, puede volver a la banda gratis (consultar reglas de campaña).',
+    summary: 'Si un Trench Pilgrim muere tras una partida de campaña, puede resucitar en el siguiente Quartermaster Step como Martyr Penitent (perfil Martyr Penitent) por 45 👑. Conserva su Battlekit y Zealot Strength, pero pierde Scars, Experience y Advancements. Las Injury Rolls contra un Martyr Penitent tienen -1 INJURY DICE y las Martyrdom Pills no le afectan.',
   },
   'Agile': {
     type: 'passive',
@@ -7313,11 +7326,11 @@ const ABILITY_LIBRARY = {
   },
   'Overwhelming Horde': {
     type: 'passive',
-    summary: 'Los Thralls pueden activar varios modelos como un grupo, abrumando al enemigo con números (consultar reglas de horda).',
+    summary: 'Un Grail Thrall o Fly Thrall puede hacer ataques cuerpo a cuerpo aunque no tenga arma cuerpo a cuerpo. Además suma +1 DICE al Success Roll de sus ataques cuerpo a cuerpo por cada otro modelo amigo a 3" o menos del atacante.',
   },
   'Disease Carrier': {
     type: 'passive',
-    summary: 'Modelos enemigos a 1" o menos de este modelo al activarse o moverse colocan INFECTION MARKERS sobre sí mismos (consultar reglas).',
+    summary: 'Si un modelo enemigo se activa estando a 1" o menos de este modelo, pon 1 INFECTION MARKER junto a él antes de que haga ninguna ACTION.',
   },
   'Frightening Speed': {
     type: 'passive',
@@ -26009,7 +26022,7 @@ const CAMPAIGN_TABLES = {
     'trench-pilgrims': ['eccl-prisoners','anchorite-shrine'],
     'iron-sultanate':  [],
     'heretic-legions': ['war-wolf','wretched-hl'],
-    'black-grail':     ['thralls','hounds-bg','amalgam'],
+    'black-grail':     ['grail-thralls','thralls','hounds-bg','amalgam'],
     'court-serpent':   ['wretched-co','yoke-fiends'],
   },
 

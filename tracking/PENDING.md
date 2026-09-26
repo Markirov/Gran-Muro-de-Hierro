@@ -14,7 +14,6 @@
 - [ ] **Validación física en mesa** (Domain & Product Owner / Marcos, no codeable): imprimir tarjetas y battletrackers de Cazadores del Muro y Herejes Infernales y jugar 2-3 partidas. Confirmar legibilidad, tamaño y encaje de imprenta antes de construir más encima. Hallazgos → aquí como tareas del Lead Developer.
 
 ## 🟢 Baja Prioridad
-- [ ] **Perfiles con dos variantes no modelados** (2026-09-26): *Grail/Fly Thralls* es una sola unidad con el perfil Fly Thrall (6"/Flying, FLYING); el Grail Thrall canon es 5"/Infantry sin FLYING y con Undead Fortitude. Tampoco existe el *Martyr Penitent* (Resurrection, 45, Melee +1). Decidir con Marcos si se separan en perfiles o upgrades.
 
 - [ ] **Conteo de verificaciones no determinista:** tres corridas seguidas de `verify.sh` dieron 2611 / 2613 / 2622 ✓ con 0 fallos. Alguna suite (probablemente simulación Lab con RNG) emite un número variable de líneas `✓`. No rompe nada, pero ensucia la métrica: localizar la suite y fijar semilla o normalizar el número de asserts.
 - [ ] **House rules para partida libre:** hoy solo existen overrides de Trauma D66 por campaña (`campaign.houseRules`, modal "⚙ House Rules"). Extender a partidas libres (a nivel de banda) y valorar más ámbitos. Requiere definición de producto antes de codificar.

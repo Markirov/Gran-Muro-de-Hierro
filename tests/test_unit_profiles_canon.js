@@ -13,7 +13,7 @@ const js = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
 const bootIdx = js.search(/\nfunction boot\(\)/);
 const dom = new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
 dom.window.alert = () => {};
-dom.window.eval(js.slice(0, bootIdx) + '\n;window.__D = DATA; window.__EIA = EQUIPMENT_IMPLICIT_ABILITIES;');
+dom.window.eval(js.slice(0, bootIdx) + '\n;window.__D = DATA; window.__EIA = EQUIPMENT_IMPLICIT_ABILITIES; window.__X = { ABL: ABILITY_LIBRARY, CBP: CAMPAIGN_TABLES.cannotBePromoted };');
 const D = dom.window.__D;
 
 let pass = 0, fail = 0;
@@ -70,6 +70,24 @@ ok(exc.restriction === 'Silahdar & Sultanate Sappers only · Limit: 1' && /Injur
 const sil = U('iron-sultanate', 'silahdar-iw');
 ok(/Alaybozan/.test(sil.note) && /Anq Guard/.test(sil.note) && /Explosive Charges/.test(sil.note), 'Silahdar: Alaybozan, Anq Guard y Explosive Charges');
 ok(!/ningún otro Janissary/.test(U('iron-sultanate', 'janofficer-iw').note), 'Janissary Officer: sin restricción inventada');
+
+console.log('\nGroup 6: unidades con dos perfiles separadas (decisión de Marcos 2026-09-26)');
+const X = dom.window.__X;
+const fly = U('black-grail', 'thralls'), grail = U('black-grail', 'grail-thralls');
+ok(fly && fly.name === 'Fly Thralls' && S(fly) === '6"/Flying - -1 DICE 0 25mm', 'Fly Thralls: 6"/Flying (conserva el id thralls)');
+ok(fly && fly.keywords.join() === 'BLACK GRAIL,FEAR,FLYING,NEGATE GAS' && fly.abilities.join() === 'Overwhelming Horde', 'Fly Thralls: FLYING; solo Overwhelming Horde (Disease Carrier es de los Hounds)');
+ok(grail && grail.name === 'Grail Thralls' && grail.cost === 25 && S(grail) === '5"/Infantry - -1 DICE 0 25mm', 'Grail Thralls: 5"/Infantry, 25');
+ok(grail && grail.keywords.join() === 'BLACK GRAIL,FEAR,NEGATE GAS' && grail.abilities.join() === 'Overwhelming Horde,Undead Fortitude', 'Grail Thralls: sin FLYING, con Undead Fortitude');
+const mp = U('trench-pilgrims', 'martyr-penitent');
+ok(mp && mp.cost === 45 && S(mp) === '6"/Infantry +0 DICE +1 DICE 0 25mm' && mp.keywords.join() === 'PILGRIM', 'Martyr Penitent: 45, Melee +1');
+ok(mp && /Resurrection/.test(mp.note || '') && /-1 INJURY DICE/.test(mp.note || ''), 'Martyr Penitent: nota Resurrection y -1 INJURY DICE');
+ok(X.CBP['black-grail'].includes('grail-thralls'), 'Grail Thralls no pueden ascender a ELITE (como Fly Thralls)');
+ok(/\+1 DICE/.test(X.ABL['Overwhelming Horde'].summary) && /3"/.test(X.ABL['Overwhelming Horde'].summary),
+   'Overwhelming Horde: texto canon (+1 DICE por amigo a 3")');
+ok(/INFECTION MARKER/.test(X.ABL['Disease Carrier'].summary) && /antes de/.test(X.ABL['Disease Carrier'].summary),
+   'Disease Carrier: texto canon');
+ok(/45/.test(X.ABL['Resurrection'].summary) && /Martyr Penitent/.test(X.ABL['Resurrection'].summary),
+   'Resurrection: vuelve como Martyr Penitent por 45');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
