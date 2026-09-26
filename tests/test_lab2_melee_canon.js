@@ -111,9 +111,10 @@ group('Group 2: charge bonifica vs no-charge (statistical)', () => {
     if (rNo.hit) hitsNo++;
     if (rCh.hit) hitsCharge++;
   }
-  // Charge canon usa el flag charged en resolveMelee_lab. Statistically
-  // should be similar o ligeramente más, no menos. Tolerancia amplia.
-  ok(hitsCharge >= hitsNo - 30,
+  // Rulebook 1.0.2: el Charge Bonus es solo distancia (D6"), no da +DICE,
+  // así que las tasas son iguales; tolerancia 15% de N para no fallar por
+  // varianza (con 30 fallaba ~1 de cada 5 corridas).
+  ok(hitsCharge >= hitsNo - Math.round(N * 0.15),
      'charge no es peor que no-charge en gran muestra (charge=' + hitsCharge + ', no=' + hitsNo + ')');
 });
 

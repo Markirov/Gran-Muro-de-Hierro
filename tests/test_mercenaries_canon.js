@@ -38,5 +38,11 @@ ok(item('autocannon-anchor').type === '1-Handed', 'Autocannon cuenta como 1-Hand
 ok(!/RELOAD obligatorio/.test(X.W['Full Auto'].summary) && /Bursts/.test(X.W['Full Auto'].summary), 'Full Auto: eliges perfil en cada Shoot ACTION');
 ok(/Grand Anchorite/.test(X.W['Impossible to Stop'].summary), 'Impossible to Stop: Grand Anchorite Shrine');
 
+console.log('\nGroup 3: estipulaciones de la armería (Armoury Tables 1.0.2)');
+const all = Object.values(X.DATA.factions).flatMap(f => [].concat(...Object.values(f.armoury || {}).filter(Array.isArray)));
+const uniq = all.filter(i => /Unique/.test(i.restriction || '')).map(i => i.name);
+ok(uniq.length === 0, 'ninguna restricción usa la etiqueta no canon Unique (' + uniq.length + ')');
+ok(/Consumable/.test(item('explosive-charges-iw').restriction), 'Explosive Charges: Consumable, Silahdar & Sultanate Sappers only, Limit: 1');
+
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

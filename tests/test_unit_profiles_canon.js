@@ -66,7 +66,7 @@ ok(/Sandstorm/.test(ban.note) && /24"/.test(ban.note) && /-1|restan? 1/.test(ban
 const anq = isArm('anq-guard-iw');
 ok(/40mm/.test(anq.note) && /Impassable/.test(anq.note) && anq.restriction === 'Sultanate Sappers only', 'Anq Guard: base 40mm, Impassable, solo Sappers');
 const exc = isArm('explosive-charges-iw');
-ok(exc.restriction === 'Silahdar & Sultanate Sappers only · Limit: 1' && /Injury Roll con SHRAPNEL/.test(exc.note), 'Explosive Charges: Silahdar y Sappers; Injury Roll con SHRAPNEL');
+ok(exc.restriction === 'Consumable · Silahdar & Sultanate Sappers only · Limit: 1' && /Injury Roll con SHRAPNEL/.test(exc.note), 'Explosive Charges: Silahdar y Sappers; Injury Roll con SHRAPNEL');
 const sil = U('iron-sultanate', 'silahdar-iw');
 ok(/Alaybozan/.test(sil.note) && /Anq Guard/.test(sil.note) && /Explosive Charges/.test(sil.note), 'Silahdar: Alaybozan, Anq Guard y Explosive Charges');
 ok(!/ningún otro Janissary/.test(U('iron-sultanate', 'janofficer-iw').note), 'Janissary Officer: sin restricción inventada');
