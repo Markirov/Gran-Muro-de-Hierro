@@ -6031,7 +6031,8 @@ const DATA = {
           { id:'bayonet-tp',      name:'Bayonet',              cost:2,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'Melee', weaponKeywords:['CUMBERSOME'] },
           { id:'flail-tp',        name:'Flail/Scourge',        cost:5,  currency:'👑',
-            type:'1-Handed', range:'Melee', weaponKeywords:['+1 INJURY DICE','RISKY'] },
+            type:'1-Handed', range:'Melee', weaponKeywords:['+1 DICE'],
+            note:'Unwieldy: el +1 DICE no se aplica cuando se usa como arma Off-Hand.' },
           { id:'great-hammer-tp', name:'Great Hammer/Maul',    cost:10, currency:'👑',
             type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY MODIFIER','HEAVY'] },
           { id:'great-sword-tp',  name:'Great Sword/Axe',      cost:12, currency:'👑',
@@ -6717,7 +6718,7 @@ const DATA = {
           { id:'pistol-bg',       name:'Pistol',               cost:6,  currency:'👑',
             type:'1-Handed', range:'12"/Melee', weaponKeywords:['PISTOL'] },
           { id:'putrid-shotgun-bg',name:'Putrid Shotgun',      cost:20, currency:'👑', restriction:'Unique · Bayonet Lug · Shield Combo · Limit: 2',
-            type:'2-Handed', range:'12"', weaponKeywords:['+1 DICE','ASSAULT','INFECTION MARKERS'] },
+            type:'2-Handed', range:'12"', weaponKeywords:['+1 DICE','ASSAULT','INFECTION MARKERS','SHOTGUN'] },
           { id:'shotgun-bg',      name:'Shotgun',              cost:10, currency:'👑', restriction:'Bayonet Lug · Shield Combo',
             type:'2-Handed', range:'12\"', weaponKeywords:['+1 DICE','SHOTGUN'] },
           { id:'viscera-cannon-bg',name:'Viscera Cannon',      cost:50, currency:'👑', restriction:'Unique · ELITE only · Limit: 2',
@@ -6747,7 +6748,7 @@ const DATA = {
           { id:'gas-bg',          name:'Gas Grenades',         cost:10, currency:'👑',
             type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
           { id:'parasite-bg',     name:'Parasite Grenades',    cost:15, currency:'👑', restriction:'Unique',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT'],
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Terrifying Hallucinations: si impacta, tras resolver la Injury Roll puedes mover al objetivo 3" en línea recta y en cualquier dirección (puede acabar a 1" de un enemigo o Retirarse, y Trepar, Saltar un hueco o Saltar hacia abajo).' },
         ],
         shields: [
@@ -6863,7 +6864,9 @@ const DATA = {
           { id:'heavy-flame-co',  name:'Heavy Flamethrower',   cost:55, currency:'👑', restriction:'Limit: 1',
             type:'2-Handed', range:'10\"', weaponKeywords:['-1 INJURY DICE','AUTOMATIC 2','FIRE','FLAMETHROWER','HEAVY','IGNORE ARMOUR'] },
           { id:'ophidian-rifle-co',name:'Ophidian Rifle',      cost:25, currency:'👑', restriction:'Unique · ELITE only · Limit: 3',
-            type:'2-Handed', range:'30"', weaponKeywords:['HEAVY','IGNORE COVER','IGNORE LONG RANGE'] },
+            type:'2-Handed', range:'30"', weaponKeywords:['HEAVY'],
+            note:'Unnatural Inversion: si al ataque se le aplican los modificadores de Cover o Long Range, cada uno da +1 DICE en lugar de -1 DICE (+2 DICE si se aplican ambos).',
+            unnaturalInversion:true },
           { id:'pistol-co',       name:'Pistol',               cost:6,  currency:'👑',
             type:'1-Handed', range:'12"/Melee', weaponKeywords:['PISTOL'] },
           { id:'serpent-gun-co',  name:'Serpent Assault Gun',  cost:50, currency:'👑', restriction:'Unique · Limit: 2',
@@ -9703,6 +9706,7 @@ function companionEquipToBattleWeapon(cmEq) {
       // Flags de reglas especiales del arma (datos de la armería).
       critIgnoreArmour: !!canonical.critIgnoreArmour,
       shortRangeInjuryDice: canonical.shortRangeInjuryDice || 0,
+      unnaturalInversion: !!canonical.unnaturalInversion,
     };
   }
   // Fallback for custom Companion items not in our catalogue
@@ -9981,6 +9985,7 @@ function _armouryItemToBattleWeapon(item) {
     // Flags de reglas especiales del arma (datos de la armería).
     critIgnoreArmour: !!item.critIgnoreArmour,
     shortRangeInjuryDice: item.shortRangeInjuryDice || 0,
+    unnaturalInversion: !!item.unnaturalInversion,
   };
 }
 
@@ -11418,7 +11423,7 @@ function resolveRanged_lab(attacker, target, weapon, allEnemies) {
   // Probability depends on terrain mode injected via attacker._terrain.
   // IGNORE COVER weapon keyword and IGNORE DEFENDED OBSTACLE attacker
   // keyword (charge-only) negate it.
-  diceMod += applyTerrainCoverModifier({
+  const coverMod = applyTerrainCoverModifier({
     terrain: attacker._terrain,
     attackerHasIgnoreCover:
       weapon.keywords.has('IGNORE COVER') || weapon.keywords.has('IGNORES COVER'),
@@ -11426,6 +11431,9 @@ function resolveRanged_lab(attacker, target, weapon, allEnemies) {
       attacker.keywords && attacker.keywords.has('IGNORE DEFENDED OBSTACLE'),
     isCharge: false,  // ranged is never a charge
   });
+  // Unnatural Inversion (Ophidian Rifle, Warbands 1.0.2): el Cover da +1 DICE
+  // en vez de -1. Long Range no se modela en el Lab abstracto.
+  diceMod += (coverMod < 0 && weapon.unnaturalInversion) ? -coverMod : coverMod;
 
   // Aim ACTION (Sniper Priest): if the model has Aim AND we're in a phase
   // where the model would shoot (i.e. not engagement melee), and this is the
@@ -40162,6 +40170,7 @@ function _lab2ToAbstractWeapon(eqItem, factionId) {
     // Flags de reglas especiales del arma (datos de la armería).
     critIgnoreArmour: !!entry.critIgnoreArmour,
     shortRangeInjuryDice: entry.shortRangeInjuryDice || 0,
+    unnaturalInversion: !!entry.unnaturalInversion,
   };
 }
 

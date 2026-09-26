@@ -72,13 +72,15 @@ const WEAPONS = {
   'incend-na': INC, 'incend-tp': INC, 'incend-is': INC, 'incend-hl': INC, 'incend-co': INC,
   'molotov-tp': ['-1 INJURY DICE'].concat(INC),
   'warcross-tp': ['ASSAULT', 'IGNORE LONG RANGE'],
-  'parasite-bg': ['ASSAULT'],
+  // Warbands of Trench Crusade 1.0.2 (trenchcrusade.com, 09-sep-2026).
+  'parasite-bg': ['ASSAULT', 'IGNORE COVER', 'IGNORE LONG RANGE'],
+  'flail-tp': ['+1 DICE'],
   'satchel-na': ['+1 INJURY DICE', 'BLAST 3"', 'CONSUMABLE', 'HEAVY', 'IGNORE ARMOUR', 'IGNORE COVER', 'SCATTER'],
   'heavy-shotgun-na': ['+1 DICE', '+1 INJURY DICE', 'HEAVY', 'SHOTGUN'],
   'trench-knife-na': ['-1 DICE'], 'trench-knife-tp': ['-1 DICE'], 'trench-knife-is': ['-1 DICE'],
   'trench-knife-hl': ['-1 DICE'], 'trench-knife-bg': ['-1 DICE'], 'trench-knife-co': ['-1 DICE'],
-  'putrid-shotgun-bg': ['+1 DICE', 'ASSAULT', 'INFECTION MARKERS'],
-  'ophidian-rifle-co': ['HEAVY', 'IGNORE COVER', 'IGNORE LONG RANGE'],
+  'putrid-shotgun-bg': ['+1 DICE', 'ASSAULT', 'INFECTION MARKERS', 'SHOTGUN'],
+  'ophidian-rifle-co': ['HEAVY'],
   'punt-gun-anchor': ['+1 DICE', '+1 INJURY DICE', 'HEAVY', 'SHOTGUN', 'SHRAPNEL'],
   'trench-mortar-anchor': ['+1 INJURY DICE', 'BLAST 3"', 'FIRE', 'HEAVY', 'IGNORE COVER', 'SCATTER'],
   'heavy-ballistic-na': ['COVER'],
@@ -95,12 +97,33 @@ ok(['incend-na', 'incend-tp', 'incend-is', 'incend-hl', 'incend-co', 'molotov-tp
    'Liquid Fire: flag critIgnoreArmour en incendiarias y Molotov');
 ok(byId['heavy-shotgun-na'].shortRangeInjuryDice === 1, 'Heavy Shotgun: flag shortRangeInjuryDice = 1 (Tungsten shot, 1.0.1)');
 
+ok(/Unwieldy/.test(byId['flail-tp'].note || ''), 'Flail/Scourge: nota Unwieldy (el +1 DICE no aplica como Off-Hand)');
+ok(/Unnatural Inversion/.test(byId['ophidian-rifle-co'].note || '') && byId['ophidian-rifle-co'].unnaturalInversion === true,
+   'Ophidian Rifle: Unnatural Inversion como nota + flag');
+
 console.log('\nGroup 3: motor del Lab');
 const wpn = (id) => W._armouryItemToBattleWeapon(byId[id]);
 ok(typeof W.hasBlastKeyword === 'function' && W.hasBlastKeyword(wpn('frag-na')) && W.hasBlastKeyword(wpn('gas-hl')) &&
    !W.hasBlastKeyword(wpn('incend-na')), 'hasBlastKeyword reconoce BLAST 2" y BLAST 3"; incendiaria sin BLAST');
 ok(wpn('incend-na').critIgnoreArmour === true && wpn('heavy-shotgun-na').shortRangeInjuryDice === 1,
    '_armouryItemToBattleWeapon copia los flags');
+ok(wpn('ophidian-rifle-co').unnaturalInversion === true, '_armouryItemToBattleWeapon copia unnaturalInversion');
+{
+  // Unnatural Inversion: con Cover el modificador pasa de -1 DICE a +1 DICE.
+  const origCover = W.applyTerrainCoverModifier, origSR2 = W.successRollWithBlessing_lab, origIR2 = W.injuryRoll_lab;
+  let dm = null;
+  W.applyTerrainCoverModifier = (o) => (o && o.attackerHasIgnoreCover ? 0 : -1);  // siempre a cubierto
+  W.successRollWithBlessing_lab = (a, d) => { dm = d; return 'FAILURE'; };
+  const mk0 = () => ({ rangedDice: 0, meleeDice: 0, bloodMarkers: 0, armour: 0, keywords: new Set(), weapons: [], isOut: false, isDown: false });
+  W.resolveRanged_lab(mk0(), mk0(), wpn('ophidian-rifle-co'), []);
+  ok(dm === 1, 'Unnatural Inversion: objetivo a cubierto → +1 DICE (got ' + dm + ')');
+  W.resolveRanged_lab(mk0(), mk0(), wpn('frag-na'), []);
+  ok(dm === 0, 'arma normal con IGNORE COVER sigue en 0 (got ' + dm + ')');
+  const rifle = { name: 'Rifle', isRanged: true, range: 24, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() };
+  W.resolveRanged_lab(mk0(), mk0(), rifle, []);
+  ok(dm === -1, 'arma normal a cubierto → -1 DICE (got ' + dm + ')');
+  W.applyTerrainCoverModifier = origCover; W.successRollWithBlessing_lab = origSR2; W.injuryRoll_lab = origIR2;
+}
 const cw = W.companionEquipToBattleWeapon({ name: 'Molotov Cocktail', type: 'grenade' });
 ok(cw && cw.critIgnoreArmour === true, 'companionEquipToBattleWeapon copia critIgnoreArmour');
 
