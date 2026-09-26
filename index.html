@@ -6100,7 +6100,8 @@ const DATA = {
           { id:'anti-mat-rifle-anchor', name:'Anti-Materiel Rifle', cost:40, currency:'👑', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'36\"', weaponKeywords:['+1 INJURY DICE','CRITICAL','HEAVY','IGNORE ARMOUR'] },
           { id:'autocannon-anchor',  name:'Autocannon',         cost:55, currency:'👑', restriction:'Anchorite Shrine only',
-            type:'1-Handed', range:'48"', weaponKeywords:['+1 INJURY DICE','AUTOMATIC 3','HEAVY'] },
+            type:'2-Handed', range:'48"', weaponKeywords:['+1 INJURY DICE','AUTOMATIC 3','HEAVY'],
+            note:'Full Auto: en cada Shoot ACTION eliges el perfil Bursts (arriba) o Full Auto: +1 INJURY DICE, AUTOMATIC 5, HEAVY, RELOAD, RISKY.' },
           { id:'gas-censer-anchor',  name:'Gas Censer',         cost:50, currency:'👑', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'6"', weaponKeywords:['GAS','IGNORE ARMOUR','RELOAD','Cloud of Gas'] },
           { id:'heavy-flame-anchor', name:'Heavy Flamethrower', cost:45, currency:'👑', restriction:'Anchorite Shrine only',
@@ -34202,6 +34203,11 @@ function rgbStr(c) {
 // entradas sin respaldo en los PDF (Combat Helmet, Reinforced Armour, Troop
 // Flag, Bayonet, Frag/Smoke Grenade, Demo Charge).
 const EQUIPMENT_IMPLICIT_ABILITIES = {
+  // Warbands of TC 1.0.2, Iron Sultanate Battlekit.
+  'Takwin Anqā Bird': [{
+    name: 'Cause Confusion',
+    desc: 'Los Success Rolls de ataques cuerpo a cuerpo contra este modelo son Risky. Antes de que un enemigo a 1" haga una retirada, su jugador hace un Risky Success Roll: si falla, no puede retirarse y su activación termina.',
+  }],
   // Warbands of TC, estipulación Shield Combo.
   'Trench Shield': [{
     name: 'Shield Combo',

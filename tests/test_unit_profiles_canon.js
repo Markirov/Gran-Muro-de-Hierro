@@ -13,7 +13,7 @@ const js = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
 const bootIdx = js.search(/\nfunction boot\(\)/);
 const dom = new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
 dom.window.alert = () => {};
-dom.window.eval(js.slice(0, bootIdx) + '\n;window.__D = DATA;');
+dom.window.eval(js.slice(0, bootIdx) + '\n;window.__D = DATA; window.__EIA = EQUIPMENT_IMPLICIT_ABILITIES;');
 const D = dom.window.__D;
 
 let pass = 0, fail = 0;
@@ -42,6 +42,17 @@ ok(((medic.battlekitAccess || {}).forbidCategories || []).includes('armour'), 'C
 const ano = U('heretic-legions', 'anointed');
 ok((ano.permanentEquipment || []).join() === 'Reinforced Armour,Infernal Brand', 'Anointed: Reinforced Armour + Infernal Brand');
 ok(!((ano.battlekitAccess || {}).forbidCategories || []).includes('armour'), 'Anointed: puede comprar más Battlekit (el PDF no lo prohíbe)');
+
+console.log('\nGroup 4: armería sin perfil emparejado en la auditoría');
+const arm = (fid, id) => Object.values(D.factions[fid].armoury).flat().find(i => i.id === id);
+const ac = arm('trench-pilgrims', 'autocannon-anchor');
+ok(ac.type === '2-Handed', 'Autocannon: 2-Handed');
+ok(ac.weaponKeywords.join() === '+1 INJURY DICE,AUTOMATIC 3,HEAVY', 'Autocannon: perfil Bursts');
+ok(/Full Auto/.test(ac.note || '') && /AUTOMATIC 5/.test(ac.note || '') && /RELOAD/.test(ac.note || '') && /RISKY/.test(ac.note || ''),
+   'Autocannon: perfil Full Auto en la nota');
+const bird = dom.window.__EIA['Takwin Anqā Bird'];
+ok(bird && bird[0].name === 'Cause Confusion' && /Risky/.test(bird[0].desc) && /retirada|retirarse/.test(bird[0].desc),
+   'Takwin Anqā Bird: Cause Confusion');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
