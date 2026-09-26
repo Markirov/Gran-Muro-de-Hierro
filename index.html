@@ -6320,6 +6320,11 @@ const DATA = {
         shields: [
           { id:'trench-shield-is',name:'Trench Shield',        cost:10, currency:'👑', restriction:'Shield Combo',
             type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
+          // ── House of Wisdom Armoury (variante The House of Wisdom) ──
+          { id:'fire-shield-how', name:'Fire Shield',          cost:20, currency:'👑',
+            variantOnly:'house-wisdom', restriction:'Shield Combo · Limit: 2',
+            type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER','NEGATE FIRE'],
+            note:'Flame Repellent: -1 INJURY DICE a las Injury Rolls de ataques con FIRE contra el portador, aunque el arma tenga IGNORE ARMOUR.' },
           // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
           { id:'iron-shield-iw',  name:'Iron Wall Kalkan',     cost:30, currency:'👑',
             variantOnly:'iron-wall-def', restriction:'Brazen Bull only · Limit: 1',
@@ -6361,6 +6366,11 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'flag-is',         name:'Troop Flag',           cost:1,  currency:'☼', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
+          // ── House of Wisdom Armoury (variante The House of Wisdom) ──
+          { id:'elixir-how',      name:'Elixir of Al-Khidr',   cost:10, currency:'👑',
+            variantOnly:'house-wisdom', restriction:'Consumable · Limit: 1', notForKeywords:['ARTIFICIAL'],
+            type:'Equipment', range:'-', weaponKeywords:['CONSUMABLE'],
+            note:'Fountain of Life: al desplegar al modelo por primera vez en la partida puedes decir que consume el Elixir; tiene TOUGH el resto de la partida. No lo pueden usar modelos ARTIFICIAL.' },
           { id:'wind-amulet-is',  name:'Wind Amulet',          cost:10, currency:'👑', restriction:'Limit: 2',
             type:'Equipment', range:'-', weaponKeywords:[] },
           // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
@@ -6456,6 +6466,13 @@ const DATA = {
           keywords:['SULTANATE','STRONG','ELITE'],
           abilities:['Counter-Charge'],
           note:'Janissary Officers: una banda Defenders puede tener 0-2 Janissaries con la keyword ELITE sin coste adicional.' },
+        // ── Unidad exclusiva de la variante The House of Wisdom ──
+        { id:'faris-how', name:'Fāris', tier:'elite', limit:'0-2', cost:55, currency:'👑',
+          variantOnly:'house-wisdom',
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
+          keywords:['SULTANATE','STRONG','ELITE'],
+          abilities:['Counter-Charge'],
+          note:'Noble Guardians: una banda House of Wisdom puede incluir 0-2 Fāris, que usan la entrada de Janissary con la keyword ELITE sin coste adicional.' },
       ],
       variants: [
         {
@@ -6480,10 +6497,51 @@ const DATA = {
           specialRule:'House of Wisdom',
           forbiddenUnitIds:['yuzbasi','janissaries','sult-assassin'],
           mandatoryUnits:[{ unitId:'jabirean', count:1, max:2 }],
+          // Alchemists: 1-2 Jabirean. Pride of Jabir: 0-3 Lions of Jabir.
+          unitOverrides:[
+            { unitId:'jabirean', overrides:{ limit:'1-2' } },
+            { unitId:'lions',    overrides:{ limit:'0-3' } },
+          ],
+          // Alchemists: Alchemist Armour con Limit: 2.
+          armouryOverrides:{
+            'alchemist-armour-is': { restriction:'ELITE only · Limit: 2' },
+          },
           additionalUpgrades:[
+            // Secrets of the House of Wisdom (Jabirean Alchemists)
+            { unitId:'jabirean',
+              upgrade:{ id:'how-medicine', name:'Medicine', cost:15, currency:'👑',
+                addsAbilities:['School of Medicine ACTION'], forbidsItemNames:['Medi-kit'],
+                mutuallyExclusiveGroup:'how-secret', maxPerWarband:1,
+                note:'Estudiante de la escuela de Ibn Sina: no puede llevar Medi-kit; gana School of Medicine ACTION. Secrets of the House of Wisdom: un Secret por Alchemist y sin repetir en la banda.' },
+            },
+            { unitId:'jabirean',
+              upgrade:{ id:'how-cartography', name:'Cartography & Geometry', cost:20, currency:'👑',
+                addsAbilities:['Cartography & Geometry'],
+                mutuallyExclusiveGroup:'how-secret', maxPerWarband:1,
+                note:'Antes del despliegue, hasta 2 modelos de base 32mm o menor ganan INFILTRATOR esa partida. Secrets of the House of Wisdom: un Secret por Alchemist y sin repetir en la banda.' },
+            },
+            { unitId:'jabirean',
+              upgrade:{ id:'how-takwin-secret', name:'Secrets of Takwin', cost:20, currency:'👑',
+                addsAbilities:['Secrets of Takwin'],
+                mutuallyExclusiveGroup:'how-secret', maxPerWarband:1,
+                note:'Si le impactan a 1" de su Takwin Homunculus, el impacto y la Injury Roll pueden ir al Homunculus. Secrets of the House of Wisdom: un Secret por Alchemist y sin repetir en la banda.' },
+            },
+            { unitId:'jabirean',
+              upgrade:{ id:'how-chemistry', name:'Chemistry & Alchemy', cost:25, currency:'👑',
+                addsAbilities:['Chemistry & Alchemy'],
+                mutuallyExclusiveGroup:'how-secret', maxPerWarband:1,
+                note:'Al empezar el primer turno coloca un Elemental Obstacle (2"x6") con DIFFICULT TERRAIN y DANGEROUS TERRAIN (FIRE, GAS o SHRAPNEL). Secrets of the House of Wisdom: un Secret por Alchemist y sin repetir en la banda.' },
+            },
+            { unitId:'jabirean',
+              upgrade:{ id:'how-philosophy', name:'Philosophy, Poetry and Theology', cost:20, currency:'👑',
+                addsKeywords:['NEGATE FEAR'], addsAbilities:['Philosophy, Poetry and Theology'],
+                mutuallyExclusiveGroup:'how-secret', maxPerWarband:1,
+                note:'+1 DICE a los Morale Checks de la banda mientras no esté Down ni Out of Action; con la banda Shaken, sus Success Rolls no pasan a Risky. NEGATE FEAR. Secrets of the House of Wisdom: un Secret por Alchemist y sin repetir en la banda.' },
+            },
             // Up to 3 Azebs can be Kavasses (+5 👑) — change melee to +0 but lose Light Skirmisher
             { unitId:'azebs',
               upgrade:{ id:'kavass', name:'Kavass (House of Wisdom)', cost:5, currency:'👑',
+                maxPerWarband:3, incompatibleWith:['azeb-skirmisher'],
                 statOverride:{ melee:'+0 DICE' },
                 note:'Hasta 3 Azebs pueden ser Kavasses por +5 👑: melee +0 (en vez de -1) pero pierden Light Skirmisher.' },
             },
@@ -7264,6 +7322,26 @@ const ABILITY_LIBRARY = {
   'Pin': {
     type: 'passive',
     summary: 'Modelos enemigos en estado Down con base de 40mm o menos no pueden levantarse mientras un Lion of Jabir esté a 1" o menos (incluso si el Lion también está Down).',
+  },
+  'School of Medicine ACTION': {
+    type: 'action',
+    summary: 'Success Roll con +1 DICE. Si falla, no pasa nada; con Success o Critical elige: retirar 2 BLOOD MARKERS o 1 INFECTION MARKER del Alchemist o de un amigo a 1", o levantar a un amigo Down a 1". (School of Medicine, House of Wisdom.)',
+  },
+  'Cartography & Geometry': {
+    type: 'passive',
+    summary: 'Al empezar la partida, antes del despliegue, elige hasta 2 modelos de la banda con base de 32mm o menos: tienen INFILTRATOR esa partida.',
+  },
+  'Secrets of Takwin': {
+    type: 'passive',
+    summary: 'Si el Alchemist recibe un impacto estando a 1" de su Takwin Homunculus, puedes aplicarlo al Homunculus y hacer la Injury Roll por él.',
+  },
+  'Chemistry & Alchemy': {
+    type: 'passive',
+    summary: 'Al empezar el primer turno, antes de activar modelos, coloca un Elemental Obstacle de hasta 2" x 6" a más de 1" de otros terrenos y a más de 6" de modelos. Tiene DIFFICULT TERRAIN y DANGEROUS TERRAIN (X); X es FIRE, GAS o SHRAPNEL, a tu elección.',
+  },
+  'Philosophy, Poetry and Theology': {
+    type: 'passive',
+    summary: '+1 DICE a las Morale Checks de la banda mientras el Alchemist no esté Down ni Out of Action. Si la banda está Shaken, sus Success Rolls no pasan a ser Risky (aunque sigue comprobando si huye). Tiene NEGATE FEAR.',
   },
   'Counter-Charge': {
     type: 'passive',
@@ -17277,6 +17355,38 @@ function effectiveUnitName(model, unit) {
  * Heretic Troopers" (warns if violated).
  * Returns an array of human-readable Spanish messages.
  */
+/**
+ * Can this upgrade be activated on this model? Honours:
+ *   maxPerWarband      — models in the warband with it active
+ *   incompatibleWith   — upgrade ids that cannot coexist (both directions)
+ *   requiresUpgrades   — upgrade ids that must already be active
+ * mutuallyExclusiveGroup is not a block: activating swaps within the group.
+ * Returns { state: 'active' | 'available' | 'disabled', reason? }.
+ */
+function classifyUpgrade(up, model, unit, wb) {
+  const active = model.upgrades || [];
+  if (active.includes(up.id)) return { state: 'active' };
+  if (up.maxPerWarband) {
+    const used = ((wb && wb.models) || []).filter(m =>
+      m !== model && m.uid !== model.uid && (m.upgrades || []).includes(up.id)).length;
+    if (used >= up.maxPerWarband) {
+      return { state: 'disabled', reason: `Máximo ${up.maxPerWarband} en la banda` };
+    }
+  }
+  const all = allAvailableUpgrades(unit, wb);
+  const activeDefs = all.filter(u => active.includes(u.id));
+  const clash = activeDefs.find(u =>
+    (up.incompatibleWith || []).includes(u.id) ||
+    (u.incompatibleWith || []).includes(up.id));
+  if (clash) return { state: 'disabled', reason: `Incompatible con ${clash.name}` };
+  const missing = (up.requiresUpgrades || []).filter(id => !active.includes(id));
+  if (missing.length) {
+    const names = missing.map(id => (all.find(u => u.id === id) || { name: id }).name);
+    return { state: 'disabled', reason: 'Requiere ' + names.join(', ') };
+  }
+  return { state: 'available' };
+}
+
 function checkUpgradeLegality(wb) {
   if (!wb || !wb.models) return [];
   const warnings = [];
@@ -17343,6 +17453,11 @@ function checkUpgradeLegality(wb) {
       if (!u.mandatory) continue;
       // Skip if this variant relaxes the requirement
       if (variant && variant.relaxedMandatoryIds && variant.relaxedMandatoryIds.includes(u.id)) {
+        continue;
+      }
+      // A unit the variant forbids cannot be mandatory (e.g. no Yüzbaşı in
+      // House of Wisdom, Iron Wall or Fida'i).
+      if (variant && variant.forbiddenUnitIds && variant.forbiddenUnitIds.includes(u.id)) {
         continue;
       }
       const count = unitCountInWarband(wb, u.id);
@@ -17959,10 +18074,21 @@ function classifyBattlekitItem(item, model, unit, wb) {
   }
 
   // Active upgrades may forbid categories (e.g. Wrath of God forbids ranged + armour)
+  // or specific items by name (e.g. Medicine: no Medi-kit)
   for (const up of activeUpgrades(model, unit, wb)) {
     if (up.forbidsCategories && up.forbidsCategories.includes(category)) {
       return { state: 'hidden', reason: `Bloqueado por mejora: ${up.name}` };
     }
+    if (up.forbidsItemNames && up.forbidsItemNames.includes(item.name)) {
+      return { state: 'hidden', reason: `Bloqueado por mejora: ${up.name}` };
+    }
+  }
+
+  // Items some keywords cannot use (e.g. Elixir of Al-Khidr: no ARTIFICIAL)
+  if (item.notForKeywords) {
+    const kws = effectiveKeywords(model, unit);
+    const bad = item.notForKeywords.find(k => kws.includes(k));
+    if (bad) return { state: 'hidden', reason: `No para modelos ${bad}` };
   }
 
   // Whitelist by category (e.g. Stigmatic Nuns: only certain ranged + grenades)
@@ -19360,6 +19486,8 @@ function renderDetail() {
         <div class="upgrades-list">
           ${allUpgrades.map(up => {
             const isActive = activeIds.includes(up.id);
+            const upCls = classifyUpgrade(up, model, unit, wb);
+            const upBlocked = !isActive && upCls.state === 'disabled';
             const costStr = `+${up.cost} ${up.currency}`;
             const variantBadge = up._fromVariant
               ? `<span class="upgrade-variant-badge" title="Mejora de variante">⚜ variante</span>`
@@ -19377,9 +19505,10 @@ function renderDetail() {
                   ${(up.addsAbilities || []).map(a => `<span class="upgrade-tag ability">+${a}</span>`).join('')}
                 </div>
                 <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-top:0.4rem;">
-                  <button class="btn ${isActive ? 'btn-primary' : ''}" data-toggle-upgrade="${up.id}">
+                  <button class="btn ${isActive ? 'btn-primary' : ''}" data-toggle-upgrade="${up.id}"${upBlocked ? ` disabled title="${upCls.reason.replace(/"/g,'&quot;')}"` : ''}>
                     ${isActive ? '✓ Activo' : 'Activar'}
                   </button>
+                  ${upBlocked ? `<span class="upgrade-note">${upCls.reason.replace(/</g,'&lt;')}</span>` : ''}
                   ${!isActive ? `<button class="btn" data-shopping-toggle="${up.id}" title="Añade/quita este upgrade a la lista de la compra de la banda">
                     ${onList ? '✓ En lista' : '+ Lista de la compra'}
                   </button>` : ''}
@@ -19634,6 +19763,7 @@ function renderDetail() {
         // Already active: deactivate it
         model.upgrades.splice(idx, 1);
       } else {
+        if (upgradeDef && classifyUpgrade(upgradeDef, model, unit, wb).state === 'disabled') return;
         // Activating: if this upgrade has a mutuallyExclusiveGroup,
         // deactivate any other upgrade in the same group first.
         if (upgradeDef && upgradeDef.mutuallyExclusiveGroup) {
