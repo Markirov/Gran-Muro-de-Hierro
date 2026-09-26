@@ -6473,6 +6473,48 @@ const DATA = {
           keywords:['SULTANATE','STRONG','ELITE'],
           abilities:['Counter-Charge'],
           note:'Noble Guardians: una banda House of Wisdom puede incluir 0-2 Fāris, que usan la entrada de Janissary con la keyword ELITE sin coste adicional.' },
+        { id:'takwin-how', name:'Takwin Homunculus', tier:'troops', limit:null, limitPerUnit:'jabirean', cost:40, currency:'👑',
+          variantOnly:'house-wisdom',
+          stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+0 DICE', armour:'0', base:'25mm' },
+          keywords:['SULTANATE','ARTIFICIAL'],
+          abilities:['Artificial Life','Pummelling Blows','Re-creation'],
+          // Sin Battlekit salvo lo que abren sus Alchemical Formulas.
+          battlekitAccess:{ battlekitViaUpgrades:true },
+          battlekitNote:'Sin Battlekit · Human Hands: armas y Trench/Fire Shield · Seal of Solomon: Equipment',
+          note:'Uno por Jabirean Alchemist, asociado a él al reclutarlo. Si su Alchemist muere en la campaña, no puede desplegarse, cambiar Battlekit ni recibir Formulas. Las Alchemical Formulas son permanentes y no se repiten.',
+          // Alchemical Formulas (orden: las de base mayor van después)
+          upgrades:[
+            { id:'additional-arm', name:'Additional Arm', cost:15, currency:'👑', weaponLimits:{ meleeMax:3, rangedMax:3, twoHandedSlots:2, shieldMeleeMax:2, noShieldCombo:true },
+              note:'Pummelling Blows gana CLEAVE 2. Con Human Hands: tres armas 1H, o una 1H y una 2H, de cada tipo (cuerpo a cuerpo y a distancia); un escudo ocupa una de las armas cuerpo a cuerpo y ninguna arma puede usar Shield Combo. Con Fight hace 1 ataque con cada arma cuerpo a cuerpo (Off-Hand en el último) y con Shoot dispara hasta 2 armas.' },
+            { id:'elemental-resistance', name:'Elemental Resistance', cost:40, currency:'👑', addsKeywords:['NEGATE FIRE','NEGATE GAS'],
+              note:'NEGATE FIRE y NEGATE GAS; además -1 INJURY DICE a las Injury Rolls de ataques con FIRE o GAS contra él.' },
+            { id:'enslaved-mind', name:'Enslaved Mind', cost:10, currency:'👑', addsKeywords:['FIRETEAM'],
+              note:'El Homunculus y otro modelo de la banda ganan FIRETEAM; ese modelo solo puede formar Fireteam con este Homunculus.' },
+            { id:'hawk-eyes', name:'Hawk Eyes', cost:10, currency:'👑', statOverride:{ ranged:'+1 DICE' }, incompatibleWith:['hypnotic-eyes'], incompatibleUnless:'two-heads',
+              note:'Ranged +1 DICE. No se combina con Hypnotic Eyes salvo con Two Heads.' },
+            { id:'human-hands', name:'Human Hands', cost:10, currency:'👑', unlocksCategories:['ranged','melee'], unlocksItemIds:['trench-shield-is','fire-shield-how'], incompatibleWith:['wings'],
+              note:'Puede llevar armas a distancia y cuerpo a cuerpo de la armería Iron Sultanate, y un Trench Shield o Fire Shield. No se combina con Wings. Con armas cuerpo a cuerpo no usa Pummelling Blows.' },
+            { id:'hypnotic-eyes', name:'Hypnotic Eyes', cost:15, currency:'👑', incompatibleWith:['hawk-eyes'], incompatibleUnless:'two-heads',
+              note:'-1 DICE a los ataques cuerpo a cuerpo contra él, salvo de un Sniper Priest o un modelo BLACK GRAIL. No se combina con Hawk Eyes salvo con Two Heads.' },
+            { id:'inhuman-strength', name:'Inhuman Strength', cost:15, currency:'👑', addsKeywords:['STRONG'], statOverride:{ melee:'+1 DICE', base:'32mm' },
+              note:'STRONG, Melee +1 DICE y base de 32mm.' },
+            { id:'massive-size', name:'Massive Size', cost:30, currency:'👑', addsKeywords:['TOUGH'], statOverride:{ base:'50mm' }, incompatibleWith:['wings'],
+              note:'TOUGH y base de 50mm. No se combina con Wings.' },
+            { id:'gargantuan-size', name:'Gargantuan Size', cost:20, currency:'👑', requiresUpgrades:['human-hands','inhuman-strength','massive-size'], statOverride:{ base:'60mm' }, actsAsUnitIds:['brazen-bull'], actsAsMaxItems:1,
+              note:'Requiere Human Hands, Inhuman Strength y Massive Size. Puede usar 1 arma que normalmente solo puede llevar un Brazen Bull; base de 60mm.' },
+            { id:'regenerative-tissue', name:'Regenerative Tissue', cost:25, currency:'👑', addsKeywords:['REGENERATE 1'],
+              note:'REGENERATE 1.' },
+            { id:'seal-of-solomon', name:'Seal of Solomon', cost:10, currency:'👑', unlocksCategories:['equipment'],
+              note:'Puede llevar Equipment de la armería Iron Sultanate.' },
+            { id:'startling-speed', name:'Startling Speed', cost:10, currency:'👑', 
+              note:'+1 DICE a la Risky Success Roll de su Dash ACTION.' },
+            { id:'terrifying-appearance', name:'Terrifying Appearance', cost:10, currency:'👑', addsKeywords:['FEAR'],
+              note:'FEAR.' },
+            { id:'two-heads', name:'Two Heads', cost:5, currency:'👑', 
+              note:'Puede tener Hawk Eyes y Hypnotic Eyes a la vez.' },
+            { id:'wings', name:'Wings', cost:30, currency:'👑', addsKeywords:['FLYING'], statOverride:{ movement:'8"/Flying' }, incompatibleWith:['human-hands','massive-size'],
+              note:'Movement 8"/Flying y FLYING. No se combina con Massive Size ni Human Hands.' },
+          ] },
       ],
       variants: [
         {
@@ -7322,6 +7364,14 @@ const ABILITY_LIBRARY = {
   'Pin': {
     type: 'passive',
     summary: 'Modelos enemigos en estado Down con base de 40mm o menos no pueden levantarse mientras un Lion of Jabir esté a 1" o menos (incluso si el Lion también está Down).',
+  },
+  'Pummelling Blows': {
+    type: 'passive',
+    summary: 'Un Takwin Homunculus puede hacer Melee Attacks aunque no tenga armas cuerpo a cuerpo.',
+  },
+  'Re-creation': {
+    type: 'passive',
+    summary: 'Si el Takwin Homunculus muere en la secuencia de después de la partida, puedes pagar 40 👑 en el siguiente Quartermaster Step para dejarlo en el Roster.',
   },
   'School of Medicine ACTION': {
     type: 'action',
@@ -17375,9 +17425,14 @@ function classifyUpgrade(up, model, unit, wb) {
   }
   const all = allAvailableUpgrades(unit, wb);
   const activeDefs = all.filter(u => active.includes(u.id));
-  const clash = activeDefs.find(u =>
-    (up.incompatibleWith || []).includes(u.id) ||
-    (u.incompatibleWith || []).includes(up.id));
+  const clash = activeDefs.find(u => {
+    const hit = (up.incompatibleWith || []).includes(u.id) ||
+                (u.incompatibleWith || []).includes(up.id);
+    if (!hit) return false;
+    // e.g. Hawk Eyes + Hypnotic Eyes are fine with Two Heads
+    const unless = up.incompatibleUnless || u.incompatibleUnless;
+    return !(unless && active.includes(unless));
+  });
   if (clash) return { state: 'disabled', reason: `Incompatible con ${clash.name}` };
   const missing = (up.requiresUpgrades || []).filter(id => !active.includes(id));
   if (missing.length) {
@@ -17608,11 +17663,25 @@ function eliteCapReached(wb, unit) {
          countEliteInWarband(wb) >= CAMPAIGN_TABLES.promotionRules.maxElites;
 }
 
+// Units limited by how many of another unit the warband has
+// (e.g. one Takwin Homunculus per Jabirean Alchemist).
+function perUnitLimitReached(wb, unit) {
+  if (!unit || !unit.limitPerUnit) return false;
+  return unitCountInWarband(wb, unit.id) >= unitCountInWarband(wb, unit.limitPerUnit);
+}
+
+function perUnitLimitText(wb, unit) {
+  const other = getUnit(wb.factionId, unit.limitPerUnit);
+  return '1 por ' + (other ? other.name : unit.limitPerUnit) +
+    ' (' + unitCountInWarband(wb, unit.id) + '/' + unitCountInWarband(wb, unit.limitPerUnit) + ')';
+}
+
 function canAddUnit(wb, unit) {
   // Check variant prohibition first (so we can show why)
   if (unitForbiddenByVariant(wb, unit.id)) return false;
   if (mercNotHireable(wb, unit)) return false;
   if (eliteCapReached(wb, unit)) return false;
+  if (perUnitLimitReached(wb, unit)) return false;
   // Use the variant-overridden limit if defined (e.g. Anchorite Shrine 0-2 in St. Methodius)
   const override = variantUnitOverride(wb, unit.id);
   const limStr = (override && override.limit) || unit.limit;
@@ -17667,6 +17736,11 @@ function canAddUnitWithWarning(wb, unit) {
     warning: (unit.name || unit.id) + ' no puede contratarse en esta facción.' };
   if (eliteFull) return { canAdd: false,
     warning: 'Máximo 6 modelos ELITE en la banda.' };
+  if (perUnitLimitReached(wb, unit)) {
+    const other = getUnit(wb.factionId, unit.limitPerUnit);
+    return { canAdd: false,
+      warning: 'Solo 1 ' + (unit.name || unit.id) + ' por ' + (other ? other.name : unit.limitPerUnit) + '.' };
+  }
   if (exceedsLimit) return { canAdd: false,
     warning: 'Límite alcanzado (' + count + '/' + lim.max + ').' };
   return { canAdd: true };
@@ -17956,6 +18030,20 @@ function getWeaponLimits(model, unit, wb) {
   const kws = unit ? effectiveKeywords(model, unit) : [];
   const isStrong = kws.includes('STRONG');
 
+  // Upgrade-granted limits (Takwin Homunculus Additional Arm)
+  const upLim = unit ? activeUpgrades(model, unit, wb).find(u => u.weaponLimits) : null;
+  if (upLim) {
+    const L = upLim.weaponLimits;
+    const shielded = wb && (model.battlekit || []).some(kid =>
+      getArmouryCategory(wb.factionId, kid) === 'shields');
+    return {
+      meleeMax: shielded && L.shieldMeleeMax ? L.shieldMeleeMax : L.meleeMax,
+      rangedMax: L.rangedMax, totalMax: null, strongBonus: false,
+      hasShield: !!shielded, twoHandedSlots: L.twoHandedSlots || null,
+      shieldMeleeMax: L.shieldMeleeMax || null, noShieldCombo: !!L.noShieldCombo,
+    };
+  }
+
   // Canon (Warbands of Trench Crusade): a model carrying a Shield can only
   // have 1×1H melee + 1×1H ranged. 2H weapons are forbidden (unless Shield
   // Combo on both, which is checked separately as a hard restriction).
@@ -17998,13 +18086,18 @@ function getWeaponLimits(model, unit, wb) {
  * @param {boolean} strongBonus  Whether STRONG keyword applies (melee only)
  * @returns {{ allowed: boolean, reason?: string }}
  */
-function checkWeaponSlots(count1H, count2H, max, strongBonus) {
+function checkWeaponSlots(count1H, count2H, max, strongBonus, twoHandedSlots) {
   // Rule: at most one 2H weapon of the same type, ever
   if (count2H > 1) {
     return { allowed: false, reason: 'Solo 1 arma a 2 manos del mismo tipo' };
   }
   if (count2H === 1) {
-    if (strongBonus) {
+    if (twoHandedSlots) {
+      // Extra arms: the 2H takes twoHandedSlots hands out of max
+      if ((twoHandedSlots + count1H) > max) {
+        return { allowed: false, reason: 'Máx ' + max + ' manos: el arma 2H ocupa ' + twoHandedSlots };
+      }
+    } else if (strongBonus) {
       // STRONG: the 2H counts as 1H. The 2H takes 1 slot + count1H slots.
       if ((1 + count1H) > max) {
         return { allowed: false,
@@ -18068,6 +18161,18 @@ function classifyBattlekitItem(item, model, unit, wb) {
     return { state: 'hidden', reason: 'Sin acceso a Battlekit' };
   }
 
+  // Battlekit only through upgrades (Takwin Homunculus: Human Hands, Seal of Solomon)
+  if (access.battlekitViaUpgrades) {
+    const ups = activeUpgrades(model, unit, wb);
+    const open = ups.some(u => (u.unlocksCategories || []).includes(category) ||
+                               (u.unlocksItemIds || []).includes(item.id));
+    const shieldOk = category !== 'shields' ||
+      ups.some(u => (u.unlocksItemIds || []).includes(item.id));
+    if (!open || !shieldOk) {
+      return { state: 'hidden', reason: 'Requiere una Alchemical Formula' };
+    }
+  }
+
   // Forbidden categories (e.g. MHI/Combat Engineers cannot take from Armour table)
   if (access.forbidCategories && access.forbidCategories.includes(category)) {
     return { state: 'hidden', reason: 'Categoría no permitida para esta unidad' };
@@ -18123,7 +18228,27 @@ function classifyBattlekitItem(item, model, unit, wb) {
       allowed = allowed.filter(x => x !== '__wretched__');
       if (wId) allowed = allowed.concat(wId);
     }
-    const matchesUnit = allowed && allowed.includes(unit.id);
+    let matchesUnit = allowed && allowed.includes(unit.id);
+    // Upgrades that let a model take another unit's items (Gargantuan Size:
+    // one weapon that only a Brazen Bull can usually take)
+    if (!matchesTier && !matchesUnit && allowed) {
+      const actsAs = activeUpgrades(model, unit, wb).find(u =>
+        (u.actsAsUnitIds || []).some(id => allowed.includes(id)));
+      if (actsAs) {
+        const borrowed = (model.battlekit || []).filter(kid => {
+          if (kid === item.id) return false;
+          const eit = findBattlekitItem(wb.factionId, kid, wb);
+          const er = eit ? parseRestriction(eit.restriction) : null;
+          return er && er.allowedUnitIds && !er.eliteOnly &&
+                 !er.allowedUnitIds.includes(unit.id) &&
+                 er.allowedUnitIds.some(id => actsAs.actsAsUnitIds.includes(id));
+        }).length;
+        if (borrowed >= (actsAs.actsAsMaxItems || Infinity)) {
+          return { state: 'disabled', reason: actsAs.name + ': máximo ' + actsAs.actsAsMaxItems };
+        }
+        matchesUnit = true;
+      }
+    }
     if (!matchesTier && !matchesUnit) {
       const reason = r.eliteOnly && r.allowedUnitIds
         ? 'ELITE u otra unidad específica'
@@ -18272,8 +18397,9 @@ function classifyBattlekitItem(item, model, unit, wb) {
   // ---- Shield + 2-Handed: only if BOTH have Shield Combo ----
   // If adding a shield: existing 2-Handed weapons must all have Shield Combo,
   // and the shield itself must have Shield Combo.
+  const upWeaponLimits = (activeUpgrades(model, unit, wb).find(u => u.weaponLimits) || {}).weaponLimits || null;
   if (category === 'shields') {
-    const shieldHasCombo = r.tags.has('Shield Combo');
+    const shieldHasCombo = r.tags.has('Shield Combo') && !(upWeaponLimits && upWeaponLimits.noShieldCombo);
     for (const kid of (model.battlekit || [])) {
       const eit = findBattlekitItem(wb.factionId, kid, wb);
       if (!eit || eit.type !== '2-Handed') continue;
@@ -18287,11 +18413,13 @@ function classifyBattlekitItem(item, model, unit, wb) {
     // type, block — the user must drop a weapon first.
     const melee = countModelMeleeWeapons(wb, model);
     const ranged = countModelRangedWeapons(wb, model);
-    if (melee.count1H > 1) {
+    const shieldMelee = upWeaponLimits ? upWeaponLimits.shieldMeleeMax : 1;
+    const shieldRanged = upWeaponLimits ? upWeaponLimits.rangedMax : 1;
+    if (melee.count1H > shieldMelee) {
       return { state: 'disabled',
-        reason: 'Con escudo: máx 1 arma 1H melee (canon — quita una primero)' };
+        reason: 'Con escudo: máx ' + shieldMelee + ' arma(s) 1H melee (quita una primero)' };
     }
-    if (ranged.count1H > 1) {
+    if (ranged.count1H > shieldRanged) {
       return { state: 'disabled',
         reason: 'Con escudo: máx 1 arma 1H ranged (canon — quita una primero)' };
     }
@@ -18299,7 +18427,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   // If adding a 2-Handed weapon: existing shield must allow combo and
   // the new weapon must have Shield Combo.
   if (item.type === '2-Handed') {
-    const has2hCombo = r.tags.has('Shield Combo');
+    const has2hCombo = r.tags.has('Shield Combo') && !(upWeaponLimits && upWeaponLimits.noShieldCombo);
     for (const kid of (model.battlekit || [])) {
       const eit = findBattlekitItem(wb.factionId, kid, wb);
       if (!eit) continue;
@@ -18343,7 +18471,8 @@ function classifyBattlekitItem(item, model, unit, wb) {
                  itemHasWeaponKeyword(eit, 'CUMBERSOME');
         });
       const check = checkWeaponSlots(newCount1H, newCount2H,
-                                     limits.meleeMax, limits.strongBonus && !cumbersome2H);
+                                     limits.meleeMax, limits.strongBonus && !cumbersome2H,
+                                     limits.twoHandedSlots);
       if (!check.allowed) {
         return { state: 'disabled', reason: check.reason };
       }
@@ -18354,7 +18483,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
       const newCount2H = ranged.count2H + (item.type === '2-Handed' ? 1 : 0);
       // STRONG only applies to melee — ranged uses strict canon
       const check = checkWeaponSlots(newCount1H, newCount2H,
-                                     limits.rangedMax, false);
+                                     limits.rangedMax, false, limits.twoHandedSlots);
       if (!check.allowed) {
         return { state: 'disabled', reason: check.reason };
       }
@@ -18646,7 +18775,7 @@ function unitCatalogueCard(unit, wb, isMerc=false) {
   const lim = parseLimit(effectiveLimit);
   const limitTxt = effectiveLimit
     ? `${effectiveLimit}` + (lim ? ` (${count}/${lim.max})` : '')
-    : 'sin límite';
+    : (unit.limitPerUnit ? perUnitLimitText(wb, unit) : 'sin límite');
   const limitChanged = override && override.limit && override.limit !== unit.limit;
 
   const costStr = unit.costAlt
@@ -33496,7 +33625,7 @@ function renderQMRecruit() {
     if (!can) card.dataset.disabled = 'true';
     const count = unitCountInWarband(wb, u.id);
     const lim = parseLimit(u.limit);
-    const limitTxt = u.limit ? `${u.limit}` + (lim ? ` (${count}/${lim.max})` : '') : 'sin límite';
+    const limitTxt = u.limit ? `${u.limit}` + (lim ? ` (${count}/${lim.max})` : '') : (u.limitPerUnit ? perUnitLimitText(wb, u) : 'sin límite');
     const costStr = u.costAlt ? `${u.cost}/${u.costAlt} ${u.currency}` : `${u.cost} ${u.currency}`;
     // Anticipate threshold/field-strength impact for the recruit-card
     let thresholdHint = '';
