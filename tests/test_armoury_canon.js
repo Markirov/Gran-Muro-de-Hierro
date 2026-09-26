@@ -59,7 +59,10 @@ for (const [id, kws] of Object.entries(EXPECTED)) {
 }
 
 // Lote 2 (aprobado por Marcos): armas y granadas, sí afectan al Lab.
-console.log('\nGroup 2: armas y granadas (Rulebook p.77-78, Warbands of TC)');
+// Revisión 2026-09-26: el Rulebook de referencia es el 1.0.1 (el PDF sin número es
+// la 1.0.0). En 1.0.1 la Heavy Shotgun lleva +1 INJURY DICE y SHOTGUN y Tungsten
+// shot da +1 (no +2); la Trench Knife tiene -1 DICE.
+console.log('\nGroup 2: armas y granadas (Rulebook 1.0.1 pp.70-78, Warbands of TC)');
 const FRAG = ['ASSAULT', 'BLAST 2"', 'IGNORE COVER', 'IGNORE LONG RANGE', 'SHRAPNEL'];
 const GAS = ['-1 INJURY DICE', 'ASSAULT', 'BLAST 3"', 'GAS', 'IGNORE ARMOUR', 'IGNORE COVER', 'IGNORE LONG RANGE'];
 const INC = ['ASSAULT', 'FIRE', 'IGNORE COVER', 'IGNORE LONG RANGE'];
@@ -71,7 +74,9 @@ const WEAPONS = {
   'warcross-tp': ['ASSAULT', 'IGNORE LONG RANGE'],
   'parasite-bg': ['ASSAULT'],
   'satchel-na': ['+1 INJURY DICE', 'BLAST 3"', 'CONSUMABLE', 'HEAVY', 'IGNORE ARMOUR', 'IGNORE COVER', 'SCATTER'],
-  'heavy-shotgun-na': ['+1 DICE', 'HEAVY'],
+  'heavy-shotgun-na': ['+1 DICE', '+1 INJURY DICE', 'HEAVY', 'SHOTGUN'],
+  'trench-knife-na': ['-1 DICE'], 'trench-knife-tp': ['-1 DICE'], 'trench-knife-is': ['-1 DICE'],
+  'trench-knife-hl': ['-1 DICE'], 'trench-knife-bg': ['-1 DICE'], 'trench-knife-co': ['-1 DICE'],
   'putrid-shotgun-bg': ['+1 DICE', 'ASSAULT', 'INFECTION MARKERS'],
   'ophidian-rifle-co': ['HEAVY', 'IGNORE COVER', 'IGNORE LONG RANGE'],
   'punt-gun-anchor': ['+1 DICE', '+1 INJURY DICE', 'HEAVY', 'SHOTGUN', 'SHRAPNEL'],
@@ -88,13 +93,13 @@ ok(/Overcharge/.test(byId['punt-gun-anchor'].note || ''), 'Punt Gun: Overcharge 
 ok(/High Trajectory/.test(byId['trench-mortar-anchor'].note || ''), 'Trench Mortar: High Trajectory como nota de regla');
 ok(['incend-na', 'incend-tp', 'incend-is', 'incend-hl', 'incend-co', 'molotov-tp'].every(id => byId[id].critIgnoreArmour === true),
    'Liquid Fire: flag critIgnoreArmour en incendiarias y Molotov');
-ok(byId['heavy-shotgun-na'].shortRangeInjuryDice === 2, 'Heavy Shotgun: flag shortRangeInjuryDice = 2 (Tungsten shot)');
+ok(byId['heavy-shotgun-na'].shortRangeInjuryDice === 1, 'Heavy Shotgun: flag shortRangeInjuryDice = 1 (Tungsten shot, 1.0.1)');
 
 console.log('\nGroup 3: motor del Lab');
 const wpn = (id) => W._armouryItemToBattleWeapon(byId[id]);
 ok(typeof W.hasBlastKeyword === 'function' && W.hasBlastKeyword(wpn('frag-na')) && W.hasBlastKeyword(wpn('gas-hl')) &&
    !W.hasBlastKeyword(wpn('incend-na')), 'hasBlastKeyword reconoce BLAST 2" y BLAST 3"; incendiaria sin BLAST');
-ok(wpn('incend-na').critIgnoreArmour === true && wpn('heavy-shotgun-na').shortRangeInjuryDice === 2,
+ok(wpn('incend-na').critIgnoreArmour === true && wpn('heavy-shotgun-na').shortRangeInjuryDice === 1,
    '_armouryItemToBattleWeapon copia los flags');
 const cw = W.companionEquipToBattleWeapon({ name: 'Molotov Cocktail', type: 'grenade' });
 ok(cw && cw.critIgnoreArmour === true, 'companionEquipToBattleWeapon copia critIgnoreArmour');
@@ -119,11 +124,11 @@ ok(lastInjury && lastInjury.bypass === false, 'Liquid Fire: sin crítico → arm
 
 const hs = wpn('heavy-shotgun-na');
 W.applyInjury_lab(mk(0), mk(5), hs, false, false, []);
-ok(lastInjury && lastInjury.dice === 2, 'Tungsten shot: a corta distancia (5" ≤ 6") +2 INJURY DICE → ' + (lastInjury && lastInjury.dice));
+ok(lastInjury && lastInjury.dice === 2, 'Tungsten shot: a corta distancia (5" ≤ 6") +1 del perfil +1 → ' + (lastInjury && lastInjury.dice));
 W.applyInjury_lab(mk(0), mk(10), hs, false, false, []);
-ok(lastInjury && lastInjury.dice === 0, 'Tungsten shot: a larga distancia sin bonus');
+ok(lastInjury && lastInjury.dice === 1, 'Tungsten shot: a larga distancia solo el +1 del perfil');
 W.applyInjury_lab(mk(), mk(), hs, false, false, []);
-ok(lastInjury && lastInjury.dice === 0, 'Tungsten shot: sin posiciones (Lab abstracto) no se aplica');
+ok(lastInjury && lastInjury.dice === 1, 'Tungsten shot: sin posiciones (Lab abstracto) no se aplica');
 W.successRollWithBlessing_lab = origSR; W.injuryRoll_lab = origIR;
 
 console.log('\nGroup 4: toda keyword de la armería tiene texto de consulta (modo mesa / tarjetas)');
