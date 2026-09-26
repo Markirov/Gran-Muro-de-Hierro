@@ -6548,6 +6548,12 @@ const DATA = {
           armouryOverrides:{
             'alchemist-armour-is': { restriction:'ELITE only · Limit: 2' },
           },
+          // Weapon Collections: 1 pieza de la armería de New Antioch y 1 de la
+          // de Trench Pilgrims (con sus estipulaciones).
+          foreignArmoury:[
+            { factionId:'new-antioch',     max:1, label:'Weapon Collections' },
+            { factionId:'trench-pilgrims', max:1, label:'Weapon Collections' },
+          ],
           additionalUpgrades:[
             // Secrets of the House of Wisdom (Jabirean Alchemists)
             { unitId:'jabirean',
@@ -17106,7 +17112,38 @@ function findBattlekitItem(factionId, kitId, wb) {
     const found = cat.find(x => x.id === kitId);
     if (found) return wb ? variantArmouryItem(wb, found) : found;
   }
+  // Items the variant lets the warband buy from other armouries
+  const v = wb ? getActiveVariant(wb) : null;
+  for (const fa of ((v && v.foreignArmoury) || [])) {
+    const ff = DATA.factions[fa.factionId];
+    if (!ff) continue;
+    for (const cat of Object.values(ff.armoury)) {
+      const found = cat.find(x => x.id === kitId);
+      if (found) return Object.assign({}, found, { _foreignFaction: fa.factionId });
+    }
+  }
   return null;
+}
+
+/**
+ * Other factions' armouries the active variant opens (House of Wisdom
+ * Weapon Collections). Returns [{ factionId, name, max, label, items }].
+ */
+function foreignArmouryItems(wb) {
+  const v = wb ? getActiveVariant(wb) : null;
+  return ((v && v.foreignArmoury) || []).map(fa => {
+    const ff = DATA.factions[fa.factionId];
+    const items = [];
+    for (const [cat, list] of Object.entries((ff && ff.armoury) || {})) {
+      if (/^anchorite/.test(cat)) continue;
+      for (const it of list) {
+        if (it.variantOnly) continue;
+        items.push(Object.assign({}, it, { _foreignFaction: fa.factionId }));
+      }
+    }
+    return { factionId: fa.factionId, name: ff ? ff.name : fa.factionId,
+             max: fa.max, label: fa.label || 'Otra armería', items };
+  });
 }
 
 /**
@@ -17855,6 +17892,14 @@ function getArmouryCategory(factionId, itemId) {
   for (const [cat, list] of Object.entries(f.armoury)) {
     if (list.find(x => x.id === itemId)) return cat;
   }
+  // Items bought from another armoury (Weapon Collections): ids are unique
+  // per faction, so the first match elsewhere is the right one.
+  for (const [fid, ff] of Object.entries(DATA.factions)) {
+    if (fid === factionId || !ff.armoury) continue;
+    for (const [cat, list] of Object.entries(ff.armoury)) {
+      if (list.find(x => x.id === itemId)) return cat;
+    }
+  }
   return null;
 }
 
@@ -18258,6 +18303,25 @@ function classifyBattlekitItem(item, model, unit, wb) {
   }
 
   // ---- DISABLED: contextual restrictions ----
+
+  // Weapon Collections: max N pieces from each foreign armoury, whole warband
+  if (item._foreignFaction) {
+    const fa = ((getActiveVariant(wb) || {}).foreignArmoury || [])
+      .find(x => x.factionId === item._foreignFaction);
+    if (fa && fa.max) {
+      let used = 0;
+      for (const m of wb.models) {
+        for (const kid of (m.battlekit || [])) {
+          const it = findBattlekitItem(wb.factionId, kid, wb);
+          if (it && it._foreignFaction === fa.factionId) used++;
+        }
+      }
+      if (used >= fa.max) {
+        const fname = (DATA.factions[fa.factionId] || {}).name || fa.factionId;
+        return { state: 'disabled', reason: (fa.label || 'Otra armería') + ': ya tienes ' + used + '/' + fa.max + ' de ' + fname };
+      }
+    }
+  }
 
   // Per-warband limit reached
   if (r.limit !== null) {
@@ -19785,6 +19849,29 @@ function renderDetail() {
           </div>`;
       }
       categoryHTML += `</div>`;
+    }
+    // Weapon Collections (House of Wisdom): other armouries
+    for (const grp of foreignArmouryItems(wb)) {
+      const visible = grp.items
+        .map(item => ({ item, cls: classifyBattlekitItem(item, model, unit, wb) }))
+        .filter(c => c.cls.state !== 'hidden');
+      if (!visible.length) continue;
+      const availCount = visible.filter(c =>
+        c.cls.state === 'available' || c.cls.state === 'equipped').length;
+      totalAvailable += availCount;
+      categoryHTML += '<div class="battlekit-section"><h4>' + grp.label + ': ' + grp.name +
+        ' <span class="bk-cat-count">máx. ' + grp.max + ' en la banda</span></h4>';
+      for (const { item, cls } of visible) {
+        const currencyClass = item.currency === '☼' ? 'glory' : '';
+        categoryHTML +=
+          '<div class="battlekit-item ' + cls.state + '" data-kit="' + item.id + '" data-state="' + cls.state + '">' +
+            '<div class="bk-main"><div class="bk-line"><span class="bk-name">' + item.name + '</span>' +
+            (item.restriction ? '<span class="bk-restriction">' + item.restriction + '</span>' : '') + '</div>' +
+            (cls.state === 'disabled' ? '<div class="bk-reason">' + cls.reason + '</div>' : '') + '</div>' +
+            '<span class="bk-cost ' + currencyClass + '">' + item.cost + ' ' + item.currency + '</span>' +
+          '</div>';
+      }
+      categoryHTML += '</div>';
     }
 
     if (totalAvailable === 0 && !(model.battlekit || []).length) {

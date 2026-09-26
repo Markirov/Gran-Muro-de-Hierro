@@ -3,7 +3,7 @@
 > Arriba solo lo pendiente, por prioridad. Al cerrar una tarea, su entrada se traslada íntegra a `## ✅ Completado` al final (no se deja `[x]` mezclado entre los `[ ]`).
 
 ## 🔴 Alta Prioridad
-- [ ] **Variantes en Forge: datos + legalidad** (decisión de Marcos 2026-09-27; orden: Iron Wall ✅ → House of Wisdom → Alba → Prussia → Éire → resto): por cada variante, armería propia, costes/Limit (`armouryOverrides`), límites de unidades (`unitOverrides`), unidades propias y restricciones, con test por variante. Siguiente: **House of Wisdom** tanda C (Weapon Collections: 1 pieza de la armería de New Antioch y 1 de Trench Pilgrims al crear la banda).
+- [ ] **Variantes en Forge: datos + legalidad** (decisión de Marcos 2026-09-27; orden: Iron Wall ✅ → House of Wisdom ✅ → Alba → Prussia → Éire → resto): por cada variante, armería propia, costes/Limit (`armouryOverrides`), límites de unidades (`unitOverrides`), unidades propias y restricciones, con test por variante. Siguiente: **Kingdom of Alba** (Claymore Smiths, Cold Steel, Dum-Dum, Strained Supply, Lightly-armoured, Highland Strength, Melee-focused MHI, Bagpipes, Lochaber Axe).
 - [ ] **Iron Wall: Grand Cannon como gun battery** (sin modelar): Forge solo permite el cañón en un Brazen Bull; el segundo (o sin Brazen Bull) como batería estacionaria de la armería de la banda no se puede añadir.
 
 
