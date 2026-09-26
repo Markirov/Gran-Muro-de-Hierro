@@ -54,5 +54,22 @@ const bird = dom.window.__EIA['Takwin Anqā Bird'];
 ok(bird && bird[0].name === 'Cause Confusion' && /Risky/.test(bird[0].desc) && /retirada|retirarse/.test(bird[0].desc),
    'Takwin Anqā Bird: Cause Confusion');
 
+console.log('\nGroup 5: Defenders of the Iron Wall (Warbands 1.0.2)');
+const isArm = (id) => arm('iron-sultanate', id);
+const kal = isArm('iron-shield-iw');
+ok(kal.name === 'Iron Wall Kalkan' && kal.type === 'Shield' && kal.weaponKeywords.join() === 'COVER',
+   'Iron Shield → Iron Wall Kalkan: Shield con COVER');
+ok(/Othismos/.test(kal.note) && /40mm/.test(kal.note) && !/obstáculo defendido/.test(kal.note), 'Kalkan: regla Othismos');
+const ban = isArm('banner-desert-wind-iw');
+ok(/Sandstorm/.test(ban.note) && /24"/.test(ban.note) && /-1|restan? 1/.test(ban.note) && !/Flying/.test(ban.note),
+   'Banner of Desert Wind: Sandstorm (-1 Movement a 24")');
+const anq = isArm('anq-guard-iw');
+ok(/40mm/.test(anq.note) && /Impassable/.test(anq.note) && anq.restriction === 'Sultanate Sappers only', 'Anq Guard: base 40mm, Impassable, solo Sappers');
+const exc = isArm('explosive-charges-iw');
+ok(exc.restriction === 'Silahdar & Sultanate Sappers only · Limit: 1' && /Injury Roll con SHRAPNEL/.test(exc.note), 'Explosive Charges: Silahdar y Sappers; Injury Roll con SHRAPNEL');
+const sil = U('iron-sultanate', 'silahdar-iw');
+ok(/Alaybozan/.test(sil.note) && /Anq Guard/.test(sil.note) && /Explosive Charges/.test(sil.note), 'Silahdar: Alaybozan, Anq Guard y Explosive Charges');
+ok(!/ningún otro Janissary/.test(U('iron-sultanate', 'janofficer-iw').note), 'Janissary Officer: sin restricción inventada');
+
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

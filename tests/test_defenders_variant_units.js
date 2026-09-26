@@ -129,11 +129,11 @@ group('Group 6: Iron Wall special armoury present', () => {
   }
   ok(byId['grand-cannon-iw'].cost === 60, 'Grand Cannon 60👑');
   ok(byId['grand-cannon-iw'].weaponKeywords.includes('IGNORE ARMOUR'), 'Grand Cannon IGNORE ARMOUR');
-  ok(byId['iron-shield-iw'].cost === 30, 'Iron Shield 30👑');
+  ok(byId['iron-shield-iw'].cost === 30, 'Iron Wall Kalkan 30👑');
   ok(byId['anq-guard-iw'].weaponKeywords.includes('HEAVY'), 'Anq Guard HEAVY');
   // findBattlekitItem resolves them regardless of variant (for equipped lookups).
-  ok(findBattlekitItem('iron-sultanate','iron-shield-iw').name === 'Iron Shield',
-     'findBattlekitItem resolves Iron Shield');
+  ok(findBattlekitItem('iron-sultanate','iron-shield-iw').name === 'Iron Wall Kalkan',
+     'findBattlekitItem resolves Iron Wall Kalkan');
 });
 
 group('Group 7: classifyBattlekitItem hides variant armoury off-variant', () => {
