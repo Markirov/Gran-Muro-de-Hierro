@@ -75,9 +75,9 @@ group('Sub-D Group 2: modelo nativo sin unitId resoluble → stats vacíos no-cr
 });
 
 group('Sub-E Group 3: EQUIPMENT_IMPLICIT_ABILITIES expandido', () => {
-  // Originales 4 + nuevos
+  // Solo piezas con regla especial en los PDF (revisión canon 2026-09-26).
   const expected = ['Trench Shield', 'Binoculars', 'Alchemist Armour', 'Alchemical Ammunition',
-                    'Gas Mask', 'Field Shrine', 'Reinforced Armour', 'Combat Helmet', 'Frag Grenade'];
+                    'Gas Mask', 'Field Shrine', 'Medi-kit', 'Musical Instrument', 'Blessed Icon'];
   for (const item of expected) {
     ok(Array.isArray(EQUIPMENT_IMPLICIT_ABILITIES[item]),
        item + ' present in map');
@@ -85,7 +85,7 @@ group('Sub-E Group 3: EQUIPMENT_IMPLICIT_ABILITIES expandido', () => {
 });
 
 group('Sub-E Group 4: nuevos items tienen abilities con name+desc', () => {
-  const newItems = ['Gas Mask', 'Field Shrine', 'Reinforced Armour', 'Combat Helmet', 'Frag Grenade'];
+  const newItems = ['Gas Mask', 'Field Shrine', 'Medi-kit', 'Musical Instrument', 'Blessed Icon', 'Unholy Trinket'];
   for (const item of newItems) {
     const abs = EQUIPMENT_IMPLICIT_ABILITIES[item];
     if (!abs) continue;

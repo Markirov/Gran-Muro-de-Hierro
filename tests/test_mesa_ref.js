@@ -31,7 +31,8 @@ console.log('\nGroup 1: lookupRuleText');
 ok(L.lookupRuleText('SHRAPNEL') === L.WEAPON_KEYWORD_LIBRARY['SHRAPNEL'].summary, 'keyword de arma');
 ok(L.lookupRuleText('ELITE') === L.KEYWORD_LIBRARY['ELITE'], 'keyword de modelo');
 ok(L.lookupRuleText('shield combo') === L.WEAPON_KEYWORD_LIBRARY['Shield Combo'].summary, 'insensible a mayúsculas');
-ok(L.lookupRuleText('AUTOMATIC 4') === L.WEAPON_KEYWORD_LIBRARY['AUTOMATIC'].summary, 'paramétrica sin entrada exacta → base');
+ok(L.lookupRuleText('AUTOMATIC 4').startsWith(L.WEAPON_KEYWORD_LIBRARY['AUTOMATIC'].summary) && /X = 4/.test(L.lookupRuleText('AUTOMATIC 4')),
+   'paramétrica sin entrada exacta → texto base con X = 4');
 ok(L.lookupRuleText('BLAST 3"') === L.WEAPON_KEYWORD_LIBRARY['BLAST 3"'].summary, 'paramétrica con entrada exacta');
 ok(L.lookupRuleText('Pieza Inexistente') === '', 'sin datos → cadena vacía (no se inventa)');
 

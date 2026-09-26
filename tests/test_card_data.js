@@ -89,7 +89,7 @@ group('Group 2: getFactionPalette merge base + variant (ORNAMENT upper)', () => 
 group('Group 3: EQUIPMENT_IMPLICIT_ABILITIES map', () => {
   ok(Array.isArray(EQUIPMENT_IMPLICIT_ABILITIES['Trench Shield']), 'Trench Shield in map');
   ok(EQUIPMENT_IMPLICIT_ABILITIES['Trench Shield'][0].name === 'Shield Combo', 'Shield Combo');
-  ok(EQUIPMENT_IMPLICIT_ABILITIES['Binoculars'][0].name === 'Survey the Land', 'Survey the Land');
+  ok(EQUIPMENT_IMPLICIT_ABILITIES['Binoculars'][0].name === 'Binoculars', 'Binoculars (regla canon del Rulebook)');
   ok(EQUIPMENT_IMPLICIT_ABILITIES['Alchemist Armour'].length === 3, 'Alchemist Armour = 3 abilities (NEGATE FIRE, NEGATE GAS, Protection From Harm — Warbands of TC)');
 });
 
@@ -112,7 +112,7 @@ group('Group 4: getImplicitAbilities recorre equipment', () => {
 
   const m5 = mkModel('Officer', [{name:'Binoculars'}]);
   const a5 = getImplicitAbilities(m5);
-  ok(a5.length === 1 && a5[0].name === 'Survey the Land', 'Binoculars → Survey the Land');
+  ok(a5.length === 1 && a5[0].name === 'Binoculars', 'Binoculars → regla Binoculars');
 });
 
 group('Group 5: getVariantFactionRules', () => {

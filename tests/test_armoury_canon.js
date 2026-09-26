@@ -131,8 +131,8 @@ const allKw = new Set();
 Object.values(byId).forEach(it => (it.weaponKeywords || []).forEach(k => allKw.add(k)));
 const noText = [...allKw].filter(k => !W.lookupRuleText(k));
 ok(noText.length === 0, 'sin keywords huérfanas (' + (noText.join(' | ') || 'ninguna') + ')');
-ok(W.lookupRuleText('AMMUNITION').length > 20 && W.lookupRuleText('AMMUNITION (FIRE)') === W.lookupRuleText('AMMUNITION'),
-   'AMMUNITION (X) cae a la definición base');
+ok(W.lookupRuleText('AMMUNITION').length > 20 && W.lookupRuleText('AMMUNITION (FIRE)').startsWith(W.lookupRuleText('AMMUNITION')) &&
+   /X = FIRE/.test(W.lookupRuleText('AMMUNITION (FIRE)')), 'AMMUNITION (X) usa la definición base con X = FIRE');
 ok(/Efecto/.test(W.lookupRuleText('NEGATE GAS')) && /Efecto/.test(W.lookupRuleText('NEGATE SHRAPNEL')) && /Efecto/.test(W.lookupRuleText('NEGATE FIRE')),
    'NEGATE X con semántica canon ("no le afecta el Efecto")');
 
