@@ -42,7 +42,14 @@ ok(NEW102.every(k => byKey(k) && byKey(k).prev === null), 'las 10 nuevas de 1.0.
   NEW102.filter(k => !byKey(k) || byKey(k).prev !== null).join(', ') + ')');
 ok(V101.every(k => byKey(k) && byKey(k).prev !== null), 'las de 1.0.1 no están marcadas como nuevas');
 ok(G.every(e => /^(Efecto|Etiqueta)$/.test(e.type) && e.text.length > 15 && e.src), 'tipo, texto y fuente en todas');
-const CHANGED = ['ARMOUR PIERCING', 'AUTOMATIC (X)', 'BLAST (X")', 'FIRETEAM', 'RISKY', 'SCATTER', 'SKIRMISHER', 'STRONG'];
+const CHANGED = ['ARMOUR PIERCING', 'AUTOMATIC (X)', 'BLAST (X")', 'BLOCK', 'FIRETEAM', 'HELD', 'RISKY', 'SCATTER', 'SKIRMISHER', 'STRONG'];
+// Revisión 2026-09-26 con el Digital Rulebook 1.0.2 publicado (09-sep-2026).
+ok(G.every(e => /1\.0\.2/.test(e.src)), 'todas las fuentes citan el Rulebook 1.0.2 (' + G.filter(e => !/1\.0\.2/.test(e.src)).map(e => e.key).join(', ') + ')');
+ok(/NEGATE HEAVY/.test(byKey('STRONG').text), 'STRONG 1.0.2: tiene NEGATE HEAVY');
+ok(/BLESSING MARKERS/.test(byKey('AUTOMATIC (X)').text) && /BLESSING MARKERS/.test(byKey('CLEAVE (X)').text),
+   'AUTOMATIC / CLEAVE 1.0.2: también los BLESSING MARKERS gastados');
+ok(/turno/.test(byKey('BLOCK').text) && /ronda/.test(byKey('BLOCK').prev), 'BLOCK 1.0.2: "este turno" (1.0.1: "esta ronda")');
+ok(/equipar ni usar|equipar o usar/.test(byKey('HELD').text), 'HELD 1.0.2: equipar o usar');
 ok(CHANGED.every(k => typeof byKey(k).prev === 'string' && byKey(k).prev !== byKey(k).text),
    'las cambiadas por el Changelog 1.0.2 guardan su texto 1.0.1 (' + CHANGED.filter(k => typeof byKey(k).prev !== 'string').join(', ') + ')');
 

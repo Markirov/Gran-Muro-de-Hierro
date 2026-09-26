@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* Genera los PDF del glosario de keywords a partir de KEYWORD_GLOSSARY
- * (index.html): versión vigente (Rulebook 1.0.1 + Changelog 1.0.2 + Rules
- * Commentaries 1.0.2) y versión anterior (Rulebook 1.0.1 tal cual).
+ * (index.html): versión vigente (Rulebook 1.0.2 + Rules Commentaries 1.0.2)
+ * y versión anterior (Rulebook 1.0.1).
  *
  * Uso: node scripts/build-keyword-glossary.js [carpeta-salida]
  * Salida por defecto: herramientas/glosario/ (gitignored).
@@ -94,7 +94,7 @@ function main() {
     was: typeof e.prev === 'string' ? e.prev : '',
   }));
   const previous = G.filter(e => e.prev !== null).map(e => ({
-    key: e.key, type: e.type, src: e.src.replace(/ \+ Changelog 1\.0\.2$/, ''),
+    key: e.key, type: e.type, src: 'Rulebook 1.0.1',
     text: typeof e.prev === 'string' ? e.prev : e.text,
   }));
 
@@ -102,12 +102,12 @@ function main() {
     { file: 'Glosario-keywords-1.0.2', entries: current,
       title: 'Glosario de keywords — Trench Crusade',
       subtitle: `Versión vigente 1.0.2 · ${current.length} keywords`,
-      sources: 'Fuentes: Digital Rulebook 1.0.1 (Keyword Glossary, pp.52-57) + Changelog 1.0.2 + Rules Commentaries 1.0.2.',
-      legend: '<span class="badge new">NUEVA 1.0.2</span> añadida por el Changelog 1.0.2 · <span class="badge changed">CAMBIA 1.0.2</span> texto modificado (se muestra el anterior debajo).' },
+      sources: 'Fuentes: Digital Rulebook 1.0.2 (Keyword Glossary, pp.52-57; trenchcrusade.com, 09-sep-2026) + Rules Commentaries 1.0.2.',
+      legend: '<span class="badge new">NUEVA 1.0.2</span> no existía en 1.0.1 · <span class="badge changed">CAMBIA 1.0.2</span> texto modificado (se muestra el anterior debajo).' },
     { file: 'Glosario-keywords-1.0.1', entries: previous,
       title: 'Glosario de keywords — Trench Crusade',
       subtitle: `Versión anterior 1.0.1 · ${previous.length} keywords`,
-      sources: 'Fuente: Digital Rulebook 1.0.1 (Keyword Glossary, pp.52-57), sin las erratas del Changelog 1.0.2.' },
+      sources: 'Fuente: Digital Rulebook 1.0.1 (Keyword Glossary, pp.52-57; 20-nov-2025).' },
   ];
 
   const browser = findBrowser();
