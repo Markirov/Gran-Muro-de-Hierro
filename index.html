@@ -5765,6 +5765,41 @@ body.table-mode-open { overflow: hidden; }
    (consult the official rulebook for those during play).
    ====================================================================== */
 
+// The Great Hunger: Strains of the Great Hunger. Cualquier modelo puede
+// tener 1 Strain; los Ravenous (y Cradle Thralls, que usan su entrada) hasta 3.
+const HUNGER_ELITE_GH    = ['plague-knights','matagot-hag-gh','husks-gh','great-maw-gh'];
+const HUNGER_RAVENOUS_GH = ['ravenous-gh','cradle-thralls-gh'];
+const HUNGER_UNITS_GH    = HUNGER_ELITE_GH.concat(HUNGER_RAVENOUS_GH, ['gregori-gula-gh','thralls','hounds-bg']);
+const HUNGER_STRAINS_GH = [
+  { units:HUNGER_ELITE_GH, up:{ id:'strain-devouring-jaws', name:'Devouring Jaws', cost:2, currency:'☼',
+      addsAbilities:['Devour ACTION'], maxPerWarband:1,
+      note:'Strain (ELITE only, Limit: 1): puede hacer Devour ACTION.' } },
+  { units:HUNGER_UNITS_GH, up:{ id:'strain-grasping-maw', name:'Grasping Maw', cost:15, currency:'👑',
+      addsAbilities:['Grasp ACTION'], note:'Strain: puede hacer Grasp ACTION.' } },
+  { units:HUNGER_RAVENOUS_GH, up:{ id:'strain-hellfly-host', name:'Hellfly Host', cost:0, currency:'👑',
+      statOverride:{ movement:'6"/Flying' }, addsKeywords:['FLYING'], removesAbilities:['Undead Fortitude'],
+      note:'Strain (Ravenous only): Movement 6"/Flying y FLYING; pierde Undead Fortitude.' } },
+  { units:HUNGER_UNITS_GH, up:{ id:'strain-lockjaw-bite', name:'Lockjaw Bite', cost:15, currency:'👑',
+      addsAbilities:['Lockjaw Bite'], note:'Strain: pone 1 INFECTION MARKER al enemigo que hace Retreat a 1" o menos.' } },
+  { units:HUNGER_RAVENOUS_GH.concat(['hounds-bg']), up:{ id:'strain-papillal-hide', name:'Papillal Hide', cost:5, currency:'👑',
+      addsAbilities:['Papillal Hide'], note:'Strain (Ravenous y Hounds of the Black Grail): no necesita Line of Sight para cargar.' } },
+  { units:['matagot-hag-gh'].concat(HUNGER_RAVENOUS_GH), up:{ id:'strain-rotten-cutters', name:'Rotten Cutters', cost:7, currency:'👑',
+      addsAbilities:['Rotten Cutters'], note:'Strain (Matagot Hag y Ravenous): CLEAVE 2 en sus Melee Attacks.' } },
+  { units:['matagot-hag-gh','great-maw-gh','husks-gh'].concat(HUNGER_RAVENOUS_GH), up:{ id:'strain-unending-starvation', name:'Unending Starvation', cost:10, currency:'👑',
+      addsAbilities:['Unending Starvation'], note:'Strain (Matagot Hag, Great Maw, Desiccated Husks y Ravenous): +1" a su Movement.' } },
+];
+function hungerStrainUpgrades() {
+  const out = [];
+  for (const st of HUNGER_STRAINS_GH) {
+    for (const unitId of st.units) {
+      out.push({ unitId, upgrade: Object.assign({}, st.up, { perModelGroup:'hunger-strain',
+        perModelMax: HUNGER_RAVENOUS_GH.includes(unitId) ? 3 : 1 }) });
+    }
+  }
+  return out;
+}
+const PK_RANK_NOTE_GH = 'Butcher Knights: un Plague Knight solo puede tener uno de estos rangos (en lugar de los del Cult of the Black Grail).';
+
 // Fida'i of Alamut Art of Assassination: una habilidad por Assassin y sin
 // repetir en la banda.
 const ART_ASSASSINATION_FIDAI = [
@@ -7226,6 +7261,11 @@ const DATA = {
         ranged: [
           { id:'blunderbuss-bg',  name:'Blunderbuss',          cost:5,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'10\"', weaponKeywords:['SHRAPNEL'] },
+          // ── The Great Hunger Armoury ──
+          { id:'black-spot-rifle-gh', name:'Black Spot Rifle',  cost:25, currency:'👑',
+            variantOnly:'great-hunger', restriction:'Bayonet Lug · Shield Combo · Limit: 2',
+            type:'2-Handed', range:'18"', weaponKeywords:['+1 DICE','-1 INJURY DICE','ASSAULT','INFECTION MARKERS'],
+            note:'Fresh Meat: si la Injury Roll de un Ranged Attack con esta arma no deja al enemigo Out of Action, un Ravenous o Hound of the Black Grail a 12" del atacante puede hacer un movimiento de carga (no impide activarlo ese turno).' },
           { id:'bolt-rifle-bg',   name:'Bolt-Action Rifle',    cost:10, currency:'👑', restriction:'Bayonet Lug',
             type:'2-Handed', range:'24"', weaponKeywords:[] },
           { id:'corruption-belcher-bg',name:'Corruption Belcher',cost:30,currency:'👑', restriction:'Limit: 2',
@@ -7246,6 +7286,15 @@ const DATA = {
             type:'2-Handed', range:'24"', weaponKeywords:['+2 DICE','HEAVY'] },
         ],
         melee: [
+          // ── The Great Hunger Armoury ──
+          { id:'butcher-bayonet-gh', name:'Butcher Bayonet',   cost:15, currency:'👑',
+            variantOnly:'great-hunger', restriction:'Shield Combo · Limit: 2', needsBayonetLug:true,
+            type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY DICE','CUMBERSOME'],
+            note:'Bayonet: requiere un arma a distancia con Bayonet Lug. Hack and Hew: los modelos amigos a 3" logran Critical con 11+ en sus Melee Attacks.' },
+          { id:'pestilent-fang-gh', name:'Pestilent Fang',     cost:15, currency:'👑',
+            variantOnly:'great-hunger', restriction:'Limit: 2',
+            type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY MODIFIER','HEAVY'],
+            note:'Gnashing Blow: si pone 1 o más BLOOD MARKERS, pon además 1 INFECTION MARKER al objetivo. Rotten Splinters: con Critical, la Injury Roll tiene IGNORE ARMOUR.' },
           { id:'bayonet-bg',      name:'Bayonet',              cost:2,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'Melee', weaponKeywords:['CUMBERSOME'] },
           { id:'beelz-axe-bg',    name:"Beelzebub's Axe",      cost:30, currency:'👑', restriction:'ELITE only · Limit: 1',
@@ -7279,6 +7328,11 @@ const DATA = {
             type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         armour: [
+          // ── The Great Hunger Armoury ──
+          { id:'palanquin-gh',    name:'Foetid Palanquin',      cost:4,  currency:'☼',
+            variantOnly:'great-hunger', restriction:'Matagot Hag only · Limit: 1',
+            type:'Armour', range:'-', weaponKeywords:['-1 INJURY MODIFIER'],
+            note:'Bile Clot ACTION: una vez por turno, justo antes de una Injury Roll contra la Hag, quita cualquier número de INFECTION MARKERS de modelos (amigos o enemigos) a 18"; -1 INJURY MODIFIER por cada 2 retirados (máx. -3 en total).' },
           { id:'reinforced-bg',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'ELITE only',
             type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER'] },
           { id:'standard-bg',     name:'Standard Armour',      cost:15, currency:'👑',
@@ -7297,6 +7351,11 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:['HELD'] },
           { id:'flag-bg',          name:'Troop Flag',            cost:1,  currency:'☼', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
+          // ── The Great Hunger Armoury ──
+          { id:'cup-filth-gh',    name:'Cup of Filth',          cost:4,  currency:'☼',
+            variantOnly:'great-hunger', restriction:'Matagot Hag only · Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:[],
+            note:'Drink from the Cup: antes del despliegue elige 1 modelo ELITE o hasta 4 Ravenous; el resto de la partida tienen +1 DICE a la Risky Success Roll de Dash.' },
           // ── Dirge of the Great Hegemon Armoury ──
           { id:'broken-crown-dg', name:'Broken Crown',          cost:25, currency:'👑',
             variantOnly:'great-hegemon', restriction:'ELITE only · Limit: 1',
@@ -7362,6 +7421,55 @@ const DATA = {
               addsAbilities:['Maddening Buzzing'],
               note:'Hasta 1 Herald de la banda puede tener Maddening Buzzing por +10 👑.' },
           ] },
+        // ── Unidades exclusivas de la variante The Great Hunger ──
+        { id:'matagot-hag-gh', name:'Matagot Hag', tier:'elite', limit:'1', cost:135, currency:'👑',
+          variantOnly:'great-hunger',
+          stats:{ movement:'6"/Infantry', ranged:'-', melee:'+2 DICE', armour:'0', base:'60mm' },
+          keywords:['BLACK GRAIL','ELITE','FEAR','LEADER','NEGATE GAS','TOUGH'],
+          abilities:['Cadre of Flesh','Frenzied Followers',"Mother's Call ACTION",'Pestilent','Undead Fortitude'],
+          battlekitAccess:{ forbidCategories:['ranged','melee','grenades','shields'],
+            whitelistByCategory:{ armour:['palanquin-gh'], equipment:['cup-filth-gh','grail-devotee-bg'] } },
+          battlekitNote:'Solo Cup of Filth, Grail Devotee y Foetid Palanquin',
+          note:'Spawn of Gluttony: cada banda Great Hunger incluye 1 Matagot Hag.' },
+        { id:'ravenous-gh', name:'Ravenous', tier:'troops', limit:null, cost:35, currency:'👑',
+          variantOnly:'great-hunger',
+          stats:{ movement:'5"/Infantry', ranged:'-', melee:'+0 DICE', armour:'0', base:'25mm' },
+          keywords:['BLACK GRAIL','FEAR','NEGATE GAS'],
+          abilities:['Gluttonous Horde','Ravenous Infection ACTION','Undead Fortitude'],
+          battlekitAccess:{ forbidden:true },
+          battlekitNote:'Sin Battlekit · Hasta 3 Strains',
+          note:'Base de 25mm o 32mm.' },
+        { id:'cradle-thralls-gh', name:'Cradle Thralls', tier:'troops', limit:'0-3', cost:2, currency:'☼',
+          variantOnly:'great-hunger', usesEntryOf:'ravenous-gh',
+          stats:{ movement:'5"/Infantry', ranged:'-', melee:'+0 DICE', armour:'0', base:'25mm' },
+          keywords:['BLACK GRAIL','FEAR','INFILTRATOR','NEGATE GAS'],
+          abilities:['Gluttonous Horde','Ravenous Infection ACTION','Undead Fortitude'],
+          battlekitAccess:{ forbidden:true },
+          battlekitNote:'Sin Battlekit · Hasta 3 Strains',
+          note:'Cradle of Filth: usan la entrada de Ravenous con INFILTRATOR, cuestan 2 ☼ (no 👑) y no cuentan para el Maximum Field Strength.' },
+        { id:'husks-gh', name:'Desiccated Husks', tier:'elite', limit:'0-2', cost:55, currency:'👑',
+          variantOnly:'great-hunger', usesEntryOf:'corpse-guards',
+          stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
+          keywords:['BLACK GRAIL','ELITE','FEAR','NEGATE GAS'],
+          abilities:['More Worm Than Man','Parasite Host','Undead Fortitude'],
+          note:'Usan la entrada de Corpse Guard: sus Melee Attacks tienen CRITICAL y cambian Bodyguard por More Worm Than Man.' },
+        { id:'great-maw-gh', name:'Great Maw', tier:'elite', limit:'0-1', cost:130, currency:'👑',
+          variantOnly:'great-hunger', usesEntryOf:'lord-tumours', requiresWarbandValue:1000,
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+4 DICE', armour:'0', base:'50mm' },
+          keywords:['BLACK GRAIL','ELITE','FEAR','NEGATE GAS','STRONG','TOUGH'],
+          abilities:["Beelzebub's Touch",'Crushing Blows','Undead Fortitude'],
+          note:'Usa la entrada del Lord of Tumours sin LEADER. Solo si el resto de la banda (con su Battlekit) suma 1.000 👑 o más.' },
+        { id:'gregori-gula-gh', name:'Gregori Gula', tier:'troops', limit:'0-2', cost:140, currency:'👑',
+          variantOnly:'great-hunger',
+          stats:{ movement:'9"/Flying', ranged:'-', melee:'+2 DICE', armour:'0', base:'60mm' },
+          keywords:['BLACK GRAIL','FEAR','INFILTRATOR','NEGATE GAS'],
+          abilities:['Dormant Hunger','Gnashing and Tearing','Plague-Ridden Flesh','Unholy Gut'],
+          battlekitAccess:{ forbidden:true },
+          battlekitNote:'Sin Battlekit · Unholy Gut: Vomitus por 40 👑',
+          upgrades:[
+            { id:'vomitus-gh', name:'Vomitus', cost:40, currency:'👑', addsAbilities:['Vomitus'],
+              note:'Unholy Gut: arma a distancia Special, 8", +1 INJURY MODIFIER, ASSAULT, INFECTION MARKERS. No se puede perder. Torrent of Bile: sin Success Roll; línea de 8" y Injury Roll a cada modelo (amigo o enemigo) que toque. Vile Ferment: quitando 2 INFECTION MARKERS de la Gula, +1 INJURY MODIFIER a esas Injury Rolls.' },
+          ] },
         { id:'amalgam', name:'Amalgam', tier:'troops', limit:'0-1', cost:140, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+0 DICE', armour:'0', base:'60mm' },
           keywords:['BLACK GRAIL','FEAR','NEGATE GAS','STRONG','TOUGH'],
@@ -7411,7 +7519,32 @@ const DATA = {
           name:'The Great Hunger',
           summary:'Horda famélica guiada por una Matagot Hag: cada turno elige un efecto del Hambre que convierte los INFECTION MARKERS propios en ventaja.',
           specialRule:'The Great Hunger',
-          mandatoryUnits:[{ unitId:'plague-knights', count:1 }],
+          // Spawn of Gluttony
+          forbiddenUnitIds:['lord-tumours','corpse-guards','grail-thralls','heralds','amalgam'],
+          mandatoryUnits:[{ unitId:'matagot-hag-gh', count:1, max:1 }],
+          unitOverrides:[
+            // Butcher Knights: 0-2, Ravenous Infection y sus propios rangos
+            { unitId:'plague-knights', overrides:{ limit:'0-2', removeAbilities:['Plague Knight Ranks'],
+                addAbilities:['Ravenous Infection ACTION'] } },
+          ],
+          // Excruciating Hunger
+          armouryOverrides:{
+            'beelz-axe-bg':{ forbidden:true }, 'bg-shield-bg':{ forbidden:true }, 'bolt-rifle-bg':{ forbidden:true },
+            'blunderbuss-bg':{ forbidden:true }, 'compound-eyes-bg':{ forbidden:true }, 'corruption-belcher-bg':{ forbidden:true },
+            'gas-bg':{ forbidden:true }, 'infested-rifle-bg':{ forbidden:true }, 'mg-bg':{ forbidden:true },
+            'music-bg':{ forbidden:true }, 'musket-bg':{ forbidden:true }, 'pistol-bg':{ forbidden:true },
+            'flag-bg':{ forbidden:true }, 'viscera-cannon-bg':{ forbidden:true },
+          },
+          additionalUpgrades:[
+            { unitId:'plague-knights', upgrade:{ id:'rank-butcher-king', name:'Butcher King', cost:10, currency:'👑',
+                addsAbilities:['Butcher King'], mutuallyExclusiveGroup:'pk-rank-gh', note:PK_RANK_NOTE_GH } },
+            { unitId:'plague-knights', upgrade:{ id:'rank-feast-companion', name:'Knight Companion of the Feast', cost:5, currency:'👑',
+                addsAbilities:['Knight Companion of the Feast'], mutuallyExclusiveGroup:'pk-rank-gh', note:PK_RANK_NOTE_GH } },
+            { unitId:'plague-knights', upgrade:{ id:'rank-twin-cleavers', name:'Knight of Twin Cleavers', cost:5, currency:'👑',
+                addsKeywords:['IGNORE OFF-HAND WEAPON'], addsAbilities:['Knight of Twin Cleavers'],
+                mutuallyExclusiveGroup:'pk-rank-gh', note:PK_RANK_NOTE_GH } },
+            ...hungerStrainUpgrades(),
+          ],
         },
       ],
     },
@@ -7972,6 +8105,90 @@ const ABILITY_LIBRARY = {
   'Undead Fortitude': {
     type: 'passive',
     summary: 'Añade -1 INJURY DICE a las tiradas de lesión contra este modelo, salvo si el ataque tiene la keyword FIRE.',
+  },
+  'Cadre of Flesh': {
+    type: 'passive',
+    summary: 'Si la Matagot Hag recibe un ataque con un Ravenous amigo a 3", ese Ravenous puede recibirlo en su lugar (Injury Roll para él). Con BLAST, la Injury Roll de la Hag se hace antes que la del resto.',
+  },
+  'Frenzied Followers': {
+    type: 'passive',
+    summary: '+1 DICE a la Risky Success Roll de Dash de los modelos amigos a 8" de la Matagot Hag.',
+  },
+  "Mother's Call ACTION": {
+    type: 'action',
+    summary: 'Quita INFECTION MARKERS de modelos (amigos o enemigos) a 18". Por cada uno, un Ravenous a 8" cumple una orden (máx. 1 por turno, no impide activarlo): Feast (Ravenous Infection ACTION; con Success, 1 INFECTION MARKER extra), Fight (Melee Attack con +1 DICE) o Follow (mueve, sin Charge ni Retreat).',
+  },
+  'Pestilent': {
+    type: 'passive',
+    summary: 'Hace Melee Attacks con INFECTION MARKERS y CRITICAL sin arma. Si pone INFECTION MARKERS, pone 1 más.',
+  },
+  'Gluttonous Horde': {
+    type: 'passive',
+    summary: 'Hace Melee Attacks con CRITICAL sin arma, con +1 DICE por cada otro modelo amigo a 3" del atacante.',
+  },
+  'Ravenous Infection ACTION': {
+    type: 'action',
+    summary: 'Risky Success Roll; si falla, su activación termina. Con Success o Critical, pon 1 INFECTION MARKER a otro modelo a 1"; después su activación termina.',
+  },
+  'More Worm Than Man': {
+    type: 'passive',
+    summary: 'El rival no puede gastar los INFECTION MARKERS de un Desiccated Husk salvo para convertir una Injury Roll en Bloodbath Roll.',
+  },
+  'Dormant Hunger': {
+    type: 'passive',
+    summary: 'Una vez por turno, en vez de quedar Out of Action queda latente: quita sus INFECTION MARKERS y cámbiala por un marcador de 60mm (Impassable). Si un Ravenous amigo termina un movimiento a 1", retira marcador y Ravenous y vuelve la Gula Down. Latente cuenta como Out of Action para Morale y Trauma; el Ravenous usado muere.',
+  },
+  'Gnashing and Tearing': {
+    type: 'passive',
+    summary: 'Hace Melee Attacks con +1 INJURY DICE, INFECTION MARKERS y CLEAVE 2 sin arma; CLEAVE 3 si cargó en esa activación.',
+  },
+  'Plague-Ridden Flesh': {
+    type: 'passive',
+    summary: '-2 INJURY DICE a las Injury Rolls contra ella salvo ataques con FIRE.',
+  },
+  'Unholy Gut': {
+    type: 'passive',
+    summary: 'Puede llevar el arma Vomitus por 40 👑; no se puede perder ni retirar.',
+  },
+  'Vomitus': {
+    type: 'passive',
+    summary: 'Special, 8", +1 INJURY MODIFIER, ASSAULT, INFECTION MARKERS. Sin Success Roll: línea recta de 8" (se corta en terreno más alto que el atacante) e Injury Roll a cada modelo que toque. Vile Ferment: quitando 2 INFECTION MARKERS de la Gula, +1 INJURY MODIFIER.',
+  },
+  'Devour ACTION': {
+    type: 'action',
+    summary: 'Melee Attack sin arma con CRITICAL contra un enemigo a 1". Si no lo deja Out of Action, pon 1 BLOOD MARKER al atacante.',
+  },
+  'Grasp ACTION': {
+    type: 'action',
+    summary: 'Risky Success Roll; si falla, su activación termina. Con Success o Critical, arrastra 3" en línea recta hacia él a un enemigo a 12" en Line of Sight (puede hacerle saltar, entrar a 1" de un enemigo o retirarse sin ataques de huida). Se detiene ante modelos, terreno Difficult, Dangerous o Impassable, o terreno que exija Climb o Jump.',
+  },
+  'Lockjaw Bite': {
+    type: 'passive',
+    summary: 'Cuando un enemigo hace Retreat a 1" de este modelo, ponle 1 INFECTION MARKER antes de los ataques de huida.',
+  },
+  'Papillal Hide': {
+    type: 'passive',
+    summary: 'No necesita Line of Sight al objetivo para cargar (el resto de restricciones sigue).',
+  },
+  'Rotten Cutters': {
+    type: 'passive',
+    summary: 'Sus Melee Attacks tienen CLEAVE 2.',
+  },
+  'Unending Starvation': {
+    type: 'passive',
+    summary: '+1" a su Movement.',
+  },
+  'Butcher King': {
+    type: 'passive',
+    summary: 'Al final de la batalla, si no está Out of Action y dejó Out of Action a un enemigo con un Melee Attack, ganas 1 ☼.',
+  },
+  'Knight Companion of the Feast': {
+    type: 'passive',
+    summary: '+1 DICE a la Risky Success Roll de Ravenous Infection ACTION de los modelos amigos a 3".',
+  },
+  'Knight of Twin Cleavers': {
+    type: 'passive',
+    summary: 'IGNORE OFF-HAND WEAPON y sus Melee Attacks tienen SHRAPNEL.',
   },
   'Plague Knight Ranks': {
     type: 'campaign',
@@ -17748,7 +17965,7 @@ function effectiveKeywords(model, unit, wb) {
     const extra = ((ov && ov.addKeywords) || []).concat(v.allModelsKeywords || []);
     for (const k of extra) if (!base.includes(k)) base.push(k);
   }
-  for (const up of activeUpgrades(model, unit)) {
+  for (const up of activeUpgrades(model, unit, w)) {
     for (const k of (up.addsKeywords || [])) {
       if (!base.includes(k)) base.push(k);
     }
@@ -17803,10 +18020,15 @@ function effectiveAbilities(model, unit, wb) {
   const ov = w ? variantUnitOverride(w, unit.id) : null;
   if (ov && ov.removeAbilities) base = base.filter(a => !ov.removeAbilities.includes(a));
   if (ov && ov.addAbilities) for (const a of ov.addAbilities) if (!base.includes(a)) base.push(a);
-  for (const up of activeUpgrades(model, unit)) {
+  const ups = activeUpgrades(model, unit, w);
+  for (const up of ups) {
     for (const a of (up.addsAbilities || [])) {
       if (!base.includes(a)) base.push(a);
     }
+  }
+  // Upgrades that take an ability away (Hellfly Host: no Undead Fortitude)
+  for (const up of ups) {
+    if (up.removesAbilities) base = base.filter(a => !up.removesAbilities.includes(a));
   }
   return base;
 }
@@ -18019,6 +18241,13 @@ function classifyUpgrade(up, model, unit, wb) {
   }
   const all = allAvailableUpgrades(unit, wb);
   const activeDefs = all.filter(u => active.includes(u.id));
+  // Per-model cap shared by a group (Great Hunger Strains: 1, or 3 for Ravenous)
+  if (up.perModelGroup) {
+    const n = activeDefs.filter(u => u.perModelGroup === up.perModelGroup).length;
+    if (n >= (up.perModelMax || 1)) {
+      return { state: 'disabled', reason: 'Máx. ' + (up.perModelMax || 1) + ' por modelo' };
+    }
+  }
   const clash = activeDefs.find(u => {
     const hit = (up.incompatibleWith || []).includes(u.id) ||
                 (u.incompatibleWith || []).includes(up.id);
@@ -18366,6 +18595,12 @@ function canAddUnit(wb, unit) {
   if (unitForbiddenByVariant(wb, unit.id)) return false;
   // Variant-only units (Dervishes, Master Assassin...) need their variant
   if (unit.variantOnly && unit.variantOnly !== (wb && wb.variantId)) return false;
+  // Units that need the rest of the warband to be worth X 👑 (Great Maw: 1,000)
+  if (unit.requiresWarbandValue) {
+    const value = (wb.models || []).filter(m => m.unitId !== unit.id)
+      .reduce((t, m) => t + modelCost(m, wb.factionId, wb).ducados, 0);
+    if (value < unit.requiresWarbandValue) return false;
+  }
   {
     const v = getActiveVariant(wb);
     // Enemies of All (Trench Ghosts): no Mercenaries
@@ -18475,6 +18710,7 @@ const RESTRICTION_UNIT_MAP = {
   'Hell Knights':                'hell-knights',
   'Amalgam':                     'amalgam',
   'Jabirean Alchemist':          'jabirean',
+  'Matagot Hag':                 'matagot-hag-gh',
   'Heretic Troopers':            'heretic-troopers',
   'Heretic Priest':              'heretic-priest',
   'Legionnaires':                'heretic-troopers',
@@ -18666,7 +18902,7 @@ function modelHasWeaponKeyword(wb, model, keyword, excludeId=null) {
  * stipulation already equipped.
  */
 function itemIsBayonet(item) {
-  return !!item && /^bayonet$/i.test(item.name);
+  return !!item && (/^bayonet$/i.test(item.name) || !!item.needsBayonetLug);
 }
 
 /**
