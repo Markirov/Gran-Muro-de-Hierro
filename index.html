@@ -7193,21 +7193,22 @@ const DATA = {
           name:'Heretic Naval Raiders',
           summary:'Infantería de marina hereje: +1 DICE a la Risky de Dash, Submachine Guns a 25 👑, hasta 3 infiltrados y sin War Wolf.',
           specialRule:'Heretic Naval Raiders',
+          // Let Sleeping Dogs Lie
           forbiddenUnitIds:['war-wolf'],
-          additionalUpgrades:[
-            // Up to 3 non-ELITE models can have INFILTRATOR (Unseen Advance) for +10
-            // Applied to multiple unit IDs
-            { unitId:'heretic-troopers',
-              upgrade:{ id:'unseen-advance', name:'Unseen Advance', cost:10, currency:'👑',
-                addsKeywords:['INFILTRATOR'],
-                note:'Hasta 3 modelos no-ELITE de la banda pueden ser Unseen Advance por +10 👑 (INFILTRATOR).' },
-            },
-            { unitId:'wretched-hl',
-              upgrade:{ id:'unseen-advance', name:'Unseen Advance', cost:10, currency:'👑',
-                addsKeywords:['INFILTRATOR'],
-                note:'Hasta 3 modelos no-ELITE de la banda pueden ser Unseen Advance por +10 👑 (INFILTRATOR).' },
-            },
+          // Close Assault Weapons
+          armouryOverrides:{
+            'smg-hl': { cost:25, currency:'👑' },
+          },
+          // Light Troops: máx. 2 Anointed y 1 Artillery Witch (aunque la banda valga 1.000 👑 o más)
+          unitOverrides:[
+            { unitId:'anointed',  overrides:{ limit:'0-2' } },
+            { unitId:'art-witch', overrides:{ limit:'0-1' } },
           ],
+          // Unseen Advance: hasta 3 modelos no ELITE con INFILTRATOR (+10 👑)
+          additionalUpgrades:['heretic-troopers','wretched-hl','anointed','art-witch'].map(unitId => ({ unitId,
+            upgrade:{ id:'unseen-advance', name:'Unseen Advance', cost:10, currency:'👑',
+              addsKeywords:['INFILTRATOR'], maxPerWarband:3,
+              note:'Hasta 3 modelos no ELITE de la banda pueden tener INFILTRATOR por +10 👑 cada uno.' } })),
         },
       ],
     },
