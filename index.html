@@ -8088,7 +8088,7 @@ const ABILITY_LIBRARY = {
   },
   'Resurrection': {
     type: 'campaign',
-    summary: 'Si un Trench Pilgrim muere tras una partida de campaña, puede resucitar en el siguiente Quartermaster Step como Martyr Penitent (perfil Martyr Penitent) por 45 👑. Conserva su Battlekit y Zealot Strength, pero pierde Scars, Experience y Advancements. Las Injury Rolls contra un Martyr Penitent tienen -1 INJURY DICE y las Martyrdom Pills no le afectan.',
+    summary: 'Si un Trench Pilgrim muere tras una partida de campaña, puede resucitar en el siguiente Quartermaster Step como Martyr Penitent (perfil Martyr Penitent) por 45 👑. Conserva su Battlekit y Zealot Strength, pero pierde Scars, Experience y Advancements. Las Injury Rolls contra un Martyr Penitent tienen -1 INJURY DICE y las Martyrdom Pills no le afectan. No puede resucitar el que murió por Broken on the Wheel (Rules Commentaries, Trench Pilgrims Q1).',
   },
   'Agile': {
     type: 'passive',
@@ -8276,7 +8276,7 @@ const ABILITY_LIBRARY = {
   },
   'Stealth Generator': {
     type: 'passive',
-    summary: '-1 DICE a tiradas para ataques a distancia que tengan a este modelo como objetivo.',
+    summary: '-1 DICE a tiradas para ataques a distancia que tengan a este modelo como objetivo. Afecta a un ataque con BLAST solo si apunta al Death Commando, no si apunta a un punto del suelo (Rules Commentaries, Heretic Legions Q2).',
   },
   'Barbed Wire Banshee': {
     type: 'passive',
@@ -8314,7 +8314,7 @@ const ABILITY_LIBRARY = {
   },
   'Crushing Blows': {
     type: 'passive',
-    summary: 'El Lord of Tumours puede hacer un ataque cuerpo a cuerpo Crushing Blows aunque no tenga arma cuerpo a cuerpo equipada (o en lugar de usar las armas que tenga). El ataque tiene CLEAVE 2.',
+    summary: 'El Lord of Tumours puede hacer un ataque cuerpo a cuerpo Crushing Blows aunque no tenga arma cuerpo a cuerpo equipada (o en lugar de usar las armas que tenga). El ataque tiene CLEAVE 2. Puede hacerlo aunque no tenga armas cuerpo a cuerpo y aunque lleve Shield (Rules Commentaries, Black Grail Q1).',
   },
   'Command Bereaved ACTION': {
     type: 'action',
@@ -8394,7 +8394,7 @@ const ABILITY_LIBRARY = {
   },
   'Black Heart': {
     type: 'action',
-    summary: 'Goetic Spell (Cost 1). Antes de una Success Roll o Risky Success Roll del lanzador: +1 DICE.',
+    summary: 'Goetic Spell (Cost 1). Antes de una Success Roll o Risky Success Roll del lanzador: +1 DICE. Como cualquier hechizo, no se lanza más de una vez por activación; fuera de tu activación sí puedes usarlo en cada Success Roll o Risky Success Roll (Rules Commentaries, The Court Q2).',
   },
   'Body of Gold': {
     type: 'passive',
@@ -8936,7 +8936,8 @@ const KEYWORD_GLOSSARY = [
     note: 'Se le puede seguir cargando aunque salga de la Line of Sight del que carga (Q10).' },
   { key: 'STRONG', type: 'Efecto', src: 'Rulebook 1.0.2 (cambia)',
     text: 'Tiene la keyword NEGATE HEAVY. Además puede equipar y usar un arma cuerpo a cuerpo de 2 manos como si fuera de 1 mano.',
-    prev: 'No le afecta la keyword HEAVY de su Battlekit. Además puede usar un arma cuerpo a cuerpo de 2 manos como si fuera de 1 mano.' },
+    prev: 'No le afecta la keyword HEAVY de su Battlekit. Además puede usar un arma cuerpo a cuerpo de 2 manos como si fuera de 1 mano.',
+    note: 'Puede usar la Shovel como arma cuerpo a cuerpo a 1 mano (Rules Commentaries, Battlekit Q2).' },
   { key: 'SULTANATE', type: 'Etiqueta', src: 'Rulebook 1.0.2',
     text: 'El modelo pertenece a la facción Sultanate of the Iron Wall.' },
   { key: 'THE COURT', type: 'Etiqueta', src: 'Rulebook 1.0.2',
@@ -27423,7 +27424,7 @@ const PATRON_CATALOG = {
       { name: 'Favoured by God', summary: 'Al final de cada partida, la banda gana 1 ☼ extra por cada modelo con esta Skill en el campo.' },
       { name: 'Healing Arts', summary: 'Puedes re-rollear el resultado de la Trauma Chart de ELITE para este modelo.' },
       { name: 'Knowledge of Sciences', summary: 'El Limit de una pieza de Battlekit (no Glory Items), elegida y anotada en el Roster, sube en 1 mientras este modelo esté en la banda. Solo un modelo puede tenerla.' },
-      { name: 'Logistical Skills', summary: 'La banda puede subir en 1 cualquier límite de modelos (p. ej. 0-2 → 0-3) si el modelo no es ELITE, ni Mercenario, ni tiene base de 50mm o más.' },
+      { name: 'Logistical Skills', summary: 'La banda puede subir en 1 cualquier límite de modelos (p. ej. 0-2 → 0-3) si el modelo no es ELITE, ni Mercenario, ni tiene base de 50mm o más. También vale para modelos de bandas de variante, p. ej. Holy Warriors de Abyssinia (Rules Commentaries, Campaigns Q4).' },
       { name: 'Pennies from Heaven', summary: 'Al final de cada partida, la banda gana D6x5 👑 por cada modelo con esta Skill en el campo.' },
       { name: 'Walk with God', summary: 'Elige 1 Skill de cualquier Skill Chart (incl. Exploration Skill) y dásela a este modelo.' },
     ],
@@ -27452,7 +27453,7 @@ const PATRON_CATALOG = {
       { name: 'Imported Wares', summary: 'Compra 1 Weapon o 1 Armour del Armoury de New Antioch para este modelo. Re-comprable si se pierde.' },
       { name: 'Janissary Training', summary: 'Si la primera ACCIÓN es Charge, +1 DICE a Melee el resto de la Activación. Además gana IGNORE OFF-HAND WEAPON.' },
       { name: 'Rightly Guided', summary: 'Tras el despliegue, elige 1 ACTION (salvo Charge, Shoot o Fight) que requiera elegir o afectar a un enemigo; el resto de la partida este modelo no puede ser elegido ni afectado por ella.' },
-      { name: "Sultan's Favour", summary: 'La banda puede subir en 1 cualquier límite de modelos (p. ej. 0-2 → 0-3) si el modelo no es ELITE, ni Mercenario, ni tiene base de 50mm o más.' },
+      { name: "Sultan's Favour", summary: 'La banda puede subir en 1 cualquier límite de modelos (p. ej. 0-2 → 0-3) si el modelo no es ELITE, ni Mercenario, ni tiene base de 50mm o más. También vale para modelos de bandas de variante (Rules Commentaries, Campaigns Q4).' },
       { name: 'Sword of Allah', summary: 'Elige 1 Skill de la Melee & Strength Skills Table para este modelo.' },
     ],
   },
@@ -27767,7 +27768,7 @@ const CAMPAIGN_TABLES = {
         { roll:3,  name:'Hunter',
           summary:'Sus Ranged Attacks tienen IGNORE COVER.' },
         { roll:4,  name:'Gunslinger',
-          summary:'Si lleva 2 armas con PISTOL: puede hacer Shoot ACTION con una y luego Shoot ACTION con la otra. Además sus armas con PISTOL ganan ASSAULT e IGNORE OFF-HAND WEAPON.' },
+          summary:'Si lleva 2 armas con PISTOL: puede hacer Shoot ACTION con una y luego Shoot ACTION con la otra. Además sus armas con PISTOL ganan ASSAULT e IGNORE OFF-HAND WEAPON. Con un par de Automatic Pistols hace dos ataques con cada una (AUTOMATIC 2 con la primera y después con la segunda). En una Fight ACTION puede cambiar una pistola por un arma cuerpo a cuerpo; si ataca con la pistola como segunda arma, aplica IGNORE OFF-HAND WEAPON (Rules Commentaries, Campaigns Q2 y Q6).' },
         { roll:5,  name:'Far Shot',
           summary:'+6" de alcance a sus armas con PISTOL, a las que tengan "Rifle" en el nombre, y a las "Jezzail" o "Arquebus".' },
         { roll:6,  name:'Sharp Eyes',
@@ -27778,7 +27779,7 @@ const CAMPAIGN_TABLES = {
         { roll:8,  name:"Sniper's Nest",
           summary:'+2 DICE (en lugar de +1) a sus Ranged Attacks con el modificador Elevated Position.' },
         { roll:9,  name:'Point Blank',
-          summary:'Cuando hace un Melee Attack puede usar el Ranged Characteristic y un Ranged Weapon en lugar del Melee, si está a 1" del objetivo. Si el arma tiene ASSAULT, también puede hacer un Ranged Attack normal en la misma Activación.' },
+          summary:'Cuando hace un Melee Attack puede usar el Ranged Characteristic y un Ranged Weapon en lugar del Melee, si está a 1" del objetivo. Si el arma tiene ASSAULT, también puede hacer un Ranged Attack normal en la misma Activación. Se aplican los modificadores de un Melee Attack (Rules Commentaries, Campaigns Q7).' },
         { roll:10, name:'Hip Shot',
           summary:'Sus Ranged Weapons cuentan como con ASSAULT.' },
         { roll:11, name:'Headshot',
@@ -36240,7 +36241,7 @@ const EQUIPMENT_IMPLICIT_ABILITIES = {
   ],
   'Musical Instrument': [{
     name: 'Fanfare',
-    desc: '+1 DICE a las Risky Success Rolls de Dash de modelos aliados a 4" o menos de un modelo con Musical Instrument.',
+    desc: '+1 DICE a las Risky Success Rolls de Dash de modelos aliados a 4" o menos de un modelo con Musical Instrument. El portador también se beneficia: un modelo está a X" de sí mismo, incluido el portador (Rules Commentaries, Misc Q2).',
   }],
   'Blessed Icon': [{
     name: 'Talisman',
