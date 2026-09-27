@@ -40,10 +40,10 @@ ok(/0-3 Lions of Jabir/.test(F('Pride of Jabir')), 'Pride of Jabir: 0-3 Lions (H
 
 console.log('\nGroup 2: VARIANT_FACTION_RULES sin efectos inventados');
 ok(!/Hold the Line/.test(V('new-antioch:alba')) && /NEGATE FEAR/.test(V('new-antioch:alba')) && /Brave/.test(V('new-antioch:alba')), 'Alba: Brave y Bagpipes = NEGATE FEAR (sin Hold the Line)');
-ok(/\+5/.test(V('new-antioch:prussia')), 'Prussia: Rapid Assault solo comprado (+5)');
+ok(/Masters of the Grenade/.test(V('new-antioch:prussia')) && !/Rapid Assault/.test(V('new-antioch:prussia')), 'Prussia: Masters of the Grenade (Rapid Assault es mejora de unidad, no regla de banda)');
 ok(!/\+1 DICE Ranged a todo/.test(V('iron-sultanate:house-wisdom')), 'House of Wisdom: sin +1 DICE Ranged inventado');
-ok(!/INJURY MOD a Plague/.test(V('black-grail:great-hegemon')) && /Command Bereaved/.test(V('black-grail:great-hegemon')), 'Dirge: Command Bereaved (sin +1 INJURY MOD)');
-ok(/TOUGH/.test(V('trench-pilgrims:tenth-plague')), 'Tenth Plague: Castigators con TOUGH');
+ok(!/INJURY MOD a Plague/.test(V('black-grail:great-hegemon')), 'Dirge: sin +1 INJURY MOD (Command Bereaved va en Executor y Plague Knights)');
+ok(/Favour of the Lord/.test(V('trench-pilgrims:tenth-plague')) && !/Blood of the Lamb/.test(V('trench-pilgrims:tenth-plague')), 'Tenth Plague: Favour of the Lord (Blood of the Lamb va en los Castigators)');
 ok(/Semi-corporeal/.test(V('heretic-legions:trench-ghosts')), 'Trench Ghosts: Semi-corporeal');
 ok(!/Antipope/.test(V('black-grail:great-hunger')) && /Matagot Hag/.test(V('black-grail:great-hunger')), 'Great Hunger: Eternal Appetence con Matagot Hag');
 ok(/200/.test(V('new-antioch:red-brigade')) && /máx\. 2/.test(V('new-antioch:red-brigade')), 'Red Brigade: Wear and Tear con máximo 2 por modelo');

@@ -59,7 +59,7 @@ ok(/MOV/.test(cards[0].textContent) && /ARM/.test(cards[0].textContent), 'etique
 ok($$('.tm-dot', ov).length === wb.models.length, 'un punto por ficha');
 ok(/Turno 1/.test($('.tm-turn', ov).textContent), 'cabecera "Turno 1"');
 ok(/0\/9 activadas/.test($('.tm-count', ov).textContent), 'contador "0/9 activadas"');
-ok($$('.tm-effect', cards[0]).length >= 6, 'chips de efectos (≥6)');
+ok($$('.tm-effect', cards[0]).length >= 5, 'chips de efectos (≥5)');
 // Consulta completa visible (petición Marcos: cuanta más información, mejor).
 ok(!$('details.tm-ref', cards[0]), 'consulta ya no va plegada');
 ok(!!$('.tm-ref-weapons', cards[0]) && !!$('.tm-ref-equipment', cards[0]) && !!$('.tm-ref-abilities', cards[0]),
@@ -85,20 +85,20 @@ ok($$('.tm-dot', ov)[0].classList.contains('activated'), 'punto marcado como act
 console.log('\nGroup 5: sangre, efectos, usos');
 // Cada toque re-renderiza la ficha: hay que volver a buscarla.
 // Sangre 0-6: una fila de 7 botones, el actual marcado (aria-pressed).
-ok($$('.tm-blood-btn', c0).length === 7, '7 botones de sangre (0-6)');
-ok($$('.tm-blood-btn', c0).map(b => b.dataset.blood).join('') === '0123456', 'valores 0..6 en orden');
+ok($$('.tm-blood-btn[data-blood]', c0).length === 7, '7 botones de sangre (0-6)');
+ok($$('.tm-blood-btn[data-blood]', c0).map(b => b.dataset.blood).join('') === '0123456', 'valores 0..6 en orden');
 ok(!$('.tm-blood-plus', c0) && !$('.tm-blood-minus', c0), 'sin botones + / −');
 click($('.tm-blood-btn[data-blood="2"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
 ok($('.tm-blood-btn[data-blood="2"]', c0).getAttribute('aria-pressed') === 'true', 'blood 2 marcado');
-ok($$('.tm-blood-btn[aria-pressed="true"]', c0).length === 1, 'solo uno marcado');
+ok($$('.tm-blood-btn[data-blood][aria-pressed="true"]', c0).length === 1, 'solo uno marcado');
 click($('.tm-blood-btn[data-blood="1"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
 ok($('.tm-blood-btn[data-blood="1"]', c0).getAttribute('aria-pressed') === 'true' && L.loadTableSession(wb).models[uid0].blood === 1, 'blood 1');
-click($('.tm-effect[data-effect="BLES"]', c0));
+click($('.tm-effect[data-effect="FEAR"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
-ok($('.tm-effect[data-effect="BLES"]', c0).getAttribute('aria-pressed') === 'true', 'efecto BLES encendido');
-ok(L.loadTableSession(wb).models[uid0].effects.includes('BLES'), 'efecto guardado');
+ok($('.tm-effect[data-effect="FEAR"]', c0).getAttribute('aria-pressed') === 'true', 'efecto FEAR encendido');
+ok(L.loadTableSession(wb).models[uid0].effects.includes('FEAR'), 'efecto guardado');
 const withSpent = $$('.tm-card', ov).find(c => $('.tm-spent', c));
 if (withSpent) {
   const ab = $('.tm-spent', withSpent).dataset.ability;
@@ -116,7 +116,7 @@ ok(c0.classList.contains('tm-down'), 'Down → clase tm-down');
 click($('.tm-status [data-status="out"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
 ok(c0.classList.contains('tm-out'), 'Fuera → clase tm-out');
-ok($('.tm-activate', c0).disabled && $$('.tm-blood-btn', c0).every(b => b.disabled) && $$('.tm-effect', c0).every(b => b.disabled),
+ok($('.tm-activate', c0).disabled && $$('.tm-blood-btn[data-blood]', c0).every(b => b.disabled) && $$('.tm-effect', c0).every(b => b.disabled),
    'Fuera deshabilita activación, sangre y efectos');
 ok($$('.tm-status [data-status]', c0).every(b => !b.disabled), 'el selector de estado sigue activo');
 ok(/0\/8 activadas/.test($('.tm-count', ov).textContent), 'contador excluye Fuera (0/8)');
@@ -142,8 +142,8 @@ click(doc.getElementById('tm-close'));
 ok(!ov.classList.contains('show') && !doc.body.classList.contains('table-mode-open'), 'cerrado');
 click(btn);
 ok(/Turno 2/.test($('.tm-turn', ov).textContent), 'reabre en Turno 2');
-ok($('.tm-effect[data-effect="BLES"]', $(`.tm-card[data-uid="${uid0}"]`, ov)).getAttribute('aria-pressed') === 'true',
-   'efecto BLES conservado');
+ok($('.tm-effect[data-effect="FEAR"]', $(`.tm-card[data-uid="${uid0}"]`, ov)).getAttribute('aria-pressed') === 'true',
+   'efecto FEAR conservado');
 
 console.log('\nGroup 9: nueva partida');
 click(doc.getElementById('tm-reset'));

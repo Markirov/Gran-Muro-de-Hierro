@@ -36280,24 +36280,16 @@ const VARIANT_FACTION_RULES = {
       desc: 'La Machine Armour mantiene Charge Bonus D6".' },
   ],
   'new-antioch:prussia': [
-    { name: 'Rapid Assault',
-      desc: 'Solo si se compra (+5 👑, Lieutenant y Shock Troopers): +1 DICE a la Risky de Dash.' },
     { name: 'Masters of the Grenade',
       desc: '+4" al alcance de todas las granadas.' },
   ],
   'new-antioch:eire-rangers': [
     { name: 'Hit & Run Tactics',
       desc: '-1 DICE a los ataques cuerpo a cuerpo contra un modelo de la banda que se está retirando.' },
-    { name: 'Loose Formation',
-      desc: 'El Lieutenant tiene SKIRMISHER en lugar de Hold Your Fire!.' },
   ],
   'new-antioch:abyssinia': [
     { name: 'Short-Range Marksmanship',
       desc: '+1 DICE a los disparos a Short Range del Lieutenant y los Yeomen (no granadas ni armas HEAVY).' },
-  ],
-  'new-antioch:papal-states': [
-    { name: 'Lector',
-      desc: 'El Trench Cleric tiene LEADER y Arise and be Healed! ACTION.' },
   ],
   'trench-pilgrims:sacred-affliction': [
     { name: 'Punishing Millstones',
@@ -36306,12 +36298,6 @@ const VARIANT_FACTION_RULES = {
   'trench-pilgrims:tenth-plague': [
     { name: 'Favour of the Lord',
       desc: 'Al empezar cada turno, 1 BLESSING MARKER a un modelo de la banda.' },
-    { name: 'Blood of the Lamb',
-      desc: 'Los Castigators tienen TOUGH.' },
-  ],
-  'iron-sultanate:fidai-alamut': [
-    { name: 'Whirling Dervish',
-      desc: 'Dervishes: -1 DICE a los disparos contra ellos.' },
   ],
   'heretic-legions:trench-ghosts': [
     { name: 'Semi-corporeal',
@@ -36324,10 +36310,6 @@ const VARIANT_FACTION_RULES = {
   'heretic-legions:naval-raiders': [
     { name: 'Fast as Lightning',
       desc: '+1 DICE a la Risky Success Roll de Dash.' },
-  ],
-  'black-grail:great-hegemon': [
-    { name: 'Hegemon\'s Will',
-      desc: 'Executor y Plague Knights: Command Bereaved ACTION (gasta INFECTION MARKERS de enemigos para dar órdenes a Bereaved a 18").' },
   ],
   'new-antioch:red-brigade': [
     { name: 'Wear and Tear',
@@ -36364,33 +36346,47 @@ function buildModelCardData(model, wb) {
     kws = (model.companionKeywords || []).map(k => (typeof k === 'string' ? k : k && k.name) || '').filter(Boolean);
     abilitiesNative = (model.companionAbilities || []).map(a => typeof a === 'string' ? { name: a } : a);
   } else {
-    // Native path: lookup unit canon.
+    // Native path: el motor de Forge (variante, mejoras y progresión).
     const unit = (typeof getUnit === 'function' && wb.factionId && model.unitId)
       ? getUnit(wb.factionId, model.unitId) : null;
     if (unit && unit.stats) {
+      const es = effectiveStats(model, unit, wb);
       stats = {
-        move: unit.stats.movement || unit.stats.move || '0',
-        ranged: unit.stats.ranged || '0',
-        melee: unit.stats.melee || '0',
-        armour: unit.stats.armour || '0',
+        move: es.movement || es.move || '0',
+        ranged: es.ranged || '0',
+        melee: es.melee || '0',
+        armour: es.armour || '0',
       };
     } else {
       stats = {};
     }
-    kws = (unit && Array.isArray(unit.keywords)) ? unit.keywords.slice() : [];
-    // Map model.upgrades a abilities + collect battlekit IDs.
-    const upgradeIds = Array.isArray(model.upgrades) ? model.upgrades : [];
-    abilitiesNative = upgradeIds.map(uid => {
-      const upg = unit && (unit.upgrades || []).find(u => u.id === uid);
-      return upg ? { name: upg.name, desc: upg.note || '' } : { name: uid, desc: '' };
-    });
-    // Equipment: model.battlekit IDs → name lookup via factionId.
+    kws = unit ? effectiveKeywords(model, unit, wb) : [];
+    // Habilidades de la unidad (con la variante) y después las mejoras activas.
+    abilitiesNative = unit ? effectiveAbilities(model, unit, wb).map(n => ({ name: n, desc: '' })) : [];
+    for (const upg of (unit ? activeUpgrades(model, unit, wb) : [])) {
+      abilitiesNative.push({ name: upg.name, desc: upg.note || '' });
+    }
+    // Battlekit: armas por su categoría de la armería (type "2-Handed weapon"…).
+    const WEAPON_CATS = ['ranged', 'melee', 'grenades', 'anchoriteRanged', 'anchoriteMelee'];
     const bkIds = Array.isArray(model.battlekit) ? model.battlekit : [];
     equipment = bkIds.map(bid => {
-      const it = (typeof findBattlekitItem === 'function')
-        ? findBattlekitItem(wb.factionId, bid, wb) : null;
-      return it ? { name: it.name, type: (it.category || ''), keywords: it.weaponKeywords || [] } : { name: bid };
+      const it = findBattlekitItem(wb.factionId, bid, wb);
+      if (!it) return { name: bid };
+      const cat = getArmouryCategory(wb.factionId, bid);
+      const isWeapon = WEAPON_CATS.includes(cat);
+      return { name: it.name, keywords: it.weaponKeywords || [], range: it.range,
+               type: isWeapon ? (cat === 'grenades' ? 'Grenade' : String(it.type || '') + ' weapon') : (it.type || '') };
     });
+    // Equipo permanente de la entrada (Anointed, Hunter of the Left-Hand Path…).
+    const perm = ((unit && getUnitWithVariant(wb, unit.id)) || unit || {}).permanentEquipment || [];
+    for (const pname of perm) {
+      const it = findArmouryItemByName(wb, pname);
+      const isWeapon = it && /handed|grenade/i.test(String(it.type || '')) && !/shield/i.test(String(it.type || ''));
+      equipment.push(it
+        ? { name: pname, keywords: it.weaponKeywords || [], range: it.range,
+            type: isWeapon ? String(it.type) + ' weapon' : (it.type || 'Equipment') }
+        : { name: pname, type: 'Equipment' });
+    }
   }
   const stats0 = stats;  // alias para mantener referencia luego.
   stats = stats0;
@@ -37536,12 +37532,14 @@ function drawTrackerPanelOnCanvas(ctx, x0, y0, w, h, data) {
  */
 const TABLE_SESSION_VERSION = 1;
 const TABLE_STATUSES = ['up', 'down', 'out'];
-// Misma lista que el battletracker PDF (drawTrackerPanelOnCanvas).
-const TABLE_EFFECTS_BASE = ['BLES', 'AIM', 'MEM', 'FEAR', 'CHARGED', 'OTRO'];
+// Recordatorios del battletracker PDF. BLESSING e INFECTION MARKERS no son
+// chips: son contadores 0-6 como los BLOOD MARKERS (Rulebook / Warbands 1.0.2).
+const TABLE_EFFECTS_BASE = ['AIM', 'MEM', 'FEAR', 'CHARGED', 'OTRO'];
 const TABLE_EFFECTS_ELEMENTAL = ['FIRE', 'GAS', 'SHRAPNEL'];
 
 function _defaultTableModelState() {
-  return { activated: false, blood: 0, status: 'up', effects: [], spent: [] };
+  return { activated: false, blood: 0, blessing: 0, infection: 0, spread: false,
+           status: 'up', effects: [], spent: [] };
 }
 
 function newTableSession(wb) {
@@ -37562,6 +37560,15 @@ function syncTableSession(session, wb) {
   for (const m of models) {
     if (m && m.uid && !session.models[m.uid]) session.models[m.uid] = _defaultTableModelState();
   }
+  // Sesiones anteriores: contadores nuevos y el chip BLES pasa a 1 BLESSING MARKER.
+  for (const st of Object.values(session.models)) {
+    if (typeof st.blessing !== 'number') st.blessing = 0;
+    if (typeof st.infection !== 'number') st.infection = 0;
+    if (Array.isArray(st.effects) && st.effects.includes('BLES')) {
+      st.effects = st.effects.filter(e => e !== 'BLES');
+      st.blessing = Math.max(st.blessing, 1);
+    }
+  }
   return session;
 }
 
@@ -37574,9 +37581,18 @@ function _tableModel(session, uid) {
   return session.models[uid];
 }
 
+// The Infection Spreads (Warbands 1.0.2): al activarse con INFECTION
+// MARKERS, recibe 1 más antes de sus ACTIONS. Desmarcar la activación lo deshace.
 function toggleTableActivated(session, uid) {
   const st = _tableModel(session, uid);
   st.activated = !st.activated;
+  if (st.activated) {
+    st.spread = (st.infection || 0) > 0 && st.infection < TABLE_MAX_MARKERS;
+    if (st.spread) st.infection += 1;
+  } else if (st.spread) {
+    st.infection = Math.max(0, (st.infection || 0) - 1);
+    st.spread = false;
+  }
   return session;
 }
 
@@ -37586,6 +37602,22 @@ const TABLE_MAX_BLOOD = 6;
 function setTableBlood(session, uid, n) {
   const st = _tableModel(session, uid);
   st.blood = Math.min(TABLE_MAX_BLOOD, Math.max(0, Math.round(Number(n) || 0)));
+  return session;
+}
+
+// Máximo 6 BLESSING MARKERS (Rulebook) y 6 INFECTION MARKERS (Warbands).
+const TABLE_MAX_MARKERS = 6;
+function _clampMarkers(n) {
+  return Math.min(TABLE_MAX_MARKERS, Math.max(0, Math.round(Number(n) || 0)));
+}
+function setTableBlessing(session, uid, n) {
+  _tableModel(session, uid).blessing = _clampMarkers(n);
+  return session;
+}
+function setTableInfection(session, uid, n) {
+  const st = _tableModel(session, uid);
+  st.infection = _clampMarkers(n);
+  st.spread = false;
   return session;
 }
 
@@ -37619,7 +37651,10 @@ function toggleTableSpent(session, uid, abilityName) {
 // el jugador a mano (cuándo se retira cada marcador depende de la regla).
 function advanceTableTurn(session) {
   session.turn = (session.turn || 1) + 1;
-  for (const uid of Object.keys(session.models)) session.models[uid].activated = false;
+  for (const uid of Object.keys(session.models)) {
+    session.models[uid].activated = false;
+    session.models[uid].spread = false;
+  }
   return session;
 }
 
@@ -37861,6 +37896,16 @@ function _tmCardHtml(model) {
         <div class="tm-blood-row">${Array.from({ length: TABLE_MAX_BLOOD + 1 }, (_, n) =>
           `<button type="button" class="tm-blood-btn" data-blood="${n}" aria-pressed="${st.blood === n}" aria-label="${n} blood markers"${dis}>${n}</button>`).join('')}</div>
       </div>
+      <div class="tm-blood tm-blessing">
+        <span class="tm-label">Blessing markers</span>
+        <div class="tm-blood-row">${Array.from({ length: TABLE_MAX_MARKERS + 1 }, (_, n) =>
+          `<button type="button" class="tm-blood-btn" data-blessing="${n}" aria-pressed="${(st.blessing || 0) === n}" aria-label="${n} blessing markers"${dis}>${n}</button>`).join('')}</div>
+      </div>
+      <div class="tm-blood tm-infection">
+        <span class="tm-label">Infection markers</span>
+        <div class="tm-blood-row">${Array.from({ length: TABLE_MAX_MARKERS + 1 }, (_, n) =>
+          `<button type="button" class="tm-blood-btn" data-infection="${n}" aria-pressed="${(st.infection || 0) === n}" aria-label="${n} infection markers"${dis}>${n}</button>`).join('')}</div>
+      </div>
     </div>
     <div class="tm-block">
       <div class="tm-label">Efectos</div>
@@ -37973,6 +38018,8 @@ document.getElementById('btn-table-mode')?.addEventListener('click', () => {
     if (!card) return;
     const uid = card.dataset.uid;
     if (t.classList.contains('tm-activate')) toggleTableActivated(S, uid);
+    else if (t.dataset.blessing != null) setTableBlessing(S, uid, Number(t.dataset.blessing));
+    else if (t.dataset.infection != null) setTableInfection(S, uid, Number(t.dataset.infection));
     else if (t.classList.contains('tm-blood-btn')) setTableBlood(S, uid, Number(t.dataset.blood));
     else if (t.dataset.status) setTableStatus(S, uid, t.dataset.status);
     else if (t.classList.contains('tm-effect')) toggleTableEffect(S, uid, t.dataset.effect);
