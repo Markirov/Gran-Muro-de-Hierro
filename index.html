@@ -5765,6 +5765,11 @@ body.table-mode-open { overflow: hidden; }
    (consult the official rulebook for those during play).
    ====================================================================== */
 
+// Papal States Swiss Guard: hasta 4 modelos (además del Lieutenant) con NEGATE FEAR gratis.
+const SWISS_GUARD_PAPAL = { id:'swiss-guard', name:'Swiss Guard', cost:0, currency:'👑',
+  addsKeywords:['NEGATE FEAR'], maxPerWarband:4,
+  note:'Swiss Guard: el Lieutenant y hasta 4 modelos más pueden tener NEGATE FEAR sin coste.' };
+
 const DATA = {
   // ============= FACTIONS =============
   factions: {
@@ -5877,6 +5882,11 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'mountain-na',       name:'Mountaineer Kit',      cost:3,  currency:'👑', restriction:'Limit: 4',
             type:'Equipment', range:'-', weaponKeywords:[] },
+          // Supreme Blessing (Papal States Intervention Force)
+          { id:'crucifix-papal',    name:"Supreme Pontiff's Crucifix", cost:3, currency:'☼',
+            variantOnly:'papal-states', restriction:'Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:[],
+            note:'Inspiring Relic: el portador no termina su activación tras fallar una Risky Success Roll. El que se da al crear la banda es gratis (si se pierde, el reemplazo se paga).' },
           // Anointed Ammunition (Éire Rangers): Battlekit del Rulebook.
           { id:'ap-bullets-eire',   name:'Armour-Piercing Bullets', cost:5, currency:'👑',
             variantOnly:'eire-rangers', restriction:'Consumable · Limit: 2',
@@ -5955,6 +5965,25 @@ const DATA = {
           mandatoryUnits:[{ unitId:'trench-cleric', count:1 }],
           // Lieutenant is no longer mandatory in Papal States
           relaxedMandatoryIds:['lieutenant'],
+          // Lector: el Trench Cleric tiene LEADER y Arise and be Healed! ACTION.
+          unitOverrides:[
+            { unitId:'trench-cleric', overrides:{ addKeywords:['LEADER'], addAbilities:['Arise and be Healed! ACTION'] } },
+          ],
+          // Supreme Blessing: un modelo lleva el Crucifix, gratis al crear la banda.
+          mandatoryItems:['crucifix-papal'],
+          freeFirstItems:['crucifix-papal'],
+          // Swiss Guard: el Lieutenant y hasta 4 modelos más con NEGATE FEAR gratis.
+          additionalUpgrades:[
+            { unitId:'lieutenant', upgrade:{ id:'swiss-guard-lt', name:'Swiss Guard', cost:0, currency:'👑',
+                addsKeywords:['NEGATE FEAR'],
+                note:'Swiss Guard: el Lieutenant puede tener NEGATE FEAR sin coste.' } },
+            { unitId:'sniper-priests', upgrade:SWISS_GUARD_PAPAL },
+            { unitId:'yeomen', upgrade:SWISS_GUARD_PAPAL },
+            { unitId:'shock-troopers', upgrade:SWISS_GUARD_PAPAL },
+            { unitId:'combat-engineers', upgrade:SWISS_GUARD_PAPAL },
+            { unitId:'mech-heavy-inf', upgrade:SWISS_GUARD_PAPAL },
+            { unitId:'combat-medic', upgrade:SWISS_GUARD_PAPAL },
+          ],
         },
         {
           id:'eire-rangers',
@@ -17659,6 +17688,14 @@ function checkUpgradeLegality(wb) {
         }
       }
     }
+    // Variant: mandatory items missing (Papal States Crucifix)
+    for (const iid of (variant.mandatoryItems || [])) {
+      const has = wb.models.some(m => (m.battlekit || []).includes(iid));
+      if (!has && wb.models.length > 0) {
+        const it = findBattlekitItem(wb.factionId, iid);
+        warnings.push('La variante ' + variant.name + ' requiere que un modelo lleve ' + (it ? it.name : iid) + '.');
+      }
+    }
     // Variant: mandatory units missing
     if (variant.mandatoryUnits) {
       for (const req of variant.mandatoryUnits) {
@@ -17800,6 +17837,12 @@ function coldSteelApplies(wb, factionId, kitId) {
  *  carries it, otherwise the price of buying it now (Cold Steel halves the first one). */
 function battlekitPurchaseCost(wb, item, model) {
   const idx = model ? (model.battlekit || []).indexOf(item.id) : -1;
+  const fv = getActiveVariant(wb);
+  if (fv && (fv.freeFirstItems || []).includes(item.id)) {
+    const free = idx >= 0 ? isFirstMeleePurchase(wb, model, item.id, idx)
+                          : !wb.models.some(m => (m.battlekit || []).includes(item.id));
+    if (free) return 0;
+  }
   if (idx >= 0) {
     return coldSteelApplies(wb, wb.factionId, item.id) && isFirstMeleePurchase(wb, model, item.id, idx)
       ? Math.ceil(item.cost / 2) : item.cost;
@@ -17836,6 +17879,9 @@ function modelCost(model, factionId, wb) {
     if (item) {
       const half = item.currency === '👑' && coldSteelApplies(wb, factionId, kitId) &&
                    isFirstMeleePurchase(wb, model, kitId, idx);
+      // Supreme Blessing: the warband's first Crucifix is free
+      const fv = wb ? getActiveVariant(wb) : null;
+      if (fv && (fv.freeFirstItems || []).includes(kitId) && isFirstMeleePurchase(wb, model, kitId, idx)) return;
       if (item.currency === '👑') ducados += half ? Math.ceil(item.cost / 2) : item.cost;
       else glory += item.cost;
     }
