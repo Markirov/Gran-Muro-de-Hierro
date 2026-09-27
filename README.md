@@ -2,7 +2,7 @@
 
 > Companion offline para [Trench Crusade](https://www.trenchcrusade.com) — tarjetas físicas, simulador de batalla y herramientas de mesa.
 
-**[🔗 Probar en directo](https://markirov.github.io/Gran-Muro-de-Hierro/)**
+**[🔗 Probar en directo](https://murodehierrodelsultanato.web.app)**
 
 ---
 
@@ -36,7 +36,7 @@ Warband Forge es una herramienta web complementaria a [Trench Companion](https:/
 
 ### En la web (recomendado)
 
-Visita [https://markirov.github.io/Gran-Muro-de-Hierro/](https://markirov.github.io/Gran-Muro-de-Hierro/). No requiere instalación.
+Visita [https://murodehierrodelsultanato.web.app](https://murodehierrodelsultanato.web.app). No requiere instalación.
 
 ### Localmente
 

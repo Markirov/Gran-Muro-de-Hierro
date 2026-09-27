@@ -43,3 +43,7 @@ turno_referencia_trench_crusade.pdf
 tarjetas-*.pdf
 battletrackers-*.pdf
 Bandas/cazadores-del-muro.pdf
+
+# Build de Firebase Hosting (scripts/deploy.sh)
+dist/
+.firebase/
