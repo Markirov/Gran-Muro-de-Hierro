@@ -6274,6 +6274,12 @@ const DATA = {
             type:'Armour', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         equipment: [
+          // Cavalcade of the Tenth Plague: cualquier modelo PILGRIM (también el
+          // Anchorite Shrine) salvo Ecclesiastic Prisoners.
+          { id:'lamb-tenth',      name:'Sacrificial Lamb',     cost:5,  currency:'👑',
+            variantOnly:'tenth-plague', restriction:'Consumable', bypassUnitCategoryLimits:true,
+            type:'Equipment', range:'-', weaponKeywords:['CONSUMABLE'],
+            note:'Warded by Blood: al desplegar al portador puedes sacrificarlo; se ignora el primer BLOOD MARKER que se le ponga.' },
           { id:'blessed-icon-tp', name:'Blessed Icon',         cost:15, currency:'👑', restriction:'Consumable',
             type:'Equipment', range:'-', weaponKeywords:['CONSUMABLE'] },
           { id:'shrine-tp',       name:'Field Shrine',         cost:2,  currency:'☼',
@@ -6485,8 +6491,18 @@ const DATA = {
           name:'Cavalcade of the Tenth Plague',
           summary:'Rechazan la doctrina del Meta-Cristo: Castigators con TOUGH, Sacrificial Lamb, 1 BLESSING MARKER por turno y Communicants robados por 3 ☼.',
           specialRule:'Cavalcade of the Tenth Plague',
-          // Limits: max 2 Ecclesiastic Prisoners (instead of normal limit)
-          // Heaven Awaits: cannot resurrect Pilgrims as Martyr-Penitents
+          // Heaven Awaits: sin Martyr Penitents
+          forbiddenUnitIds:['martyr-penitent'],
+          unitOverrides:[
+            // Blood of the Lamb
+            { unitId:'castigator',     overrides:{ addKeywords:['TOUGH'] } },
+            // Day of His Wrath
+            { unitId:'war-prophet',    overrides:{ removeAbilities:['Laying on of Hands ACTION'], addAbilities:['Day of His Wrath ACTION'] } },
+            // Stolen Communicants: 3 ☼ en vez de 100 👑
+            { unitId:'communicant',    overrides:{ cost:3, currency:'☼' } },
+            // The Unclean
+            { unitId:'eccl-prisoners', overrides:{ limit:'0-2' } },
+          ],
         },
       ],
     },
@@ -7619,6 +7635,10 @@ const ABILITY_LIBRARY = {
   'Rapid Assault': {
     type: 'passive',
     summary: '+1 DICE a la Risky Success Roll cuando el modelo hace una Dash ACTION. (Athleticism, Stosstruppen of Prussia.)',
+  },
+  'Day of His Wrath ACTION': {
+    type: 'action',
+    summary: 'Risky Success Roll. Si falla, su activación termina. Con Success, Injury Roll con IGNORE ARMOUR a 1 enemigo a 3"; con Critical, además +1 INJURY DICE. (Sustituye a Laying on of Hands en el Cavalcade of the Tenth Plague.)',
   },
   'Blessed Psalm ACTION': {
     type: 'action',
@@ -18012,7 +18032,8 @@ function modelCost(model, factionId, wb) {
       glory:   model.companionGlory || 0,
     };
   }
-  const u = getUnit(factionId, model.unitId);
+  // Variant cost overrides (Tenth Plague: Communicants for 3 ☼)
+  const u = wb ? getUnitWithVariant(wb, model.unitId) : getUnit(factionId, model.unitId);
   if (!u) return { ducados: 0, glory: 0 };
   const altOk = unitCostAltAllowed(wb, u);
   let ducados = u.currency === '👑' ? (model.costVariant === 'alt' && altOk ? (u.costAlt||u.cost) : u.cost) : 0;
@@ -18598,7 +18619,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   }
 
   // Forbidden categories (e.g. MHI/Combat Engineers cannot take from Armour table)
-  if (access.forbidCategories && access.forbidCategories.includes(category)) {
+  if (access.forbidCategories && access.forbidCategories.includes(category) && !item.bypassUnitCategoryLimits) {
     return { state: 'hidden', reason: 'Categoría no permitida para esta unidad' };
   }
 
@@ -19260,9 +19281,11 @@ function unitCatalogueCard(unit, wb, isMerc=false) {
     : (unit.limitPerUnit ? perUnitLimitText(wb, unit) : 'sin límite');
   const limitChanged = override && override.limit && override.limit !== unit.limit;
 
-  const costStr = unit.costAlt
-    ? `${unit.cost}/${unit.costAlt} ${unit.currency}`
-    : `${unit.cost} ${unit.currency}`;
+  // Variant cost override (Tenth Plague: Communicants for 3 ☼)
+  const cu = (override && override.cost != null) ? Object.assign({}, unit, { cost: override.cost, currency: override.currency || unit.currency }) : unit;
+  const costStr = cu.costAlt && unitCostAltAllowed(wb, cu)
+    ? `${cu.cost}/${cu.costAlt} ${cu.currency}`
+    : `${cu.cost} ${cu.currency}`;
 
   card.innerHTML = `
     <div class="unit-row">
