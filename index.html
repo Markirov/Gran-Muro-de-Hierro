@@ -5821,6 +5821,10 @@ const DATA = {
             type:'1-Handed', range:'Melee', weaponKeywords:[] },
           { id:'polearm-na',        name:'Polearm',              cost:7,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'Melee', weaponKeywords:['BLOCK','CUMBERSOME'] },
+          // ── Kingdom of Alba Armoury (variante Alba) ──
+          { id:'lochaber-axe-alba', name:'Lochaber Axe',         cost:20, currency:'👑',
+            variantOnly:'alba',
+            type:'2-Handed', range:'Melee', weaponKeywords:['+2 INJURY DICE','BLOCK','CRITICAL','CUMBERSOME','HEAVY'] },
           { id:'sword-na',          name:'Sword/Axe',            cost:4,  currency:'👑',
             type:'1-Handed', range:'Melee', weaponKeywords:['CRITICAL'] },
           { id:'trench-club-na',    name:'Trench Club',          cost:3,  currency:'👑',
@@ -5868,6 +5872,10 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'mountain-na',       name:'Mountaineer Kit',      cost:3,  currency:'👑', restriction:'Limit: 4',
             type:'Equipment', range:'-', weaponKeywords:[] },
+          // Dum-Dum Ammunition (Kingdom of Alba): Battlekit del Rulebook.
+          { id:'dum-dum-alba',      name:'Dum-Dum Bullets',      cost:5,  currency:'👑',
+            variantOnly:'alba', restriction:'Consumable · Limit: 3',
+            type:'Equipment', range:'-', weaponKeywords:['AMMUNITION (CRITICAL)','CONSUMABLE'] },
           { id:'music-na',          name:'Musical Instrument',   cost:15, currency:'👑', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD'] },
           { id:'shovel-na',         name:'Shovel',               cost:5,  currency:'👑',
@@ -5960,6 +5968,32 @@ const DATA = {
           name:'Kingdom of Alba Assault Detachment',
           summary:'Asalto cuerpo a cuerpo de las Highlands: STRONG gratis para Lieutenant y Shock Troopers, Rampant Charge, Bagpipes y claymores baratas.',
           specialRule:'Kingdom of Alba Assault',
+          // Rampant Charge: todos los modelos tienen IGNORE DEFENDED OBSTACLE.
+          allModelsKeywords:['IGNORE DEFENDED OBSTACLE'],
+          unitOverrides:[
+            // Highland Strength
+            { unitId:'lieutenant',     overrides:{ addKeywords:['STRONG'] } },
+            { unitId:'shock-troopers', overrides:{ addKeywords:['STRONG'] } },
+            // Melee-focused
+            { unitId:'mech-heavy-inf', overrides:{ stats:{ melee:'+1 DICE', ranged:'+0 DICE' } } },
+          ],
+          // Cold Steel: la primera compra de cada arma cuerpo a cuerpo cuesta la mitad.
+          halfPriceFirstMelee:true,
+          armouryOverrides:{
+            // Claymore Smiths
+            'great-sword-na':       { cost:7 },
+            // Strained Supply
+            'auto-shotgun-na':      { restriction:'Bayonet Lug · Shield Combo · Limit: 1' },
+            'grenade-launcher-na':  { restriction:'Limit: 1' },
+            'machine-gun-na':       { restriction:'Limit: 1' },
+            'sniper-rifle-na':      { restriction:'Limit: 1' },
+            'smg-na':               { restriction:'Bayonet Lug · Shield Combo · Limit: 1' },
+            // Lightly-armoured
+            'reinforced-armour-na': { restriction:'Lieutenant & Mech. Heavy Inf. only' },
+            'machine-armour-na':    { restriction:'Lieutenant & Mech. Heavy Inf. only · Limit: 1 excl. MHI' },
+            // Bagpipes
+            'music-na':             { note:'Bagpipes (Kingdom of Alba): un Musical Instrument de la banda puede ser Bagpipes sin coste extra; los modelos amigos a 8" del portador tienen NEGATE FEAR.' },
+          },
         },
         {
           id:'prussia',
@@ -17202,9 +17236,17 @@ function activeUpgrades(model, unit, wb) {
  * Returns the effective keyword set for a model: base keywords + keywords
  * added by each active upgrade + skill advancements. Used for display, legality and PDF.
  */
-function effectiveKeywords(model, unit) {
+function effectiveKeywords(model, unit, wb) {
   if (!unit) return [];
   const base = [...(unit.keywords || [])];
+  // Keywords the active variant grants (Alba: Highland Strength, Rampant Charge)
+  const w = wb || (typeof STATE !== 'undefined' ? STATE.currentWarband : null);
+  const v = w ? getActiveVariant(w) : null;
+  if (v) {
+    const ov = variantUnitOverride(w, unit.id);
+    const extra = ((ov && ov.addKeywords) || []).concat(v.allModelsKeywords || []);
+    for (const k of extra) if (!base.includes(k)) base.push(k);
+  }
   for (const up of activeUpgrades(model, unit)) {
     for (const k of (up.addsKeywords || [])) {
       if (!base.includes(k)) base.push(k);
@@ -17239,9 +17281,9 @@ function effectiveKeywords(model, unit) {
  * @param {string} keyword  the keyword to check NEGATE for (e.g. 'HEAVY')
  * @returns {boolean}
  */
-function modelNegatesKeyword(model, unit, keyword) {
+function modelNegatesKeyword(model, unit, keyword, wb) {
   if (!unit) return false;
-  const kws = effectiveKeywords(model, unit);
+  const kws = effectiveKeywords(model, unit, wb);
   if (kws.includes(`NEGATE ${keyword}`)) return true;
   // STRONG implicitly grants NEGATE HEAVY (canon)
   if (keyword === 'HEAVY' && kws.includes('STRONG')) return true;
@@ -17633,6 +17675,41 @@ function checkBattlekitLegality(wb) {
   return warnings;
 }
 
+/**
+ * Cold Steel (Kingdom of Alba): the first Melee Weapon of each kind bought
+ * for the warband costs half (fractions round up, Rulebook "Fractions").
+ * "First" = first occurrence in roster order.
+ */
+function isFirstMeleePurchase(wb, model, kitId, idx) {
+  for (const m of wb.models) {
+    const bk = m.battlekit || [];
+    for (let i = 0; i < bk.length; i++) {
+      if (bk[i] !== kitId) continue;
+      return (m === model || m.uid === model.uid) && i === idx;
+    }
+  }
+  return true;
+}
+function coldSteelApplies(wb, factionId, kitId) {
+  const v = wb ? getActiveVariant(wb) : null;
+  return !!(v && v.halfPriceFirstMelee && getArmouryCategory(factionId, kitId) === 'melee');
+}
+
+/** Price shown for `item` in the picker: what this model paid if it already
+ *  carries it, otherwise the price of buying it now (Cold Steel halves the first one). */
+function battlekitPurchaseCost(wb, item, model) {
+  const idx = model ? (model.battlekit || []).indexOf(item.id) : -1;
+  if (idx >= 0) {
+    return coldSteelApplies(wb, wb.factionId, item.id) && isFirstMeleePurchase(wb, model, item.id, idx)
+      ? Math.ceil(item.cost / 2) : item.cost;
+  }
+  if (coldSteelApplies(wb, wb.factionId, item.id) &&
+      !wb.models.some(m => (m.battlekit || []).includes(item.id))) {
+    return Math.ceil(item.cost / 2);
+  }
+  return item.cost;
+}
+
 function modelCost(model, factionId, wb) {
   // Fase 10 PIVOT v2 — si el modelo viene de Trench Companion, TC es la
   // verdad oficial: confiar en companionCost/companionGlory. Evita
@@ -17653,13 +17730,15 @@ function modelCost(model, factionId, wb) {
     if (up.currency === '👑') ducados += up.cost || 0;
     else if (up.currency === '☼') glory += up.cost || 0;
   }
-  for (const kitId of (model.battlekit || [])) {
+  (model.battlekit || []).forEach((kitId, idx) => {
     const item = findBattlekitItem(factionId, kitId, wb);
     if (item) {
-      if (item.currency === '👑') ducados += item.cost;
+      const half = item.currency === '👑' && coldSteelApplies(wb, factionId, kitId) &&
+                   isFirstMeleePurchase(wb, model, kitId, idx);
+      if (item.currency === '👑') ducados += half ? Math.ceil(item.cost / 2) : item.cost;
       else glory += item.cost;
     }
-  }
+  });
   return { ducados, glory };
 }
 
@@ -17795,6 +17874,7 @@ const RESTRICTION_UNIT_MAP = {
   'Mech. Heavy Inf.':            'mech-heavy-inf',
   'Mechanized Heavy Infantry':   'mech-heavy-inf',
   'Combat Medic':                'combat-medic',
+  'Lieutenant':                  'lieutenant',
   'Combat Engineer':             'combat-engineers',
   'Sappers':                     'sappers',
   'Sultanate Sappers':           'sappers',
@@ -18072,7 +18152,7 @@ function getWeaponLimits(model, unit, wb) {
     return Object.assign({ meleeMax:2, rangedMax:2, totalMax:null, strongBonus:false, hasShield:false },
                          access.weaponLimits);
   }
-  const kws = unit ? effectiveKeywords(model, unit) : [];
+  const kws = unit ? effectiveKeywords(model, unit, wb) : [];
   const isStrong = kws.includes('STRONG');
 
   // Upgrade-granted limits (Takwin Homunculus Additional Arm)
@@ -18236,7 +18316,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
 
   // Items some keywords cannot use (e.g. Elixir of Al-Khidr: no ARTIFICIAL)
   if (item.notForKeywords) {
-    const kws = effectiveKeywords(model, unit);
+    const kws = effectiveKeywords(model, unit, wb);
     const bad = item.notForKeywords.find(k => kws.includes(k));
     if (bad) return { state: 'hidden', reason: `No para modelos ${bad}` };
   }
@@ -18393,7 +18473,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   // → Modelos con STRONG (o NEGATE HEAVY explícito) ignoran el límite de 1.
   if (itemHasWeaponKeyword(item, 'HEAVY')) {
     if (modelHasWeaponKeyword(wb, model, 'HEAVY') &&
-        !modelNegatesKeyword(model, unit, 'HEAVY')) {
+        !modelNegatesKeyword(model, unit, 'HEAVY', wb)) {
       return { state: 'disabled', reason: 'Ya lleva un arma HEAVY (máx. 1)' };
     }
   }
@@ -19845,7 +19925,7 @@ function renderDetail() {
               </div>
               ${reasonHTML}
             </div>
-            <span class="bk-cost ${currencyClass}">${item.cost} ${item.currency}</span>
+            <span class="bk-cost ${currencyClass}">${battlekitPurchaseCost(wb, item, model)} ${item.currency}</span>
           </div>`;
       }
       categoryHTML += `</div>`;
