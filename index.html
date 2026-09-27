@@ -7935,44 +7935,62 @@ const DATA = {
   mercenaries: [
     { id:'combat-biologist', name:'Combat Biologist', cost:3, currency:'☼', limit:'0-1', hiredBy:['new-antioch','iron-sultanate'],
       stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'-1', base:'32mm' },
-      keywords:['NEGATE FEAR'],
+      keywords:['MERCENARY','NEGATE FEAR'],
       abilities:['Battlefield Vivisection','Gather Knowledge','Prize Specimens'] },
     { id:'antitank-comm', name:'Communicant Anti-Tank Hunter', cost:5, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
       stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-1', base:'40mm' },
-      keywords:['REGENERATE 1','STRONG','TOUGH'],
+      keywords:['MERCENARY','REGENERATE 1','STRONG','TOUGH'],
       abilities:['Iron Fists'] },
     { id:'goetic-warlock', name:'Goetic Warlock', cost:4, currency:'☼', limit:'0-1', hiredBy:['heretic-legions','court-serpent'],
       stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-2', base:'40mm' },
-      keywords:['ARTIFICIAL','DEMONIC','FEAR'],
-      abilities:['Barbed Embrace','Iron-Clawed Hands','Goetic Gaze ACTION','Goetic Portal ACTION'] },
+      keywords:['MERCENARY','ARTIFICIAL','DEMONIC','FEAR'],
+      permanentEquipment:['Reinforced Armour','Flaying Iron Claws'],
+      abilities:['Goetic Portal','Necrotic Gaze','Barbed Embrace','Disturbing Presence'] },
     { id:'mamluk-faris', name:'Mamluk Faris', cost:4, currency:'☼', limit:'0-1', hiredBy:['new-antioch','iron-sultanate'],
       stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-2 (-3)', base:'32mm' },
-      keywords:['IGNORE OFF-HAND WEAPON'],
+      keywords:['MERCENARY','FIRETEAM','IGNORE OFF-HAND WEAPON'],
       abilities:['Automaton Destrier','Martial Prowess','Sworn Brethren'] },
     { id:'ammo-monk', name:'Mendelist Ammo Monk', cost:2, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
       stats:{ movement:'6"/Infantry', ranged:'-1 DICE', melee:'-1 DICE', armour:'0', base:'25mm' },
-      keywords:[],
+      keywords:['MERCENARY'],
       abilities:['Ammunition Sacrament ACTION'] },
-    { id:'observer', name:'Observer', cost:3, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
+    { id:'observer', name:'Observer', cost:5, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
       stats:{ movement:'8"/Infantry', ranged:'+1 DICE', melee:'+2 DICE', armour:'-1', base:'32mm' },
-      keywords:[],
+      keywords:['MERCENARY'],
       abilities:['Eye of God','Lightning Speed','Temporal Fugue','Voice of God ACTION'] },
+    // Única excepción: compra sus armas cuerpo a cuerpo de la armería de la banda.
     { id:'scripture-guardian', name:'Scripture Guardian', cost:7, currency:'☼', limit:'0-1',
-      stats:{ movement:'6"/Infantry', ranged:'-', melee:'+1 DICE', armour:'-2', base:'40mm' },
-      keywords:['GOLEM'],
-      abilities:['Slow','Vengeful Scripture ACTION'] },
+      stats:{ movement:'6"/Infantry', ranged:'+2 DICE', melee:'+1 DICE', armour:'-2', base:'40mm' },
+      keywords:['MERCENARY','GOLEM'],
+      permanentEquipment:['Reinforced Armour','Combat Helmet','Vengeful Scripture'],
+      battlekitAccess:{ onlyCategories:['melee'] },
+      battlekitNote:'Debe comprar 2 armas cuerpo a cuerpo a 1 mano o 1 a 2 manos de la armería de la banda, a su coste normal y con sus estipulaciones; no se pueden quitar ni perder · Mismo alineamiento que la banda',
+      abilities:['Slow'] },
     { id:'sin-eater', name:'Sin Eater', cost:6, currency:'☼', limit:'0-1', hiredBy:['heretic-legions','black-grail','court-serpent'],
       stats:{ movement:'6"/Infantry', ranged:'-', melee:'+2 DICE', armour:'-2', base:'50mm' },
-      keywords:['DEMONIC','FEAR','STRONG','TOUGH'],
+      keywords:['MERCENARY','DEMONIC','FEAR','STRONG','TOUGH'],
+      permanentEquipment:['Tenderiser Maul'],
       abilities:['Devour the Guilty ACTION'] },
     { id:'st-cosmas', name:'Sister of Saint Cosmas', cost:2, currency:'☼', limit:'0-1', hiredBy:['trench-pilgrims'],
       stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+0 DICE', armour:'-1', base:'25mm' },
-      keywords:['NEGATE FEAR'],
+      keywords:['MERCENARY','NEGATE FEAR'],
       abilities:['Expert Medic','Finish the Fallen'] },
-    { id:'witchburner', name:'Witchburner', cost:5, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
-      stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'-2', base:'32mm' },
-      keywords:['ELITE','NEGATE FEAR'],
-      abilities:['Dignified Conduct','Divine Judgement ACTION'] },
+    { id:'witchburner', name:'Witchburner', cost:6, currency:'☼', limit:'0-1', hiredBy:['new-antioch','trench-pilgrims'],
+      stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+2 DICE', armour:'-2', base:'32mm' },
+      keywords:['MERCENARY','ELITE','FEAR','TOUGH','NEGATE DIFFICULT TERRAIN','NEGATE FIRE'],
+      permanentEquipment:['Reinforced Armour','Combat Helmet','Gavel of Justice'],
+      abilities:['Dignified Conduct','Divine Judgement ACTION','Elitist','Found Guilty'] },
+  ],
+  // Battlekit propio de los mercenarios (revisión de reglas de abril 2026, beta).
+  mercenaryArmoury: [
+    { id:'tenderiser-maul-merc', name:'Tenderiser Maul', cost:0, currency:'👑', restriction:'Sin Eater only · permanente',
+      type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY MODIFIER','HEAVY'] },
+    { id:'flaying-claws-merc', name:'Flaying Iron Claws', cost:0, currency:'👑', restriction:'Goetic Warlock only · permanente',
+      type:'2-Handed', range:'Melee', weaponKeywords:['CLEAVE 2','CRITICAL'] },
+    { id:'gavel-justice-merc', name:'Gavel of Justice', cost:0, currency:'👑', restriction:'Witchburner only · permanente',
+      type:'1-Handed', range:'Melee', weaponKeywords:['CRITICAL','FIRE'] },
+    { id:'vengeful-scripture-merc', name:'Vengeful Scripture', cost:0, currency:'👑', restriction:'Scripture Guardian only · permanente',
+      type:'Special', range:'18"', weaponKeywords:['ASSAULT','IGNORE COVER'] },
   ],
 };
 
@@ -8628,7 +8646,7 @@ const ABILITY_LIBRARY = {
   // ----- Mercenaries -----
   'Mercenary': {
     type: 'campaign',
-    summary: 'Se pagan con Glory Points. No se benefician de las reglas especiales de facción de la banda (sí de habilidades de otros modelos que afecten a amigos). Su Battlekit no se puede quitar ni perder y no pueden tener otro; la armadura ya va en su perfil. En campaña cuentan como cualquier otro modelo: Threshold y Field Strength, Glorious Deeds, Trauma si son ELITE, ascensos y experiencia.',
+    summary: 'Se pagan con Glory Points. No se benefician de las reglas especiales de facción ni de variante que hablan de «modelos de una banda [Facción]» (p. ej. Concentrated Attack de New Antioch o Light Infantry de Éire), pero cuentan como amigos para las demás reglas de la banda (p. ej. Bagpipes de Alba). En campaña cuentan como cualquier otro modelo: Threshold y Field Strength, Glorious Deeds, Trauma si son ELITE, ascensos y experiencia. Su Battlekit no se puede quitar ni perder y no pueden tener otro; la armadura ya va en su perfil.',
   },
   'Battlefield Vivisection': {
     type: 'campaign',
@@ -8648,19 +8666,11 @@ const ABILITY_LIBRARY = {
   },
   'Barbed Embrace': {
     type: 'passive',
-    summary: 'Enemigos a 1" o menos no pueden hacer Retreat ACTION.',
+    summary: 'Los enemigos a 1" del Goetic Warlock no pueden hacer Retreat ACTION. Además, pon 1 BLOOD MARKER junto a cada enemigo que se activa a 1" de él.',
   },
-  'Iron-Clawed Hands': {
-    type: 'passive',
-    summary: 'Ataque cuerpo a cuerpo con CLEAVE 2 + CRITICAL sin arma. Aplica Off-Hand al segundo ataque.',
-  },
-  'Goetic Gaze ACTION': {
+  'Goetic Portal': {
     type: 'action',
-    summary: 'Success Roll. Si falla, no pasa nada. Con Success, pon 1 BLOOD MARKER a un enemigo a 24" o menos en Line of Sight; con Critical, 2.',
-  },
-  'Goetic Portal ACTION': {
-    type: 'action',
-    summary: 'Risky Success Roll con +1 DICE. Si falla, la activación termina. Con Success o Critical, redespliega al Warlock a 6" o menos de su posición (aunque esté Down o trabado, y puede acabar a 1" de un enemigo). Si estaba a 1" de enemigos de base 32mm o menor, puede llevarse uno y desplegarlo a 1" de él.',
+    summary: 'Goetic Spell (Cost 2), solo Goetic Warlock; el Warlock usa Goetic Powers pero solo paga con BLOOD MARKERS de enemigos o de Wretched amigos. Cast Spell ACTION: redespliega al Warlock a 6" o menos de donde estaba (de centro a centro; no cuenta como Move ni Retreat). Si estaba a 1" de enemigos de base 32mm o menor, puede llevarse uno y desplegarlo a 1" de él (si no cabe, se queda donde estaba; puede quedar a punto de caer).',
   },
   'Automaton Destrier': {
     type: 'passive',
@@ -8676,7 +8686,7 @@ const ABILITY_LIBRARY = {
   },
   'Ammunition Sacrament ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll. Si falla, la activación termina. Con Success o Critical, elige 1 amigo a 1" en Line of Sight y un Sacramento hasta el final de su siguiente activación: Bullet of the Guided Path (+1 DICE a sus ataques a distancia), Cartridge of his Wrath (sus armas a distancia sin BLAST ni FLAMETHROWER ganan BLAST 2" y SHRAPNEL) o Echo of his Word (+1 INJURY DICE a sus ataques a distancia).',
+    summary: 'Risky Success Roll. Si falla, la activación termina. Con Success o Critical, elige 1 amigo a 1" y en Line of Sight y un Sacramento, que dura hasta el final de su siguiente activación (un modelo solo puede tener un Sacramento a la vez): Bullet of the Guided Path (IGNORE COVER e IGNORE LONG RANGE en sus ataques con armas a distancia), Cartridge of his Wrath (BLAST 2" y SHRAPNEL a sus armas a distancia sin AUTOMATIC, BLAST, HEAVY ni FLAMETHROWER) o Echo of his Word (+1 INJURY DICE a sus ataques a distancia).',
   },
   'Eye of God': {
     type: 'passive',
@@ -8694,25 +8704,37 @@ const ABILITY_LIBRARY = {
     type: 'action',
     summary: 'Risky Success Roll. Si falla, la activación del Observer termina. Con Success o Critical, elige 1 modelo (amigo o enemigo) en cualquier parte que no se haya activado este turno: la activación del Observer termina y la de ese modelo empieza de inmediato.',
   },
+  'Necrotic Gaze': {
+    type: 'action',
+    summary: 'Goetic Spell (Cost 0), solo Goetic Warlock (paga solo con BLOOD MARKERS de enemigos o de Wretched amigos). Cast Spell ACTION: Ranged Attack a 24"; con Success o Critical no hay Injury Roll: dobla los BLOOD MARKERS del objetivo (máximo 6) o, si no tiene, pon 1.',
+  },
+  'Disturbing Presence': {
+    type: 'passive',
+    summary: 'Tu rival no puede quitar BLOOD MARKERS de sus modelos mientras estén a 1" de un Goetic Warlock.',
+  },
   'Slow': {
     type: 'passive',
     summary: 'Trata el Movimiento del Scripture Guardian como 3"/Infantry al hacer Dash ACTION.',
   },
-  'Vengeful Scripture ACTION': {
-    type: 'action',
-    summary: 'Elige 1 enemigo a 18" o menos en Line of Sight y haz una Success Roll (+2 DICE si está a 9" o menos; +1 DICE si no). Si falla, no pasa nada. Con Success, Injury Roll al enemigo con +1 INJURY MODIFIER por cada BLOOD MARKER que tenga. Con Critical, además IGNORE ARMOUR y +1 INJURY DICE por cada BLOOD MARKER.',
-  },
   'Devour the Guilty ACTION': {
     type: 'action',
-    summary: 'Elige 1 modelo a 1" con base de 40mm o menos: si es enemigo, Risky Success Roll (si falla, su activación termina); si es amigo, Success Roll con +1 DICE. Con éxito lo devora: queda dentro (cuenta como Down para Morale), puede hacer Fight ACTIONS solo contra el Sin Eater con -3 DICE, recibe 1 BLOOD MARKER en cada activación del Sin Eater y queda Out of Action al llegar a 6. Si el Sin Eater cae Out of Action, sale Down a 1". Purge ACTION: Success Roll con +4 DICE para soltarlo Down a 1".',
+    summary: 'Elige 1 modelo a 1" con base de 40mm o menos: si es enemigo, Risky Success Roll; si es amigo, Success Roll con +1 DICE. Si falla, la activación termina. Con éxito lo devora: se aparta con sus MARKERS, no puede verse afectado ni hacer ACTIONS, sus BLOOD MARKERS pueden pagar Goetic Spells y cuenta como Down para los Morale Checks. Solo 1 devorado a la vez; mientras lo tenga, el Sin Eater tiene REGENERATE 1. Si el Sin Eater sufre un Out of Action en la Injury table (aunque TOUGH lo deje en Down), despliega al devorado a 1" y Down (si no se puede, queda Out of Action). Al acabar la partida, el devorado cuenta como Out of Action. En cada activación del Sin Eater recibe 1 BLOOD MARKER; con 6 queda Out of Action (aunque tenga TOUGH). Purge ACTION: lo despliega a 1" y Down (si no cabe, sigue dentro; puede quedar a punto de caer) y no se puede volver a devorar en esa activación.',
   },
   'Dignified Conduct': {
     type: 'passive',
-    summary: 'El Witchburner no puede hacer Dash ACTION.',
+    summary: 'El Witchburner no puede hacer Dash ACTION, no divide su Movement al levantarse al empezar su activación y ninguna habilidad ni ACTION de un enemigo puede moverlo.',
+  },
+  'Elitist': {
+    type: 'passive',
+    summary: 'Los enemigos sin ELITE no pueden hacer Melee Attack cuando el Witchburner se retira a 1" de ellos. Puede hacer Move o Charge si ningún enemigo a 1" tiene ELITE.',
+  },
+  'Found Guilty': {
+    type: 'passive',
+    summary: 'Tras la Injury Roll de un ataque con Divine Judgement o Gavel of Justice, pon 1 BLOOD MARKER extra al modelo si es de una banda Fallen (aunque el resultado sea No Effect).',
   },
   'Divine Judgement ACTION': {
     type: 'action',
-    summary: 'Risky Success Roll a 24" sin LoS: pone 1 BLOOD MARKER al enemigo (2 si es BLACK GRAIL, DEMONIC o HERETIC).',
+    summary: 'Ranged Attack a 18" con FIRE, IGNORE COVER e IGNORE LONG RANGE, sin necesidad de Line of Sight. Un resultado Out of Action en la Injury Table causado por este ataque cuenta como Down.',
   },
 
   /* ─── KEYWORDS CORE TC: el texto se sincroniza con KEYWORD_GLOSSARY ─── */
@@ -8879,6 +8901,8 @@ const KEYWORD_GLOSSARY = [
     text: 'La primera vez que se despliega puede colocarse en cualquier punto fuera de la Line of Sight de todos los enemigos y a 8" o más del enemigo más cercano. Se despliega después de los modelos sin esta keyword; si no puede hacerlo así, se despliega normalmente en su zona.' },
   { key: 'LEADER', type: 'Efecto', src: 'Rulebook 1.0.2',
     text: '+1 DICE a los Morale Checks si la banda tiene en el campo al menos un modelo con esta keyword que no esté Down ni Out of Action.' },
+  { key: 'MERCENARY', type: 'Efecto', src: 'Revisión de reglas abril 2026 (beta sobre 1.0.2)', prev: null,
+    text: 'Mercenario: pueden reclutarlo varias facciones. No se beneficia de las reglas especiales de facción ni de variante que hablan de «modelos de una banda [Facción]» (p. ej. Concentrated Attack de New Antioch o Light Infantry de Éire), pero cuenta como amigo para las demás reglas de la banda (p. ej. Bagpipes de Alba), salvo que se diga otra cosa. En campaña cuenta para Threshold y Field Strength, completa Glorious Deeds, tira en la Trauma Table si es ELITE, asciende y gana experiencia. Su Battlekit no se puede quitar ni perder y no puede tener otro. El modificador de su armadura ya está en el perfil.' },
   { key: 'MINED', type: 'Efecto', src: 'Rulebook 1.0.2 (nueva)', prev: null,
     text: 'Cuando un modelo entra en contacto con un marcador o pieza con MINED, la mina detona salvo que tenga NEGATE MINED: se hace una Injury Roll con SHRAPNEL a ese modelo y el marcador o pieza pierde MINED. Si el modelo no queda Down ni Out of Action, puede seguir moviendo. Los modelos FLYING solo la detonan si terminan el movimiento en contacto.' },
   { key: 'NEW ANTIOCH', type: 'Etiqueta', src: 'Rulebook 1.0.2',
@@ -19525,6 +19549,11 @@ function classifyBattlekitItem(item, model, unit, wb) {
     }
   }
 
+  // Only some categories (Scripture Guardian: Melee Weapons of the warband's armoury)
+  if (access.onlyCategories && !access.onlyCategories.includes(category)) {
+    return { state: 'hidden', reason: 'Categoría no permitida para esta unidad' };
+  }
+
   // Forbidden categories (e.g. MHI/Combat Engineers cannot take from Armour table)
   if (access.forbidCategories && access.forbidCategories.includes(category) && !item.bypassUnitCategoryLimits) {
     return { state: 'hidden', reason: 'Categoría no permitida para esta unidad' };
@@ -21119,7 +21148,8 @@ function renderDetail() {
   }
 
   // Battlekit selector — only for non-mercenaries
-  const isMerc = unit.tier === undefined || (DATA.mercenaries.find(m=>m.id===unit.id) && unit.tier === undefined);
+  // Mercenarios sin selector, salvo los que compran armas (Scripture Guardian)
+  const isMerc = unit.tier === undefined && !(unit.battlekitAccess && unit.battlekitAccess.onlyCategories);
   const bkNote = ((wb && getUnitWithVariant(wb, unit.id)) || unit).battlekitNote;
   if (!isMerc && bkNote) {
     html += `<div class="notice info">${bkNote}</div>`;
@@ -36156,6 +36186,18 @@ const EQUIPMENT_IMPLICIT_ABILITIES = {
     name: 'Treat ACTION',
     desc: 'Risky Success Roll: si falla, la activación termina. Con éxito, retira 1 BLOOD MARKER del modelo o de un aliado a 1", o levanta a un aliado Down a 1".',
   }],
+  // Revisión de reglas de abril 2026 (beta): Battlekit de mercenarios.
+  'Tenderiser Maul': [{
+    name: 'Mulch',
+    desc: 'Al hacer Fight ACTION eliges Crushing Blow (las Injury Rolls tienen +2 INJURY MODIFIER en vez de +1) o Swinging Blow (1 Melee Attack contra cada enemigo a 1", de uno en uno en el orden que elijas).',
+  }],
+  'Vengeful Scripture': [{
+    name: 'Unmaking',
+    desc: '+1 INJURY MODIFIER por cada BLOOD MARKER del enemigo (además de lo que ganes gastándolos). Con Critical en la Success Roll, la Injury Roll tiene IGNORE ARMOUR, +1 INJURY DICE y +1 INJURY MODIFIER por cada BLOOD MARKER del enemigo.',
+  }, {
+    name: 'Spoken',
+    desc: 'Puede hacer Ranged Attacks con Vengeful Scripture aunque esté a 1" de un enemigo.',
+  }],
   // Revisión de reglas de abril 2026 (beta): Amalgam y Black Grail.
   'Gluttonous Arsenal': [{
     name: 'Putrid Spray',
@@ -36520,8 +36562,10 @@ function buildModelCardData(model, wb) {
   }
   const stats0 = stats;  // alias para mantener referencia luego.
   stats = stats0;
-  const implicit = getImplicitAbilities(model);
-  const factionRules = getVariantFactionRules(wb);
+  const implicit = getImplicitAbilities((model.companionEquipment || model.equipment) ? model : { equipment });
+  // MERCENARY: no se benefician de las reglas de facción/variante de la banda
+  const isMercModel = !model.companionRef && (DATA.mercenaries || []).some(m => m.id === model.unitId);
+  const factionRules = isMercModel ? [] : getVariantFactionRules(wb);
 
   // Compose abilities con tag kind para filtrado de descripción.
   // Dedupe case-insensitive + fallback ABILITY_LIBRARY.summary.
@@ -37869,13 +37913,14 @@ function findArmouryItemByName(wb, name) {
   const head = (n) => n.split('/')[0];
   const factions = (typeof DATA !== 'undefined' && DATA.factions) ? DATA.factions : {};
   const order = [wb && wb.factionId].concat(Object.keys(factions)).filter((f, i, a) => f && factions[f] && a.indexOf(f) === i);
+  const lists = [];
+  for (const fid of order) lists.push(...Object.values(factions[fid].armoury || {}));
+  lists.push((typeof DATA !== 'undefined' && DATA.mercenaryArmoury) || []);
   for (const pass of ['exact', 'head']) {
-    for (const fid of order) {
-      for (const cat of Object.values(factions[fid].armoury || {})) {
-        for (const it of (cat || [])) {
-          const n = _normEquipName(it.name);
-          if (pass === 'exact' ? n === target : (head(n) && head(n) === head(target))) return it;
-        }
+    for (const cat of lists) {
+      for (const it of (cat || [])) {
+        const n = _normEquipName(it.name);
+        if (pass === 'exact' ? n === target : (head(n) && head(n) === head(target))) return it;
       }
     }
   }
