@@ -5965,9 +5965,9 @@ const DATA = {
         ],
         grenades: [
           { id:'frag-na',           name:'Frag Grenades',        cost:7,  currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
-          { id:'incend-na',         name:'Incendiary Grenades',  cost:15, currency:'👑', restriction:'Limit: 2',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','FUMBLE','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
+          { id:'incend-na',         name:'Incendiary Grenades',  cost:10, currency:'👑', restriction:'Limit: 2',
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','FUMBLE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
           { id:'satchel-na',        name:'Satchel Charge',       cost:15, currency:'👑', restriction:'Consumable · Limit: 3 (1 per model)',
             type:'Grenade', range:'6"', weaponKeywords:['+1 INJURY DICE','BLAST 3"','CONSUMABLE','HEAVY','IGNORE ARMOUR','IGNORE COVER','SCATTER'] },
@@ -6078,7 +6078,8 @@ const DATA = {
           keywords:['NEW ANTIOCH'],
           abilities:['Assault Drill','Shock Charge'] },
         { id:'combat-engineers', name:'Combat Engineers', tier:'troops', limit:'0-2', cost:80, currency:'👑',
-          stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'-2', base:'25mm' },
+          // Perfil de la revisión de reglas de abril 2026 (beta).
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+0 DICE', armour:'-2', base:'25mm' },
           keywords:['NEW ANTIOCH','NEGATE MINED'],
           permanentEquipment:['Engineer Body Armour','Shovel'],
           battlekitAccess:{ forbidCategories:['armour'] },
@@ -6261,7 +6262,8 @@ const DATA = {
             { unitId:'sniper-priests',  overrides:{ limit:'0-1' } },
             { unitId:'mech-heavy-inf',  overrides:{ limit:'0-1' } },
           ],
-          // Masters of the Grenade: +4" de alcance a todas las granadas.
+          // Masters of the Grenade: +4" de alcance a todas las granadas
+          // (revisión de abril 2026: -1 DICE si el objetivo está a más de 8").
           grenadeRangeBonus:4,
           armouryOverrides:{
             // Specialised Equipment
@@ -6411,11 +6413,11 @@ const DATA = {
             type:'1-Handed', range:'Melee', weaponKeywords:['-1 DICE'] },
         ],
         grenades: [
-          { id:'incend-tp',       name:'Incendiary Grenades',  cost:15, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+          { id:'incend-tp',       name:'Incendiary Grenades',  cost:10, currency:'👑',
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','FUMBLE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
           { id:'molotov-tp',      name:'Molotov Cocktail',     cost:5,  currency:'👑',
-            type:'Grenade', range:'6"', weaponKeywords:['-1 INJURY DICE','ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            type:'Grenade', range:'6"', weaponKeywords:['-1 INJURY DICE','ASSAULT','FIRE','FUMBLE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
           { id:'warcross-tp',     name:'Warcross',             cost:5,  currency:'👑', restriction:'',
             type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','IGNORE LONG RANGE'] },
@@ -6746,11 +6748,11 @@ const DATA = {
         ],
         grenades: [
           { id:'frag-is',         name:'Frag Grenades',        cost:7,  currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','FUMBLE','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
           { id:'gas-is',          name:'Gas Grenades',         cost:10, currency:'👑', restriction:'Limit: 4',
-            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
-          { id:'incend-is',       name:'Incendiary Grenades',  cost:15, currency:'👑', restriction:'Jabirean Alchemist only',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','FUMBLE','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
+          { id:'incend-is',       name:'Incendiary Grenades',  cost:10, currency:'👑', restriction:'Jabirean Alchemist only',
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','FUMBLE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
         ],
         shields: [
@@ -7168,11 +7170,11 @@ const DATA = {
         ],
         grenades: [
           { id:'frag-hl',         name:'Frag Grenades',        cost:7,  currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','FUMBLE','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
           { id:'gas-hl',          name:'Gas Grenades',         cost:10, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
-          { id:'incend-hl',       name:'Incendiary Grenades',  cost:15, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','FUMBLE','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
+          { id:'incend-hl',       name:'Incendiary Grenades',  cost:10, currency:'👑',
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','FUMBLE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
         ],
         shields: [
@@ -7443,9 +7445,9 @@ const DATA = {
         ],
         grenades: [
           { id:'gas-bg',          name:'Gas Grenades',         cost:10, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','FUMBLE','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
           { id:'parasite-bg',     name:'Parasite Grenades',    cost:15, currency:'👑', restriction:'',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','IGNORE COVER','IGNORE LONG RANGE'],
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FUMBLE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Terrifying Hallucinations: si impacta, tras resolver la Injury Roll puedes mover al objetivo 3" en línea recta y en cualquier dirección (puede acabar a 1" de un enemigo o Retirarse, y Trepar, Saltar un hueco o Saltar hacia abajo).' },
         ],
         shields: [
@@ -7730,9 +7732,9 @@ const DATA = {
         ],
         grenades: [
           { id:'gas-co',          name:'Gas Grenades',         cost:10, currency:'👑',
-            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
-          { id:'incend-co',       name:'Incendiary Grenades',  cost:15, currency:'👑', restriction:'Limit: 2',
-            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','FUMBLE','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
+          { id:'incend-co',       name:'Incendiary Grenades',  cost:10, currency:'👑', restriction:'Limit: 2',
+            type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','FUMBLE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
         ],
         shields: [
@@ -8741,7 +8743,7 @@ const KEYWORD_GLOSSARY = [
   { key: 'BLAST (X")', type: 'Efecto', src: 'Rulebook 1.0.2 (cambia)', match: /^BLAST( \(?\d+"\)?)?$/,
     text: 'Radio de explosión de X pulgadas (también en vertical). Eliges como objetivo un modelo enemigo o un punto visible del campo de batalla o de una pieza de escenografía, dentro de Line of Sight y alcance. Si la Success Roll falla, el ataque no tiene efecto (salvo SCATTER). Con Success o Critical son alcanzados todos los modelos dentro del radio que tengan Line of Sight al objetivo, y también los modelos propios que estén a 1" o menos de un enemigo alcanzado. El radio se mide desde el centro de la peana (o del punto) hasta lo más cercano de la peana del otro modelo. Injury Roll a cada modelo alcanzado; con Critical, los INJURY DICE extra solo se suman al objetivo elegido.',
     prev: 'Radio de explosión de X pulgadas (también en vertical). Eliges como objetivo un punto del campo de batalla o un modelo enemigo, dentro de Line of Sight y alcance. Si la Success Roll falla, el ataque no tiene efecto (salvo SCATTER). Con Success o Critical se hace una Injury Roll a cada modelo dentro del radio que tenga línea de visión con el punto objetivo. Con Critical, el +1 INJURY DICE solo se suma al modelo elegido como objetivo.',
-    note: 'No se puede apuntar al suelo bajo la peana de un modelo (Q1). Si el objetivo es un modelo, el radio se mide desde el centro de su peana (Q6). Alcanza a los modelos con Line of Sight al punto cuya peana esté dentro del radio (Q8). Un modelo alcanzado por estar a 1" de un enemigo alcanzado no arrastra a su vez a otros (Q9).' },
+    note: 'No se puede apuntar al suelo bajo la peana de un modelo (Q1). Si el objetivo es un modelo, el radio se mide desde el centro de su peana (Q6). Alcanza a los modelos con Line of Sight al punto cuya peana esté dentro del radio (Q8). Un modelo alcanzado por estar a 1" de un enemigo alcanzado no arrastra a su vez a otros (Q9). Revisión de reglas abril 2026 (beta): las granadas con BLAST no pueden apuntar a un punto del campo de batalla, solo a un modelo enemigo.' },
   { key: 'BLESSED X', type: 'Efecto', src: 'Rulebook 1.0.2', match: /^BLESSED( "?\d+"?)?$/,
     text: 'La primera vez que despliegas el modelo en la partida, coloca junto a él X BLESSING MARKERS.' },
   { key: 'BLESSING MARKER', type: 'Etiqueta', src: 'Rulebook 1.0.2', match: /^BLESSING MARKERS?$/,
@@ -8785,6 +8787,8 @@ const KEYWORD_GLOSSARY = [
     text: 'El ataque a distancia con esta arma es un Success automático: no se hace Success Roll y, por tanto, no puede ser Critical.' },
   { key: 'FLYING', type: 'Efecto', src: 'Rulebook 1.0.2 (nueva)', prev: null,
     text: 'Al mover, retirarse o cargar, la trayectoria se mide "por el aire"; debe terminar sobre el campo de batalla o una pieza de escenografía. Sigue haciendo la Risky Success Roll si se activa o termina en terreno peligroso y no puede terminar en terreno infranqueable. No hace Injury Roll si cae.' },
+  { key: 'FUMBLE', type: 'Efecto', src: 'Revisión de reglas abril 2026 (beta sobre 1.0.2)', prev: null,
+    text: 'Si la Success Roll de un ataque con esta arma es 2 o menos, el atacante se lo hace a sí mismo en vez de al objetivo: trátalo como un ataque con éxito de esa arma contra el modelo atacante.' },
   { key: 'GAS', type: 'Efecto', src: 'Rulebook 1.0.2',
     text: 'Tras la Injury Roll de un arma con esta keyword, coloca 1 BLOOD MARKER extra junto al objetivo (aunque la tirada no tenga efecto).' },
   { key: 'GOLEM', type: 'Efecto', src: 'Rulebook 1.0.2',
@@ -9292,7 +9296,7 @@ const FACTION_RULES_LIBRARY = {
   'Masters of the Grenade (Stosstruppen)': {
     type: 'special-rule',
     faction: 'new-antioch',
-    summary: 'Masters of the Grenade: +4" al alcance de todas las granadas de los modelos de una banda Stosstruppen.',
+    summary: 'Masters of the Grenade: +4" al alcance de todas las granadas de los modelos de una banda Stosstruppen; si el objetivo está a más de 8", -1 DICE a la Success Roll (revisión de reglas abril 2026).',
   },
   'Éire Rangers Light Infantry': {
     type: 'special-rule',
@@ -12107,7 +12111,7 @@ const ENEMY_FACTORIES = {
     { name: 'Lieutenant',     cost: 70,  meleeDice: 2, rangedDice: 2, armour: -1, weapons: [{ name: 'Sword/Axe', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set(['CRITICAL']) }, { name: 'Pistol', isRanged: true, range: 12, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set(['PISTOL']) }], keywords: new Set(['LEADER','TOUGH','ELITE']), tough: true, bloodMarkers: 0, isDown: false, isOut: false },
     { name: 'Sniper Priest',  cost: 50,  meleeDice: -1, rangedDice: 2, armour: 0, weapons: [{ name: 'Sniper Rifle', isRanged: true, range: 48, diceMod: 1, injuryDice: 0, injuryMod: 0, keywords: new Set(['CRITICAL','RISKY']) }], keywords: new Set(['ELITE']), bloodMarkers: 0, isDown: false, isOut: false },
     { name: 'Trench Cleric',  cost: 60,  meleeDice: 0, rangedDice: 0, armour: 0, weapons: [{ name: 'Sword/Axe', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set(['CRITICAL']) }], keywords: new Set(['ELITE','NEGATE FEAR','NEW ANTIOCH']), godIsWithUs: true, onwardChristianSoldiers: true, layingOnOfHands: true, bloodMarkers: 0, isDown: false, isOut: false },
-    { name: 'Combat Engineer',cost: 80,  meleeDice: 1, rangedDice: 0, armour: -2, weapons: [{ name: 'Shovel', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }], keywords: new Set(['NEW ANTIOCH','NEGATE MINED']), setMine: true, defuseMine: true, battlefieldDemolition: true, bloodMarkers: 0, isDown: false, isOut: false },
+    { name: 'Combat Engineer',cost: 80,  meleeDice: 0, rangedDice: 1, armour: -2, weapons: [{ name: 'Shovel', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }], keywords: new Set(['NEW ANTIOCH','NEGATE MINED']), setMine: true, defuseMine: true, battlefieldDemolition: true, bloodMarkers: 0, isDown: false, isOut: false },
     { name: 'Combat Medic',   cost: 65,  meleeDice: 0, rangedDice: 0, armour: 0, weapons: [{ name: 'Sword/Axe', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set(['CRITICAL']) }], keywords: new Set(['NEGATE FEAR']), bloodMarkers: 0, isDown: false, isOut: false },
     ...Array.from({length: 7}, () => ({ name: 'Yeoman', cost: 35, meleeDice: 0, rangedDice: 0, armour: 0, weapons: [{ name: 'Bolt-Action Rifle', isRanged: true, range: 24, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }], keywords: new Set(), bloodMarkers: 0, isDown: false, isOut: false })),
   ],
@@ -36327,7 +36331,7 @@ const VARIANT_FACTION_RULES = {
   ],
   'new-antioch:prussia': [
     { name: 'Masters of the Grenade',
-      desc: '+4" al alcance de todas las granadas.' },
+      desc: '+4" al alcance de todas las granadas; si el objetivo está a más de 8", -1 DICE a la Success Roll.' },
   ],
   'new-antioch:eire-rangers': [
     { name: 'Hit & Run Tactics',

@@ -63,9 +63,11 @@ for (const [id, kws] of Object.entries(EXPECTED)) {
 // la 1.0.0). En 1.0.1 la Heavy Shotgun lleva +1 INJURY DICE y SHOTGUN y Tungsten
 // shot da +1 (no +2); la Trench Knife tiene -1 DICE.
 console.log('\nGroup 2: armas y granadas (Rulebook 1.0.1 pp.70-78, Warbands of TC)');
-const FRAG = ['ASSAULT', 'BLAST 2"', 'IGNORE COVER', 'IGNORE LONG RANGE', 'SHRAPNEL'];
-const GAS = ['-1 INJURY DICE', 'ASSAULT', 'BLAST 3"', 'GAS', 'IGNORE ARMOUR', 'IGNORE COVER', 'IGNORE LONG RANGE'];
-const INC = ['ASSAULT', 'FIRE', 'IGNORE COVER', 'IGNORE LONG RANGE'];
+// Revisión de reglas de abril 2026 (beta): FUMBLE en Frag, Gas, Incendiary,
+// Molotov Cocktail y Parasite Grenades.
+const FRAG = ['ASSAULT', 'BLAST 2"', 'FUMBLE', 'IGNORE COVER', 'IGNORE LONG RANGE', 'SHRAPNEL'];
+const GAS = ['-1 INJURY DICE', 'ASSAULT', 'BLAST 3"', 'FUMBLE', 'GAS', 'IGNORE ARMOUR', 'IGNORE COVER', 'IGNORE LONG RANGE'];
+const INC = ['ASSAULT', 'FIRE', 'FUMBLE', 'IGNORE COVER', 'IGNORE LONG RANGE'];
 const WEAPONS = {
   'frag-na': FRAG, 'frag-is': FRAG, 'frag-hl': FRAG,
   'gas-hl': GAS, 'gas-bg': GAS, 'gas-co': GAS,
@@ -73,7 +75,7 @@ const WEAPONS = {
   'molotov-tp': ['-1 INJURY DICE'].concat(INC),
   'warcross-tp': ['ASSAULT', 'IGNORE LONG RANGE'],
   // Warbands of Trench Crusade 1.0.2 (trenchcrusade.com, 09-sep-2026).
-  'parasite-bg': ['ASSAULT', 'IGNORE COVER', 'IGNORE LONG RANGE'],
+  'parasite-bg': ['ASSAULT', 'FUMBLE', 'IGNORE COVER', 'IGNORE LONG RANGE'],
   'flail-tp': ['+1 DICE'],
   'satchel-na': ['+1 INJURY DICE', 'BLAST 3"', 'CONSUMABLE', 'HEAVY', 'IGNORE ARMOUR', 'IGNORE COVER', 'SCATTER'],
   'heavy-shotgun-na': ['+1 DICE', '+1 INJURY DICE', 'HEAVY', 'SHOTGUN'],

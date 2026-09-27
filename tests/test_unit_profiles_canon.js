@@ -22,7 +22,7 @@ const U = (fid, id) => D.factions[fid].units.find(u => u.id === id);
 const S = (u) => [u.stats.movement, u.stats.ranged, u.stats.melee, u.stats.armour, u.stats.base].join(' ');
 
 console.log('\nGroup 1: stats y base (Warbands 1.0.2)');
-ok(S(U('new-antioch', 'combat-engineers')) === '6"/Infantry +0 DICE +1 DICE -2 25mm', 'Combat Engineers: base 25mm');
+ok(S(U('new-antioch', 'combat-engineers')) === '6"/Infantry +1 DICE +0 DICE -2 25mm', 'Combat Engineers: base 25mm (perfil de la revisión de abril 2026)');
 ok(S(U('new-antioch', 'combat-medic')) === '6"/Infantry +0 DICE +0 DICE -1 25mm', 'Combat Medic: Armour -1, base 25mm');
 ok(S(U('trench-pilgrims', 'pilgrim')) === '6"/Infantry +0 DICE +0 DICE 0 25mm', 'Trench Pilgrim: Melee +0 (el +1 es del Martyr Penitent)');
 ok(S(U('iron-sultanate', 'janissaries')) === '6"/Infantry +1 DICE +1 DICE 0 32mm', 'Janissaries: base 32mm');

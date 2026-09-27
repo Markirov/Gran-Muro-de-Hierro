@@ -38,7 +38,7 @@ ok(kw('murad-bombard-is') === '+1 DICE, BLAST 3", HEAVY, SCATTER' && /Echoing Bl
 console.log('\nGroup 2: armería nueva');
 const gas = item('gas-is');
 ok(gas.name === 'Gas Grenades' && gas.cost === 10 && /Limit: 4/.test(gas.restriction) && (IS.armoury.grenades || []).includes(gas), 'Gas Grenades 10 👑 · Limit: 4');
-ok(kw('gas-is') === kw('gas-hl') || kw('gas-is') === '-1 INJURY DICE, ASSAULT, BLAST 3", GAS, IGNORE ARMOUR, IGNORE COVER, IGNORE LONG RANGE', 'Gas Grenades con el perfil estándar');
+ok(kw('gas-is') === '-1 INJURY DICE, ASSAULT, BLAST 3", FUMBLE, GAS, IGNORE ARMOUR, IGNORE COVER, IGNORE LONG RANGE', 'Gas Grenades con el perfil estándar (FUMBLE de la beta de granadas)');
 ok(item('al-inbiq-is').name === 'Al-inbīq Kit' && item('al-inbiq-is').cost === 15 && /Jabirean Alchemist only/.test(item('al-inbiq-is').restriction), 'Al-inbīq Kit 15 👑 · Jabirean Alchemist only');
 ok(item('alch-fire-is').name === 'Alchemical Fire' && item('alch-fire-is').cost === 10 && /ELITE only/.test(item('alch-fire-is').restriction) && /Limit: 3/.test(item('alch-fire-is').restriction), 'Alchemical Fire 10 👑 · ELITE only, Limit: 3');
 ok(item('corrosive-ammo-is').name === 'Corrosive Ammunition' && item('corrosive-ammo-is').cost === 10 && /Limit: 5/.test(item('corrosive-ammo-is').restriction) && kw('corrosive-ammo-is') === 'AMMUNITION (ARMOUR PIERCING)', 'Corrosive Ammunition 10 👑 · Limit: 5 · AMMUNITION (ARMOUR PIERCING)');
