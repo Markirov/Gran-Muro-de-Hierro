@@ -7297,6 +7297,15 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:['HELD'] },
           { id:'flag-bg',          name:'Troop Flag',            cost:1,  currency:'☼', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
+          // ── Dirge of the Great Hegemon Armoury ──
+          { id:'broken-crown-dg', name:'Broken Crown',          cost:25, currency:'👑',
+            variantOnly:'great-hegemon', restriction:'ELITE only · Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:[],
+            note:'Locus of Despair: cada vez que se activa el portador, antes de sus ACTIONS, pon 1 INFECTION MARKER a cada enemigo a 1" o menos.' },
+          { id:'urn-ashes-dg',    name:'Urn of the Bitter Ashes', cost:40, currency:'👑',
+            variantOnly:'great-hegemon', restriction:'ELITE only · Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:[],
+            note:'Sinister Whispers: -1 DICE a los Ranged Attacks contra el portador o contra modelos a 3" o menos de él.' },
           { id:'unholy-trinket-bg',name:'Unholy Trinket',        cost:15, currency:'👑', restriction:'Consumable',
             type:'Equipment', range:'-', weaponKeywords:['CONSUMABLE'] },
         ],
@@ -7314,17 +7323,26 @@ const DATA = {
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
           keywords:['BLACK GRAIL','ELITE','FEAR','NEGATE GAS'],
           abilities:['Black Grail Bodyguard','Parasite Host','Undead Fortitude'] },
+        // ── Unidad exclusiva de la variante Dirge of the Great Hegemon ──
+        { id:'executor-dg', name:'Executor', tier:'elite', limit:'1', cost:80, currency:'👑',
+          variantOnly:'great-hegemon', usesEntryOf:'plague-knights',
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+2 DICE', armour:'0', base:'32mm' },
+          keywords:['BLACK GRAIL','ELITE','FEAR','LEADER','NEGATE GAS','STRONG','TOUGH'],
+          abilities:['Undead Fortitude','Plague Knight Ranks'],
+          note:'Usa la entrada de Plague Knight con Ranged +1 DICE, LEADER y TOUGH. Obligatorio: cada banda Dirge incluye 1 Executor (y puede tener además 0-2 Plague Knights).' },
         // Warbands 1.0.2: entrada "Grail Thralls / Fly Thralls" con dos perfiles; aquí dos unidades.
         // El id 'thralls' se conserva para Fly Thralls (bandas guardadas).
         { id:'grail-thralls', name:'Grail Thralls', tier:'troops', limit:null, cost:25, currency:'👑',
           stats:{ movement:'5"/Infantry', ranged:'-', melee:'-1 DICE', armour:'0', base:'25mm' },
           keywords:['BLACK GRAIL','FEAR','NEGATE GAS'],
           abilities:['Overwhelming Horde','Undead Fortitude'],
+          battlekitAccess:{ forbidden:true },
           battlekitNote:'No puede tener Battlekit' },
         { id:'thralls', name:'Fly Thralls', tier:'troops', limit:null, cost:25, currency:'👑',
           stats:{ movement:'6"/Flying', ranged:'-', melee:'-1 DICE', armour:'0', base:'25mm' },
           keywords:['BLACK GRAIL','FEAR','FLYING','NEGATE GAS'],
           abilities:['Overwhelming Horde'],
+          battlekitAccess:{ forbidden:true },
           battlekitNote:'No puede tener Battlekit' },
         { id:'hounds-bg', name:'Hounds of the Black Grail', tier:'troops', limit:'0-3', cost:55, currency:'👑',
           stats:{ movement:'8"/Infantry', ranged:'-', melee:'+1 DICE', armour:'0', base:'30x60mm' },
@@ -7360,8 +7378,33 @@ const DATA = {
           name:'Dirge of the Great Hegemon',
           summary:'Cortejo fúnebre de un Hegemón caído: Executor al mando, Bereaved con armas a distancia y Command Bereaved ACTION.',
           specialRule:'Dirge of the Great Hegemon',
+          // The Fallen
           forbiddenUnitIds:['lord-tumours','amalgam'],
-          mandatoryUnits:[{ unitId:'plague-knights', count:1 }],
+          // The Executor
+          mandatoryUnits:[{ unitId:'executor-dg', count:1, max:1 }],
+          unitOverrides:[
+            // The Lost
+            { unitId:'hounds-bg', overrides:{ limit:'0-2' } },
+            { unitId:'heralds',   overrides:{ limit:'0-2' } },
+            // The Bereaved
+            { unitId:'grail-thralls', overrides:{ cost:30, stats:{ ranged:'+0 DICE' },
+                battlekitAccess:{ forbidCategories:['melee','shields','armour'], whitelistByCategory:{ equipment:['music-bg','flag-bg'] } },
+                battlekitNote:'The Bereaved: armas a distancia, granadas, Musical Instrument o Troop Flag' } },
+            { unitId:'thralls',       overrides:{ cost:30, stats:{ ranged:'+0 DICE' },
+                battlekitAccess:{ forbidCategories:['melee','shields','armour'], whitelistByCategory:{ equipment:['music-bg','flag-bg'] } },
+                battlekitNote:'The Bereaved: armas a distancia, granadas, Musical Instrument o Troop Flag' } },
+            // Hegemon's Will
+            { unitId:'executor-dg',    overrides:{ addAbilities:['Command Bereaved ACTION'] } },
+            { unitId:'plague-knights', overrides:{ addAbilities:['Command Bereaved ACTION'] } },
+          ],
+          armouryOverrides:{
+            // Dishonoured
+            'beelz-axe-bg':      { forbidden:true },
+            'bg-shield-bg':      { forbidden:true },
+            // Hegemon's Last Blessing
+            'putrid-shotgun-bg': { restriction:'Bayonet Lug · Shield Combo · Limit: 3' },
+            'viscera-cannon-bg': { restriction:'Limit: 3' },
+          },
         },
         {
           id:'great-hunger',
@@ -7921,6 +7964,10 @@ const ABILITY_LIBRARY = {
   'Crushing Blows': {
     type: 'passive',
     summary: 'El Lord of Tumours puede hacer un ataque cuerpo a cuerpo Crushing Blows aunque no tenga arma cuerpo a cuerpo equipada (o en lugar de usar las armas que tenga). El ataque tiene CLEAVE 2.',
+  },
+  'Command Bereaved ACTION': {
+    type: 'action',
+    summary: 'Quita cualquier número de INFECTION MARKERS de modelos enemigos. Por cada uno, un Bereaved (Grail o Fly Thrall) a 18" o menos cumple una orden: Charge (carga), Fight (Melee Attack), Move (mueve, sin Charge ni Retreat) o Shoot (Ranged Attack). Máx. 1 orden por Bereaved y turno; no impide activarlo ese turno.',
   },
   'Undead Fortitude': {
     type: 'passive',
@@ -18685,6 +18732,12 @@ function countModelRangedWeapons(wb, model, excludeId=null) {
  *     (allowing 1×2H + 1×1H melee combo).
  *   - hasShield: derived from current battlekit; reduces limits per canon.
  */
+/** Battlekit access as the active variant sees it (Dirge: the Bereaved can take Ranged Weapons). */
+function unitBattlekitAccess(wb, unit) {
+  const ov = wb && unit ? variantUnitOverride(wb, unit.id) : null;
+  return (ov && ov.battlekitAccess) || (unit && unit.battlekitAccess) || {};
+}
+
 function getWeaponLimits(model, unit, wb) {
   // Unit-specific override always wins
   const access = (unit && unit.battlekitAccess) || {};
@@ -18800,7 +18853,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   }
   const r = parseRestriction(item.restriction);
   const category = getArmouryCategory(wb.factionId, item.id);
-  const access = unit.battlekitAccess || {};
+  const access = unitBattlekitAccess(wb, unit);
 
   // Variant-only armoury (e.g. Iron Wall special items): hidden unless the
   // warband runs that variant. findBattlekitItem still resolves them so
@@ -20433,11 +20486,12 @@ function renderDetail() {
 
   // Battlekit selector — only for non-mercenaries
   const isMerc = unit.tier === undefined || (DATA.mercenaries.find(m=>m.id===unit.id) && unit.tier === undefined);
-  if (!isMerc && unit.battlekitNote) {
-    html += `<div class="notice info">${unit.battlekitNote}</div>`;
+  const bkNote = ((wb && getUnitWithVariant(wb, unit.id)) || unit).battlekitNote;
+  if (!isMerc && bkNote) {
+    html += `<div class="notice info">${bkNote}</div>`;
   }
   if (!isMerc) {
-    const access = unit.battlekitAccess || {};
+    const access = unitBattlekitAccess(wb, unit);
 
     // Forbidden: skip the picker entirely with a clean message
     if (access.forbidden) {
