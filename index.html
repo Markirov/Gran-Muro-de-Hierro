@@ -5765,6 +5765,24 @@ body.table-mode-open { overflow: hidden; }
    (consult the official rulebook for those during play).
    ====================================================================== */
 
+// Fida'i of Alamut Art of Assassination: una habilidad por Assassin y sin
+// repetir en la banda.
+const ART_ASSASSINATION_FIDAI = [
+  { id:'hallucinogen-disguise', name:'Hallucinogen Disguise', cost:20, currency:'👑',
+    addsAbilities:['Hallucinogen Disguise'], mutuallyExclusiveGroup:'art-assassination', maxPerWarband:1,
+    note:'Art of Assassination: una habilidad por Assassin y cada una solo en un modelo de la banda.' },
+  { id:'mirage-of-time', name:'Mirage of Time', cost:15, currency:'👑',
+    addsAbilities:['Mirage of Time'], mutuallyExclusiveGroup:'art-assassination', maxPerWarband:1,
+    note:'Art of Assassination: una habilidad por Assassin y cada una solo en un modelo de la banda.' },
+  { id:'secret-paths', name:'Secret Paths', cost:10, currency:'👑',
+    addsAbilities:['Secret Paths'], mutuallyExclusiveGroup:'art-assassination', maxPerWarband:1,
+    note:'Art of Assassination: una habilidad por Assassin y cada una solo en un modelo de la banda.' },
+  { id:'thunderbolt-alamut', name:'Thunderbolt of Alamut', cost:20, currency:'👑',
+    addsAbilities:['Thunderbolt of Alamut'], statOverride:{ movement:'8"/Infantry' },
+    mutuallyExclusiveGroup:'art-assassination', maxPerWarband:1,
+    note:'Art of Assassination: una habilidad por Assassin y cada una solo en un modelo de la banda.' },
+];
+
 // Abyssinia Warrior Nobles: Chewa (+5 👑) para Shock Troopers y ELITE.
 const CHEWA_ABYS = { id:'chewa', name:'Chewa', cost:5, currency:'👑',
   addsAbilities:['Chewa'],
@@ -6540,12 +6558,21 @@ const DATA = {
             type:'2-Handed', range:'30"', weaponKeywords:['+1 INJURY DICE','HEAVY'] },
           { id:'sniper-is',       name:'Sniper Rifle',         cost:35, currency:'👑', restriction:'ELITE & Janissaries only · Limit: 2',
             type:'2-Handed', range:'48\"', weaponKeywords:['+1 DICE','CRITICAL','RISKY'] },
+          // ── Fida'i of Alamut Armoury ──
+          { id:'bow-alamut-fid',  name:'Bow of Alamut',        cost:50, currency:'👑',
+            variantOnly:'fidai-alamut', restriction:'Master Assassin & Sultanate Assassins only · Limit: 1',
+            type:'2-Handed', range:'40"', weaponKeywords:['ASSAULT','CRITICAL','IGNORE ARMOUR'],
+            note:'Temporal Slipstream: si un Ranged Attack con esta arma pone BLOOD MARKERS al objetivo, puedes redesplegar al atacante a 1" del objetivo, sin importar distancia ni obstáculos. No se usa si el ataque deja al objetivo Out of Action.' },
           // ── Iron Wall Special Armoury (variante Defenders of the Iron Wall) ──
           { id:'grand-cannon-iw', name:'Sultanate Grand Cannon', cost:60, currency:'👑',
             variantOnly:'iron-wall-def', restriction:'Brazen Bull or stationary only · Limit: 2 (1 per model)',
             type:'1-Handed', range:'48"', weaponKeywords:['+2 INJURY DICE','DEPLOYABLE','HEAVY','IGNORE ARMOUR'] },
         ],
         melee: [
+          // ── Fida'i of Alamut Armoury ──
+          { id:'khanjar-fid',     name:'Golden Khanjar',       cost:20, currency:'👑',
+            variantOnly:'fidai-alamut', restriction:'Master Assassin & Sultanate Assassins only · Limit: 2',
+            type:'1-Handed', range:'Melee', weaponKeywords:['+1 INJURY MODIFIER','CLEAVE 2'] },
           { id:'assassin-dagger-is',name:'Assassin\'s Dagger', cost:15, currency:'👑', restriction:'Sultanate Assassins only',
             type:'1-Handed', range:'Melee', weaponKeywords:['+1 INJURY MODIFIER','CRITICAL'] },
           { id:'bayonet-is',      name:'Bayonet',              cost:2,  currency:'👑', restriction:'Shield Combo',
@@ -6623,6 +6650,11 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'flag-is',         name:'Troop Flag',           cost:1,  currency:'☼', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
+          // ── Fida'i of Alamut Armoury ──
+          { id:'hashashin-leaf-fid', name:'Hashashin Leaf',    cost:5,  currency:'👑',
+            variantOnly:'fidai-alamut', restriction:'Consumable · Limit: 4',
+            type:'Equipment', range:'-', weaponKeywords:['CONSUMABLE'],
+            note:'Enhanced Strength: al desplegar al modelo por primera vez en la partida puedes decir que consume la Hashashin Leaf; tiene STRONG el resto de la partida.' },
           // ── House of Wisdom Armoury (variante The House of Wisdom) ──
           { id:'elixir-how',      name:'Elixir of Al-Khidr',   cost:10, currency:'👑',
             variantOnly:'house-wisdom', restriction:'Consumable · Limit: 1', notForKeywords:['ARTIFICIAL'],
@@ -6724,6 +6756,20 @@ const DATA = {
           abilities:['Counter-Charge'],
           note:'Janissary Officers: una banda Defenders puede tener 0-2 Janissaries con la keyword ELITE sin coste adicional.' },
         // ── Unidad exclusiva de la variante The House of Wisdom ──
+        // ── Unidades exclusivas de la variante Fida'i of Alamut ──
+        { id:'master-assassin-fid', name:'Master Assassin', tier:'elite', limit:'1', cost:95, currency:'👑',
+          variantOnly:'fidai-alamut', usesEntryOf:'sult-assassin',
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+2 DICE', armour:'0', base:'32mm' },
+          keywords:['SULTANATE','ELITE','INFILTRATOR','LEADER','TOUGH'],
+          abilities:['Temporal Assassin'],
+          note:'Usa la entrada del Sultanate Assassin con LEADER y TOUGH. Obligatorio: cada banda Fida\'i incluye 1 Master Assassin.' },
+        { id:'dervish-fid', name:'Dervishes', tier:'troops', limit:'0-4', cost:55, currency:'👑',
+          variantOnly:'fidai-alamut', usesEntryOf:'janissaries',
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
+          keywords:['SULTANATE','IGNORE OFF-HAND WEAPON'],
+          abilities:['Counter-Charge','Whirling Dervish'],
+          battlekitNote:'Sin Reinforced Armour',
+          note:'Usan la entrada de Janissary, sin Reinforced Armour, y cambian STRONG por IGNORE OFF-HAND WEAPON y Whirling Dervish.' },
         { id:'faris-how', name:'Fāris', tier:'elite', limit:'0-2', cost:55, currency:'👑',
           variantOnly:'house-wisdom',
           stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
@@ -6779,12 +6825,25 @@ const DATA = {
           name:"Fida'i of Alamut – Cabal of Assassins",
           summary:'Cábala de asesinos de Alamut: Master Assassin al mando, hasta 2 Sultanate Assassins con Art of Assassination, Acolytes infiltrados y Dervishes.',
           specialRule:"Fida'i of Alamut",
+          // Alamut Alone
           forbiddenUnitIds:['yuzbasi','jabirean','janissaries','lions','brazen-bull'],
+          // Master Assassin obligatorio
+          mandatoryUnits:[{ unitId:'master-assassin-fid', count:1, max:1 }],
+          // Flock of Assassins: 0-2 Sultanate Assassins
+          unitOverrides:[
+            { unitId:'sult-assassin', overrides:{ limit:'0-2' } },
+          ],
+          // Dervishes: sin Reinforced Armour
+          armouryOverrides:{
+            'reinforced-is': { excludeUnitIds:['dervish-fid'] },
+          },
           additionalUpgrades:[
+            ...ART_ASSASSINATION_FIDAI.map(upgrade => ({ unitId:'master-assassin-fid', upgrade })),
+            ...ART_ASSASSINATION_FIDAI.map(upgrade => ({ unitId:'sult-assassin', upgrade })),
             // Up to 3 Azebs can have INFILTRATOR for +10 👑 each (Assassin Acolytes)
             { unitId:'azebs',
               upgrade:{ id:'assassin-acolyte', name:'Assassin Acolyte', cost:10, currency:'👑',
-                addsKeywords:['INFILTRATOR'],
+                addsKeywords:['INFILTRATOR'], maxPerWarband:3,
                 note:'Hasta 3 Azebs pueden ser Assassin Acolytes por +10 👑 cada uno (INFILTRATOR).' },
             },
           ],
@@ -7611,6 +7670,26 @@ const ABILITY_LIBRARY = {
   'Temporal Assassin': {
     type: 'passive',
     summary: 'Tras el Charge Bonus, si aún no ha hecho una Fight ACTION en su activación, puede elegir un segundo enemigo como objetivo de la carga. Carga al primero y hace una Fight ACTION; después se redespliega a 1" del segundo y hace otra Fight ACTION contra él, con la misma arma. No puede hacer más Fight ACTIONS en esa activación.',
+  },
+  'Hallucinogen Disguise': {
+    type: 'passive',
+    summary: 'Si se despliega con INFILTRATOR, debe hacerlo a 8" o más de cualquier enemigo pero ignora el resto de restricciones de INFILTRATOR (puede desplegar en Line of Sight enemiga, los Guard Dogs no le afectan, etc.).',
+  },
+  'Mirage of Time': {
+    type: 'passive',
+    summary: '-1 DICE a la Success Roll de los ataques contra este Assassin.',
+  },
+  'Secret Paths': {
+    type: 'passive',
+    summary: 'Antes del despliegue puedes declarar que usa Secret Paths: no se despliega y no puede activarse en el turno 1. Desde el turno 2, al activarlo se despliega en contacto con cualquier borde del tablero a más de 8" de todos los enemigos y sigue su activación con normalidad.',
+  },
+  'Thunderbolt of Alamut': {
+    type: 'passive',
+    summary: '+2" a su Movement y +1 DICE a la Risky Success Roll de su Dash ACTION.',
+  },
+  'Whirling Dervish': {
+    type: 'passive',
+    summary: '-1 DICE a la Success Roll de los Ranged Attacks contra un Dervish.',
   },
   'Light Skirmishers': {
     type: 'passive',
@@ -18111,6 +18190,8 @@ function perUnitLimitText(wb, unit) {
 function canAddUnit(wb, unit) {
   // Check variant prohibition first (so we can show why)
   if (unitForbiddenByVariant(wb, unit.id)) return false;
+  // Variant-only units (Dervishes, Master Assassin...) need their variant
+  if (unit.variantOnly && unit.variantOnly !== (wb && wb.variantId)) return false;
   if (mercNotHireable(wb, unit)) return false;
   if (eliteCapReached(wb, unit)) return false;
   if (perUnitLimitReached(wb, unit)) return false;
@@ -18200,6 +18281,7 @@ const RESTRICTION_UNIT_MAP = {
   'Sultanate Sappers':           'sappers',
   'Silahdar':                    'silahdar-iw',
   'Brazen Bull or stationary':   'brazen-bull',
+  'Master Assassin':             'master-assassin-fid',
   'Sultanate Assassins':         'sult-assassin',
   'Sultanate Assassin':          'sult-assassin',
   'Brazen Bull':                 'brazen-bull',
@@ -18695,7 +18777,9 @@ function classifyBattlekitItem(item, model, unit, wb) {
       allowed = allowed.filter(x => x !== '__wretched__');
       if (wId) allowed = allowed.concat(wId);
     }
-    let matchesUnit = allowed && allowed.includes(unit.id);
+    // Units that use another unit's Warband Entry (Master Assassin, Dervishes)
+    let matchesUnit = allowed && (allowed.includes(unit.id) ||
+      (unit.usesEntryOf && allowed.includes(unit.usesEntryOf)));
     // Upgrades that let a model take another unit's items (Gargantuan Size:
     // one weapon that only a Brazen Bull can usually take)
     if (!matchesTier && !matchesUnit && allowed) {
