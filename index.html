@@ -7468,6 +7468,12 @@ const DATA = {
             type:'Armour', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         equipment: [
+          // Revisión de reglas de abril 2026 (beta).
+          { id:'gluttonous-arsenal-bg', name:'Gluttonous Arsenal', cost:0, currency:'👑', restriction:'Amalgam only · permanente',
+            type:'Special', range:'Melee/16"', weaponKeywords:['ASSAULT','AUTOMATIC 3','CLEAVE 3'],
+            note:'Putrid Spray: los Melee Attacks con el Gluttonous Arsenal tienen la keyword INFECTION MARKERS.' },
+          { id:'blessings-beelzebub-bg', name:'Blessings of Beelzebub', cost:9, currency:'☼', restriction:'Lord of Tumours only · Limit: 1',
+            type:'Special', range:'-', weaponKeywords:[] },
           { id:'helmet-bg',        name:'Combat Helmet',         cost:5,  currency:'👑', restriction:'Headgear',
             type:'Headgear', range:'-', weaponKeywords:['NEGATE SHRAPNEL'] },
           { id:'compound-eyes-bg', name:'Compound Eyes Helmet',  cost:10, currency:'👑', restriction:'ELITE & Heralds only · Headgear · Limit: 3',
@@ -7520,13 +7526,33 @@ const DATA = {
           note:'Usa la entrada de Plague Knight con Ranged +1 DICE, LEADER y TOUGH. Obligatorio: cada banda Dirge incluye 1 Executor (y puede tener además 0-2 Plague Knights).' },
         // Warbands 1.0.2: entrada "Grail Thralls / Fly Thralls" con dos perfiles; aquí dos unidades.
         // El id 'thralls' se conserva para Fly Thralls (bandas guardadas).
+        // Revisión de reglas de abril 2026 (beta): entrada nueva de Grail Thralls
+        // con Grail Strains (1, o 2 si el resto de la banda vale 1000 👑 o más).
         { id:'grail-thralls', name:'Grail Thralls', tier:'troops', limit:null, cost:25, currency:'👑',
           stats:{ movement:'5"/Infantry', ranged:'-', melee:'-1 DICE', armour:'0', base:'25mm' },
           keywords:['BLACK GRAIL','FEAR','NEGATE GAS'],
           abilities:['Overwhelming Horde','Undead Fortitude'],
           battlekitAccess:{ forbidden:true },
-          battlekitNote:'No puede tener Battlekit' },
-        { id:'thralls', name:'Fly Thralls', tier:'troops', limit:null, cost:25, currency:'👑',
+          battlekitNote:'No puede tener Battlekit · hasta 1 Strain (2 si el resto de la banda vale 1000 👑 o más)',
+          upgrades:[
+            { id:'bg-strain-bolgias-gut', name:'Bolgias Gut', cost:10, currency:'👑', addsAbilities:['Burst ACTION'],
+              perModelGroup:'grail-strain', perModelMax:1, perModelMaxAtValue:{ value:1000, max:2 },
+              note:'Strain: puede tomar Burst ACTION; si un enemigo termina un movimiento a 3", puedes interrumpir y explotar sin tomar la ACTION.' },
+            { id:'bg-strain-hellfly-host', name:'Hellfly Host', cost:0, currency:'👑',
+              statOverride:{ movement:'6"/Flying' }, addsKeywords:['FLYING'], removesAbilities:['Undead Fortitude'],
+              perModelGroup:'grail-strain', perModelMax:1, perModelMaxAtValue:{ value:1000, max:2 },
+              note:'Strain: Movement 6"/Flying y FLYING; pierde Undead Fortitude.' },
+            { id:'bg-strain-leech-grip', name:'Leech Grip', cost:7, currency:'👑',
+              statOverride:{ melee:'+0 DICE' }, addsAbilities:['Leech Grip'],
+              perModelGroup:'grail-strain', perModelMax:1, perModelMaxAtValue:{ value:1000, max:2 },
+              note:'Strain: Melee +0; 1 BLOOD MARKER al enemigo que hace Retreat a 1".' },
+            { id:'bg-strain-tapeworm-throng', name:'Tapeworm Throng', cost:10, currency:'👑', addsAbilities:['Tapeworm Throng'],
+              perModelGroup:'grail-strain', perModelMax:1, perModelMaxAtValue:{ value:1000, max:2 },
+              note:'Strain: -1 DICE a los Ranged Attacks contra él a Short Range (sin efecto si tiene NEGATE FEAR).' },
+          ] },
+        // Fly Thralls: la beta los sustituye por la Strain Hellfly Host; se
+        // mantienen solo en The Great Hunger (su PDF los incluye).
+        { id:'thralls', name:'Fly Thralls', tier:'troops', limit:null, cost:25, currency:'👑', variantOnly:'great-hunger',
           stats:{ movement:'6"/Flying', ranged:'-', melee:'-1 DICE', armour:'0', base:'25mm' },
           keywords:['BLACK GRAIL','FEAR','FLYING','NEGATE GAS'],
           abilities:['Overwhelming Horde'],
@@ -7599,15 +7625,20 @@ const DATA = {
             { id:'vomitus-gh', name:'Vomitus', cost:40, currency:'👑', addsAbilities:['Vomitus'],
               note:'Unholy Gut: arma a distancia Special, 8", +1 INJURY MODIFIER, ASSAULT, INFECTION MARKERS. No se puede perder. Torrent of Bile: sin Success Roll; línea de 8" y Injury Roll a cada modelo (amigo o enemigo) que toque. Vile Ferment: quitando 2 INFECTION MARKERS de la Gula, +1 INJURY MODIFIER a esas Injury Rolls.' },
           ] },
-        { id:'amalgam', name:'Amalgam', tier:'troops', limit:'0-1', cost:140, currency:'👑',
-          stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+0 DICE', armour:'0', base:'60mm' },
-          keywords:['BLACK GRAIL','FEAR','NEGATE GAS','STRONG','TOUGH'],
-          battlekitAccess:{
-            allowOnly1HWeapons:true,
-            weaponLimits:{ meleeMax:6, rangedMax:6, totalMax:6, strongBonus:false },
-          },
-          battlekitNote:'Hasta 6 armas a 1 mano del Armoury · Hasta 1 Trench Shield (reemplaza un arma) · Sin otros Battlekit',
-          abilities:['Six-armed Monstrosity','Undead Fortitude'] },
+        // Revisión de reglas de abril 2026 (beta): entrada nueva del Amalgam.
+        { id:'amalgam', name:'Amalgam', tier:'troops', limit:'0-1', cost:150, currency:'👑',
+          stats:{ movement:'5"/Infantry', ranged:'+0 DICE', melee:'+1 DICE', armour:'-1', base:'60mm' },
+          keywords:['BLACK GRAIL','FEAR','NEGATE GAS','TOUGH'],
+          battlekitAccess:{ forbidden:true },
+          permanentEquipment:['Gluttonous Arsenal'],
+          battlekitNote:'Siempre tiene Gluttonous Arsenal · Sin otro Battlekit · hasta 1 Vile Corpus',
+          abilities:['Absorb','Corpulent','Curse on Creation','Trample ACTION','Unstoppable'],
+          upgrades:[
+            { id:'vc-bombardment-horde', name:'Bombardment Horde', cost:20, currency:'👑',
+              statOverride:{ ranged:'+1 DICE', melee:'+0 DICE' }, addsAbilities:['Bombardment Horde'],
+              perModelGroup:'vile-corpus', perModelMax:1,
+              note:'Vile Corpus: Ranged +1 DICE y Melee +0 DICE; al disparar el Gluttonous Arsenal puede cambiar AUTOMATIC 3 por BLAST 3" y SCATTER.' },
+          ] },
       ],
       variants: [
         {
@@ -8506,6 +8537,38 @@ const ABILITY_LIBRARY = {
   'Parasite Host': {
     type: 'passive',
     summary: 'Cuando un ataque cuerpo a cuerpo del Corpse Guard coloca BLOOD MARKERS o INFECTION MARKERS en el objetivo, puedes retirar hasta 1 BLOOD MARKER o INFECTION MARKER del propio Corpse Guard.',
+  },
+  'Absorb': {
+    type: 'passive',
+    summary: 'Cuando un modelo (amigo o enemigo) a 1" del Amalgam queda Out of Action, puedes quitar 1 BLOOD MARKER del Amalgam. Si era de base 40mm o mayor y el Amalgam ya usó TOUGH, puede volver a usarlo.',
+  },
+  'Corpulent': {
+    type: 'passive',
+    summary: '-2 INJURY DICE a las Injury Rolls de cualquier ataque contra el Amalgam.',
+  },
+  'Curse on Creation': {
+    type: 'passive',
+    summary: 'Campaña: si el resto de la banda vale 1000 👑 o más, en un Promotion Step puedes quitar 6 Grail Thralls de la hoja para subir el límite de Amalgams a 0-2 y reclutar uno gratis.',
+  },
+  'Unstoppable': {
+    type: 'passive',
+    summary: 'Los enemigos de base 32mm o menor no pueden hacer Melee Attack cuando el Amalgam se retira a 1" de ellos. Puede tomar Move o Charge si todos los enemigos a 1" son de base 32mm o menor.',
+  },
+  'Bombardment Horde': {
+    type: 'passive',
+    summary: 'Vile Corpus: Ranged +1 DICE y Melee +0 DICE. Al tomar Shoot con el Gluttonous Arsenal puede cambiar AUTOMATIC 3 por BLAST 3" y SCATTER.',
+  },
+  'Burst ACTION': {
+    type: 'action',
+    summary: 'Bolgias Gut: todos los modelos (amigos o enemigos) a 3" y en Line of Sight reciben un Ranged Attack con -1 INJURY DICE, GAS e INFECTION MARKERS; después el modelo queda Out of Action. También puede explotar interrumpiendo la activación de un enemigo que termina un movimiento a 3".',
+  },
+  'Leech Grip': {
+    type: 'passive',
+    summary: 'Cuando un enemigo hace Retreat a 1" de este modelo, pon 1 BLOOD MARKER junto al que se retira (antes de los Melee Attacks contra él).',
+  },
+  'Tapeworm Throng': {
+    type: 'passive',
+    summary: '-1 DICE a los Ranged Attacks contra este modelo si está a Short Range del atacante. Sin efecto si el modelo tiene NEGATE FEAR.',
   },
   'Overwhelming Horde': {
     type: 'passive',
@@ -18554,8 +18617,15 @@ function classifyUpgrade(up, model, unit, wb) {
   // Per-model cap shared by a group (Great Hunger Strains: 1, or 3 for Ravenous)
   if (up.perModelGroup) {
     const n = activeDefs.filter(u => u.perModelGroup === up.perModelGroup).length;
-    if (n >= (up.perModelMax || 1)) {
-      return { state: 'disabled', reason: 'Máx. ' + (up.perModelMax || 1) + ' por modelo' };
+    let max = up.perModelMax || 1;
+    // Grail Strains: 2 si el resto de la banda vale 1000 👑 o más
+    if (up.perModelMaxAtValue && wb) {
+      const rest = (wb.models || []).filter(m => m !== model && m.uid !== model.uid)
+        .reduce((t, m) => t + modelCost(m, wb.factionId, wb).ducados, 0);
+      if (rest >= up.perModelMaxAtValue.value) max = up.perModelMaxAtValue.max;
+    }
+    if (n >= max) {
+      return { state: 'disabled', reason: 'Máx. ' + max + ' por modelo' };
     }
   }
   const clash = activeDefs.find(u => {
@@ -36086,6 +36156,15 @@ const EQUIPMENT_IMPLICIT_ABILITIES = {
     name: 'Treat ACTION',
     desc: 'Risky Success Roll: si falla, la activación termina. Con éxito, retira 1 BLOOD MARKER del modelo o de un aliado a 1", o levanta a un aliado Down a 1".',
   }],
+  // Revisión de reglas de abril 2026 (beta): Amalgam y Black Grail.
+  'Gluttonous Arsenal': [{
+    name: 'Putrid Spray',
+    desc: 'Los Melee Attacks con el Gluttonous Arsenal tienen la keyword INFECTION MARKERS.',
+  }],
+  'Blessings of Beelzebub': [{
+    name: 'Favoured Strain',
+    desc: 'Al empezar cada partida elige 1 Strain; los modelos amigos con ella ganan su efecto Favoured: Bolgias Gut sin -1 INJURY DICE en Burst; Hellfly Host recupera Undead Fortitude; Leech Grip pone D3 BLOOD MARKERS; Tapeworm Throng da -2 DICE a Long Range en vez de -1.',
+  }],
   // Revisión de reglas de abril 2026 (beta): equipo nuevo del Iron Sultanate.
   'Al-inbīq Kit': [{
     name: "'Ilm al-Mīzān ACTION",
@@ -36431,7 +36510,8 @@ function buildModelCardData(model, wb) {
     const perm = ((unit && getUnitWithVariant(wb, unit.id)) || unit || {}).permanentEquipment || [];
     for (const pname of perm) {
       const it = findArmouryItemByName(wb, pname);
-      const isWeapon = it && /handed|grenade/i.test(String(it.type || '')) && !/shield/i.test(String(it.type || ''));
+      const isWeapon = it && !/shield/i.test(String(it.type || '')) &&
+        (/handed|grenade/i.test(String(it.type || '')) || (it.range && it.range !== '-'));
       equipment.push(it
         ? { name: pname, keywords: it.weaponKeywords || [], range: it.range,
             type: isWeapon ? String(it.type) + ' weapon' : (it.type || 'Equipment') }
