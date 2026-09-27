@@ -5821,6 +5821,11 @@ const DATA = {
             type:'1-Handed', range:'Melee', weaponKeywords:[] },
           { id:'polearm-na',        name:'Polearm',              cost:7,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'Melee', weaponKeywords:['BLOCK','CUMBERSOME'] },
+          // ── Stosstruppen of Prussia Armoury (variante Prussia) ──
+          { id:'tank-splitter-prussia', name:'Tank-Splitter Sword', cost:15, currency:'👑',
+            variantOnly:'prussia', restriction:'Limit: 2',
+            type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY DICE','CRITICAL','CUMBERSOME'],
+            note:'Melt Armour: en la Injury Roll, si el objetivo tiene Armour -1 o mejor, o lleva Armour o Shield, aparta un dado como un 6 antes de tirar el resto. No le afecta la Patron Skill Dragonslayer.' },
           // ── Kingdom of Alba Armoury (variante Alba) ──
           { id:'lochaber-axe-alba', name:'Lochaber Axe',         cost:20, currency:'👑',
             variantOnly:'alba',
@@ -5872,6 +5877,11 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'mountain-na',       name:'Mountaineer Kit',      cost:3,  currency:'👑', restriction:'Limit: 4',
             type:'Equipment', range:'-', weaponKeywords:[] },
+          // Feldkaplane (Stosstruppen of Prussia)
+          { id:'holy-smoke-prussia', name:'Holy Smoke',          cost:15, currency:'👑',
+            variantOnly:'prussia', restriction:'Consumable · Trench Clerics only',
+            type:'Equipment', range:'-', weaponKeywords:['CONSUMABLE'],
+            note:'Chemical Incense: al desplegar al modelo puedes decir que la consume; hasta el final de la partida tiene NEGATE FEAR y -1 INJURY DICE a las Injury Rolls de ataques que le impactan.' },
           // Dum-Dum Ammunition (Kingdom of Alba): Battlekit del Rulebook.
           { id:'dum-dum-alba',      name:'Dum-Dum Bullets',      cost:5,  currency:'👑',
             variantOnly:'alba', restriction:'Consumable · Limit: 3',
@@ -5937,7 +5947,7 @@ const DATA = {
           summary:'Fuerza de élite enviada por el Sumo Pontífice: Trench Cleric al mando (sin Lieutenant obligatorio), presupuesto 500 👑 y 11 ☼, Supreme Pontiff\'s Crucifix gratis y guardia suiza con NEGATE FEAR.',
           specialRule:'Papal States Intervention',
           budget:{ ducados:500, glory:11 },
-          forbiddenUnitIds:['trench-moles'],
+          forbiddenUpgradeIds:['trench-mole'],
           mandatoryUnits:[{ unitId:'trench-cleric', count:1 }],
           // Lieutenant is no longer mandatory in Papal States
           relaxedMandatoryIds:['lieutenant'],
@@ -6000,12 +6010,45 @@ const DATA = {
           name:'Stosstruppen of the Free State of Prussia',
           summary:'Tropas de asalto de élite: 2-8 Shock Troopers, hasta 3 Fireteams, Rapid Assault comprable y granadas con +4" de alcance.',
           specialRule:'Rapid Assault',
+          // Troop Selection: 2-8 Shock Troopers, sin Trench Moles, máx. 1 Sniper
+          // Priest y 1 MHI.
+          mandatoryUnits:[{ unitId:'shock-troopers', count:2, max:8 }],
+          forbiddenUpgradeIds:['trench-mole'],
+          unitOverrides:[
+            { unitId:'shock-troopers',  overrides:{ limit:'2-8', removeAbilities:['Assault Drill'] } },
+            { unitId:'sniper-priests',  overrides:{ limit:'0-1' } },
+            { unitId:'mech-heavy-inf',  overrides:{ limit:'0-1' } },
+          ],
+          // Masters of the Grenade: +4" de alcance a todas las granadas.
+          grenadeRangeBonus:4,
+          armouryOverrides:{
+            // Specialised Equipment
+            'smg-na':               { restriction:'Bayonet Lug · Shield Combo · Limit: 4' },
+            'auto-pistol-na':       { restriction:'Limit: 3' },
+            'machine-gun-na':       { restriction:'Limit: 1' },
+            'grenade-launcher-na':  { forbidden:true },
+            'martyr-pills-na':      { forbidden:true },
+            // Lightly-armoured
+            'reinforced-armour-na': { restriction:'Lieutenant & Mech. Heavy Inf. only' },
+            'machine-armour-na':    { restriction:'Lieutenant & Mech. Heavy Inf. only · Limit: 1 excl. MHI' },
+          },
           additionalUpgrades:[
-            // Shock Troopers can have INFILTRATOR for +10 (Stosstruppen tradition)
+            // Forward Positions: hasta 2 Shock Troopers con INFILTRATOR por +10 👑
             { unitId:'shock-troopers',
-              upgrade:{ id:'stoss-infiltrator', name:'Stosstruppen Infiltrator', cost:10, currency:'👑',
-                addsKeywords:['INFILTRATOR'],
-                note:'Un Shock Trooper Stosstruppen puede tener INFILTRATOR por +10 👑.' },
+              upgrade:{ id:'stoss-infiltrator', name:'Forward Positions', cost:10, currency:'👑',
+                addsKeywords:['INFILTRATOR'], maxPerWarband:2,
+                note:'Forward Positions: hasta 2 Shock Troopers pueden tener INFILTRATOR por +10 👑 cada uno.' },
+            },
+            // Athleticism: Rapid Assault +5 👑 (Lieutenant y Shock Troopers)
+            { unitId:'lieutenant',
+              upgrade:{ id:'rapid-assault', name:'Rapid Assault', cost:5, currency:'👑',
+                addsAbilities:['Rapid Assault'],
+                note:'Athleticism: +1 DICE a la Risky Success Roll de su Dash ACTION.' },
+            },
+            { unitId:'shock-troopers',
+              upgrade:{ id:'rapid-assault', name:'Rapid Assault', cost:5, currency:'👑',
+                addsAbilities:['Rapid Assault'],
+                note:'Athleticism: +1 DICE a la Risky Success Roll de su Dash ACTION.' },
             },
           ],
         },
@@ -7404,6 +7447,10 @@ const ABILITY_LIBRARY = {
   'Pin': {
     type: 'passive',
     summary: 'Modelos enemigos en estado Down con base de 40mm o menos no pueden levantarse mientras un Lion of Jabir esté a 1" o menos (incluso si el Lion también está Down).',
+  },
+  'Rapid Assault': {
+    type: 'passive',
+    summary: '+1 DICE a la Risky Success Roll cuando el modelo hace una Dash ACTION. (Athleticism, Stosstruppen of Prussia.)',
   },
   'Pummelling Blows': {
     type: 'passive',
@@ -17190,8 +17237,13 @@ function foreignArmouryItems(wb) {
 function variantArmouryItem(wb, item) {
   const v = wb ? getActiveVariant(wb) : null;
   const ov = v && v.armouryOverrides && v.armouryOverrides[item.id];
-  if (!ov) return item;
-  return Object.assign({}, item, ov, { _variantOverride: true });
+  let out = ov ? Object.assign({}, item, ov, { _variantOverride: true }) : item;
+  // Masters of the Grenade (Prussia): +X" to every Grenade's range
+  if (v && v.grenadeRangeBonus && /^\d+"$/.test(out.range || '') &&
+      getArmouryCategory(wb.factionId, item.id) === 'grenades') {
+    out = Object.assign({}, out, { range: (parseInt(out.range, 10) + v.grenadeRangeBonus) + '"', _variantOverride: true });
+  }
+  return out;
 }
 
 /** Armoury category list as the warband sees it (overrides applied, forbidden removed). */
@@ -17209,8 +17261,12 @@ function armouryItemsForWarband(wb, catKey) {
  * `_fromVariant: true` for the UI to highlight them.
  */
 function allAvailableUpgrades(unit, wb) {
-  const base = (unit && unit.upgrades) ? unit.upgrades.slice() : [];
+  let base = (unit && unit.upgrades) ? unit.upgrades.slice() : [];
   if (!wb || !unit) return base;
+  const av = getActiveVariant(wb);
+  if (av && av.forbiddenUpgradeIds) {
+    base = base.filter(u => !av.forbiddenUpgradeIds.includes(u.id));
+  }
   const variantUps = variantUpgradesForUnit(wb, unit.id);
   for (const up of variantUps) {
     // Avoid duplicates by id
@@ -17294,9 +17350,13 @@ function modelNegatesKeyword(model, unit, keyword, wb) {
  * Returns the effective abilities list for a model: base unit abilities +
  * abilities added by each active upgrade.
  */
-function effectiveAbilities(model, unit) {
+function effectiveAbilities(model, unit, wb) {
   if (!unit) return [];
-  const base = [...(unit.abilities || [])];
+  let base = [...(unit.abilities || [])];
+  // Abilities the active variant removes (Prussia Light Melee: no Assault Drill)
+  const w = wb || (typeof STATE !== 'undefined' ? STATE.currentWarband : null);
+  const ov = w ? variantUnitOverride(w, unit.id) : null;
+  if (ov && ov.removeAbilities) base = base.filter(a => !ov.removeAbilities.includes(a));
   for (const up of activeUpgrades(model, unit)) {
     for (const a of (up.addsAbilities || [])) {
       if (!base.includes(a)) base.push(a);
@@ -17875,6 +17935,8 @@ const RESTRICTION_UNIT_MAP = {
   'Mechanized Heavy Infantry':   'mech-heavy-inf',
   'Combat Medic':                'combat-medic',
   'Lieutenant':                  'lieutenant',
+  'Trench Clerics':              'trench-cleric',
+  'Trench Cleric':               'trench-cleric',
   'Combat Engineer':             'combat-engineers',
   'Sappers':                     'sappers',
   'Sultanate Sappers':           'sappers',
