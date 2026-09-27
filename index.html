@@ -5877,6 +5877,10 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'mountain-na',       name:'Mountaineer Kit',      cost:3,  currency:'👑', restriction:'Limit: 4',
             type:'Equipment', range:'-', weaponKeywords:[] },
+          // Anointed Ammunition (Éire Rangers): Battlekit del Rulebook.
+          { id:'ap-bullets-eire',   name:'Armour-Piercing Bullets', cost:5, currency:'👑',
+            variantOnly:'eire-rangers', restriction:'Consumable · Limit: 2',
+            type:'Equipment', range:'-', weaponKeywords:['AMMUNITION (ARMOUR-PIERCING)','CONSUMABLE'] },
           // Feldkaplane (Stosstruppen of Prussia)
           { id:'holy-smoke-prussia', name:'Holy Smoke',          cost:15, currency:'👑',
             variantOnly:'prussia', restriction:'Consumable · Trench Clerics only',
@@ -5957,13 +5961,41 @@ const DATA = {
           name:'Éire Rangers',
           summary:'Infantería ligera y guerrilla: Fianna con INFILTRATOR y SKIRMISHER, Berserker, Hit & Run Tactics y casi sin armadura pesada ni armas HEAVY.',
           specialRule:'Éire Rangers Light Infantry',
+          unitOverrides:[
+            // Light Infantry
+            { unitId:'mech-heavy-inf',   overrides:{ limit:'0-1' } },
+            { unitId:'combat-engineers', overrides:{ limit:'0-4' } },
+            // Loose Formation: SKIRMISHER en vez de Hold Your Fire!
+            { unitId:'lieutenant',       overrides:{ addKeywords:['SKIRMISHER'], removeAbilities:['Hold Your Fire! ACTION'] } },
+            // Strong in Faith: 0-2 Trench Clerics con Arise and be Healed! y Away Serpents!
+            { unitId:'trench-cleric',    overrides:{ limit:'0-2', removeAbilities:['Onward Christian Soldiers!'],
+                                                     addAbilities:['Arise and be Healed! ACTION','Away Serpents! ACTION'] } },
+          ],
+          // Light Infantry: salvo Great Swords/Axes, solo la MHI lleva armas
+          // (y granadas) HEAVY; los Combat Engineers pueden llevar Satchel Charges.
+          heavyOnlyUnitIds:['mech-heavy-inf'],
+          heavyExceptions:{ 'great-sword-na':null, 'satchel-na':['combat-engineers'] },
+          armouryOverrides:{
+            'great-sword-na':       { restriction:'Limit: 3', excludeUnitIds:['mech-heavy-inf'] },
+            'satchel-na':           { restriction:'Consumable · Limit: 4 (1 per model)' },
+            'reinforced-armour-na': { restriction:'Mech. Heavy Inf. only' },
+            'machine-armour-na':    { restriction:'Mech. Heavy Inf. only' },
+            // Carnyx
+            'music-na':             { note:'Carnyx (Éire Rangers): un Musical Instrument de la banda puede tener la keyword FEAR sin coste extra.' },
+          },
           additionalUpgrades:[
-            // Berserker for Lieutenant or Fianna (+15 👑)
+            // Berserker: el Lieutenant o UNO de los Fianna (+15 👑)
             { unitId:'lieutenant',
               upgrade:{ id:'berserker', name:'Berserker', cost:15, currency:'👑',
                 addsKeywords:['NEGATE FEAR'],
-                forbidsCategories:['armour'],
-                note:'+15 👑. Sin armadura (puede tener escudos). NEGATE FEAR. Nunca recibe BLOOD MARKERS.' },
+                forbidsCategories:['armour'], maxPerWarband:1,
+                note:'+15 👑. Solo el Lieutenant o uno de los Fianna. Sin armadura (puede tener escudos). NEGATE FEAR. Nunca recibe BLOOD MARKERS.' },
+            },
+            { unitId:'shock-troopers',
+              upgrade:{ id:'berserker', name:'Berserker', cost:15, currency:'👑',
+                addsKeywords:['NEGATE FEAR'], requiresUpgrades:['fianna'],
+                forbidsCategories:['armour'], maxPerWarband:1,
+                note:'+15 👑. Solo el Lieutenant o uno de los Fianna. Sin armadura (puede tener escudos). NEGATE FEAR. Nunca recibe BLOOD MARKERS.' },
             },
             // Shock Troopers can have INFILTRATOR + SKIRMISHER for +10 (Fianna upgrade)
             { unitId:'shock-troopers',
@@ -7451,6 +7483,14 @@ const ABILITY_LIBRARY = {
   'Rapid Assault': {
     type: 'passive',
     summary: '+1 DICE a la Risky Success Roll cuando el modelo hace una Dash ACTION. (Athleticism, Stosstruppen of Prussia.)',
+  },
+  'Arise and be Healed! ACTION': {
+    type: 'action',
+    summary: 'Risky Success Roll. Si falla, no pasa nada y su activación termina. Con Success o Critical elige al Trench Cleric o a 1 amigo a 3": se levanta sin gastar movimiento y puedes retirarle hasta D3 BLOOD MARKERS y/o INFECTION MARKERS.',
+  },
+  'Away Serpents! ACTION': {
+    type: 'action',
+    summary: 'Elige 1 enemigo a 12" y haz una Risky Success Roll (-1 DICE si su base es de 40mm o más). Si falla, no pasa nada y su activación termina. Con Success o Critical, el enemigo queda Down.',
   },
   'Pummelling Blows': {
     type: 'passive',
@@ -17357,6 +17397,7 @@ function effectiveAbilities(model, unit, wb) {
   const w = wb || (typeof STATE !== 'undefined' ? STATE.currentWarband : null);
   const ov = w ? variantUnitOverride(w, unit.id) : null;
   if (ov && ov.removeAbilities) base = base.filter(a => !ov.removeAbilities.includes(a));
+  if (ov && ov.addAbilities) for (const a of ov.addAbilities) if (!base.includes(a)) base.push(a);
   for (const up of activeUpgrades(model, unit)) {
     for (const a of (up.addsAbilities || [])) {
       if (!base.includes(a)) base.push(a);
@@ -18373,6 +18414,23 @@ function classifyBattlekitItem(item, model, unit, wb) {
     }
     if (up.forbidsItemNames && up.forbidsItemNames.includes(item.name)) {
       return { state: 'hidden', reason: `Bloqueado por mejora: ${up.name}` };
+    }
+  }
+
+  // Item overrides that exclude units (Éire: MHI cannot have a Great Sword/Axe)
+  if (item.excludeUnitIds && item.excludeUnitIds.includes(unit.id)) {
+    return { state: 'hidden', reason: 'No para esta unidad (variante)' };
+  }
+
+  // HEAVY weapons/grenades only for some units (Éire Light Infantry)
+  {
+    const hv = getActiveVariant(wb);
+    if (hv && hv.heavyOnlyUnitIds && !hv.heavyOnlyUnitIds.includes(unit.id) &&
+        ['ranged', 'melee', 'grenades'].includes(category) &&
+        itemHasWeaponKeyword(item, 'HEAVY')) {
+      const ex = hv.heavyExceptions || {};
+      const allowed = (item.id in ex) && (ex[item.id] === null || ex[item.id].includes(unit.id));
+      if (!allowed) return { state: 'hidden', reason: 'HEAVY: solo ' + hv.heavyOnlyUnitIds.map(id => (getUnit(wb.factionId, id) || { name: id }).name).join(', ') };
     }
   }
 
