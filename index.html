@@ -5765,6 +5765,11 @@ body.table-mode-open { overflow: hidden; }
    (consult the official rulebook for those during play).
    ====================================================================== */
 
+// Abyssinia Warrior Nobles: Chewa (+5 👑) para Shock Troopers y ELITE.
+const CHEWA_ABYS = { id:'chewa', name:'Chewa', cost:5, currency:'👑',
+  addsAbilities:['Chewa'],
+  note:'Warrior Nobles: +1 DICE a sus Melee Attacks por cada otro modelo amigo a 1" del objetivo (máx. +2 DICE).' };
+
 // Papal States Swiss Guard: hasta 4 modelos (además del Lieutenant) con NEGATE FEAR gratis.
 const SWISS_GUARD_PAPAL = { id:'swiss-guard', name:'Swiss Guard', cost:0, currency:'👑',
   addsKeywords:['NEGATE FEAR'], maxPerWarband:4,
@@ -5826,6 +5831,11 @@ const DATA = {
             type:'1-Handed', range:'Melee', weaponKeywords:[] },
           { id:'polearm-na',        name:'Polearm',              cost:7,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'Melee', weaponKeywords:['BLOCK','CUMBERSOME'] },
+          // ── Expeditionary Forces of Abyssinia Armoury ──
+          { id:'shotel-abys',       name:'Shotel',               cost:5,  currency:'👑',
+            variantOnly:'abyssinia', restriction:'', requiresUpgrade:'chewa',
+            type:'1-Handed', range:'Melee', weaponKeywords:['CRITICAL'],
+            note:'Chewa & ELITE only. Bypass Shield: ignora los -INJURY DICE y -INJURY MODIFIER de los escudos contra Melee Attacks con Shotel (el resto de reglas del escudo se aplican).' },
           // ── Stosstruppen of Prussia Armoury (variante Prussia) ──
           { id:'tank-splitter-prussia', name:'Tank-Splitter Sword', cost:15, currency:'👑',
             variantOnly:'prussia', restriction:'Limit: 2',
@@ -5882,6 +5892,19 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'mountain-na',       name:'Mountaineer Kit',      cost:3,  currency:'👑', restriction:'Limit: 4',
             type:'Equipment', range:'-', weaponKeywords:[] },
+          // ── Expeditionary Forces of Abyssinia Armoury ──
+          { id:'holy-water-abys',   name:'Holy Water of Lalibela', cost:3, currency:'👑',
+            variantOnly:'abyssinia', restriction:'Consumable · Limit: 5',
+            type:'Equipment', range:'-', weaponKeywords:['CONSUMABLE'],
+            note:'Healing Waters: +1 DICE a la Success Roll de una ACTION que puede retirar BLOOD o INFECTION MARKERS de otro modelo o de sí mismo.' },
+          { id:'anfarro-abys',      name:'Anfarro (Warriors Crown)', cost:10, currency:'👑',
+            variantOnly:'abyssinia', restriction:'Headgear · Limit: 6', requiresUpgrade:'chewa',
+            type:'Equipment', range:'-', weaponKeywords:['NEGATE FEAR'],
+            note:'Chewa & ELITE only. Token of Honour: +1 DICE a la característica Melee del portador.' },
+          { id:'tabot-abys',        name:'Tabot',                cost:4,  currency:'☼',
+            variantOnly:'abyssinia', restriction:'Holy Warrior only · Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:[],
+            note:'Virtuous Rewards: pon 1 BLESSING MARKER junto al portador cada vez que una ACTION de un modelo amigo retire BLOOD o INFECTION MARKERS de uno o más modelos amigos.' },
           // Supreme Blessing (Papal States Intervention Force)
           { id:'crucifix-papal',    name:"Supreme Pontiff's Crucifix", cost:3, currency:'☼',
             variantOnly:'papal-states', restriction:'Limit: 1',
@@ -5947,6 +5970,13 @@ const DATA = {
           permanentEquipment:['Reinforced Armour (85👑) ó Machine Armour (95👑)'],
           battlekitAccess:{ forbidCategories:['armour'] },
           battlekitNote:'Armadura incluida en el coste · No puede comprar más Armadura' },
+        // ── Unidad exclusiva de la variante Expeditionary Forces of Abyssinia ──
+        { id:'holy-warrior-abys', name:'Holy Warrior', tier:'elite', limit:'0-2', cost:60, currency:'👑',
+          variantOnly:'abyssinia',
+          stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
+          keywords:['NEW ANTIOCH','ELITE','NEGATE FEAR'],
+          abilities:['God is With Us! ACTION','Onward Christian Soldiers!','Blessed Psalm ACTION','Arise and be Healed! ACTION'],
+          note:'Holy Warriors: usa la entrada del Trench Cleric con Blessed Psalm ACTION y Arise and be Healed! ACTION. Una banda de Abyssinia puede tener 0-1 Trench Cleric y 0-2 Holy Warriors.' },
         { id:'combat-medic', name:'Combat Medic', tier:'troops', limit:'0-1', cost:65, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+0 DICE', armour:'-1', base:'25mm' },
           keywords:['NEW ANTIOCH','NEGATE FEAR'],
@@ -6118,7 +6148,32 @@ const DATA = {
           name:'Expeditionary Forces of Abyssinia',
           summary:'Trono Salomónico: sin Sniper Priests, 0-2 Combat Medics y Holy Warriors, puntería a corta distancia y nobles Chewa en cuerpo a cuerpo.',
           specialRule:'Expeditionary Forces of Abyssinia',
+          // Faith of Ethiopia: sin Sniper Priests. Vanguard Forces: sin Trench Moles.
           forbiddenUnitIds:['sniper-priests'],
+          forbiddenUpgradeIds:['trench-mole'],
+          unitOverrides:[
+            // Abyssinian Healers
+            { unitId:'combat-medic',   overrides:{ limit:'0-2' } },
+            // Chieftain Panoply: la MHI no puede tener Machine Armour
+            { unitId:'mech-heavy-inf', overrides:{ costAlt:null } },
+          ],
+          // Weapons of Mobile Warfare: máx. 3 armas a distancia HEAVY (sin contar Satchel Charges)
+          heavyRangedMax:3,
+          armouryOverrides:{
+            'misericordia-na':   { restriction:'Combat Medic only · Limit: 2' },
+            'machine-armour-na': { excludeUnitIds:['mech-heavy-inf'] },
+          },
+          additionalUpgrades:[
+            // Vanguard Forces: hasta 4 Yeomen con Flanking (+5 👑)
+            { unitId:'yeomen', upgrade:{ id:'flanking', name:'Flanking', cost:5, currency:'👑',
+                addsAbilities:['Flanking'], maxPerWarband:4,
+                note:'Vanguard Forces: hasta 4 Yeomen pueden tener Flanking por +5 👑 cada uno.' } },
+            // Warrior Nobles: Chewa
+            { unitId:'lieutenant',        upgrade:CHEWA_ABYS },
+            { unitId:'trench-cleric',     upgrade:CHEWA_ABYS },
+            { unitId:'holy-warrior-abys', upgrade:CHEWA_ABYS },
+            { unitId:'shock-troopers',    upgrade:CHEWA_ABYS },
+          ],
         },
         {
           id:'red-brigade',
@@ -7512,6 +7567,18 @@ const ABILITY_LIBRARY = {
   'Rapid Assault': {
     type: 'passive',
     summary: '+1 DICE a la Risky Success Roll cuando el modelo hace una Dash ACTION. (Athleticism, Stosstruppen of Prussia.)',
+  },
+  'Blessed Psalm ACTION': {
+    type: 'action',
+    summary: 'Quita 1 BLESSING MARKER del Holy Warrior y ponlo junto a un modelo amigo. No requiere Success Roll.',
+  },
+  'Flanking': {
+    type: 'passive',
+    summary: 'Al desplegarlo por primera vez, puede desplegarse en su zona o en contacto con cualquier borde del tablero a 8" o más de enemigos. Despliega antes que los INFILTRATOR y después del resto; si el escenario obliga a los INFILTRATOR a desplegar normalmente, este también.',
+  },
+  'Chewa': {
+    type: 'passive',
+    summary: '+1 DICE a la Success Roll de sus Melee Attacks por cada otro modelo amigo a 1" del objetivo, hasta +2 DICE.',
   },
   'Arise and be Healed! ACTION': {
     type: 'action',
@@ -17854,6 +17921,12 @@ function battlekitPurchaseCost(wb, item, model) {
   return item.cost;
 }
 
+/** Variant can drop a unit's alternative cost (Abyssinia: MHI without Machine Armour). */
+function unitCostAltAllowed(wb, unit) {
+  const ov = wb ? variantUnitOverride(wb, unit.id) : null;
+  return !(ov && 'costAlt' in ov && ov.costAlt == null);
+}
+
 function modelCost(model, factionId, wb) {
   // Fase 10 PIVOT v2 — si el modelo viene de Trench Companion, TC es la
   // verdad oficial: confiar en companionCost/companionGlory. Evita
@@ -17867,7 +17940,8 @@ function modelCost(model, factionId, wb) {
   }
   const u = getUnit(factionId, model.unitId);
   if (!u) return { ducados: 0, glory: 0 };
-  let ducados = u.currency === '👑' ? (model.costVariant === 'alt' ? (u.costAlt||u.cost) : u.cost) : 0;
+  const altOk = unitCostAltAllowed(wb, u);
+  let ducados = u.currency === '👑' ? (model.costVariant === 'alt' && altOk ? (u.costAlt||u.cost) : u.cost) : 0;
   let glory   = u.currency === '☼' ? u.cost : 0;
   // Add cost of active upgrades
   for (const up of activeUpgrades(model, u)) {
@@ -18023,6 +18097,8 @@ const RESTRICTION_UNIT_MAP = {
   'Combat Medic':                'combat-medic',
   'Lieutenant':                  'lieutenant',
   'Trench Clerics':              'trench-cleric',
+  'Holy Warrior':                'holy-warrior-abys',
+  'Holy warrior':                'holy-warrior-abys',
   'Trench Cleric':               'trench-cleric',
   'Combat Engineer':             'combat-engineers',
   'Sappers':                     'sappers',
@@ -18463,6 +18539,11 @@ function classifyBattlekitItem(item, model, unit, wb) {
     }
   }
 
+  // Items that need an upgrade on the model (Abyssinia: Shotel, Anfarro need Chewa)
+  if (item.requiresUpgrade && !(model.upgrades || []).includes(item.requiresUpgrade)) {
+    return { state: 'hidden', reason: 'Requiere ' + item.requiresUpgrade };
+  }
+
   // Item overrides that exclude units (Éire: MHI cannot have a Great Sword/Axe)
   if (item.excludeUnitIds && item.excludeUnitIds.includes(unit.id)) {
     return { state: 'hidden', reason: 'No para esta unidad (variante)' };
@@ -18549,6 +18630,23 @@ function classifyBattlekitItem(item, model, unit, wb) {
   }
 
   // ---- DISABLED: contextual restrictions ----
+
+  // Warband cap on HEAVY Ranged Weapons (Abyssinia: 3, Satchel Charges excluded)
+  {
+    const hv = getActiveVariant(wb);
+    if (hv && hv.heavyRangedMax && (category === 'ranged' || category === 'anchoriteRanged') &&
+        itemHasWeaponKeyword(item, 'HEAVY')) {
+      let used = 0;
+      for (const m of wb.models) for (const kid of (m.battlekit || [])) {
+        const c = getArmouryCategory(wb.factionId, kid);
+        const it = findBattlekitItem(wb.factionId, kid, wb);
+        if ((c === 'ranged' || c === 'anchoriteRanged') && it && itemHasWeaponKeyword(it, 'HEAVY')) used++;
+      }
+      if (used >= hv.heavyRangedMax) {
+        return { state: 'disabled', reason: 'Máx. ' + hv.heavyRangedMax + ' armas a distancia HEAVY en la banda (' + used + ')' };
+      }
+    }
+  }
 
   // Weapon Collections: max N pieces from each foreign armoury, whole warband
   if (item._foreignFaction) {
@@ -19974,7 +20072,7 @@ function renderDetail() {
   }
 
   // Cost variant for Mech Heavy Inf
-  if (unit.costAlt) {
+  if (unit.costAlt && unitCostAltAllowed(wb, unit)) {
     html += `
       <div class="detail-section">
         <div class="detail-label">Variante de coste</div>
