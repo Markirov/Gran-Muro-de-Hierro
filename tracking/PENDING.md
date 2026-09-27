@@ -3,7 +3,7 @@
 > Arriba solo lo pendiente, por prioridad. Al cerrar una tarea, su entrada se traslada íntegra a `## ✅ Completado` al final (no se deja `[x]` mezclado entre los `[ ]`).
 
 ## 🔴 Alta Prioridad
-- [ ] **Variantes en Forge: datos + legalidad** (decisión de Marcos 2026-09-27; orden: Iron Wall ✅ → House of Wisdom ✅ → Alba ✅ → Prussia ✅ → Éire ✅ → resto): por cada variante, armería propia, costes/Limit (`armouryOverrides`), límites de unidades (`unitOverrides`), unidades propias y restricciones, con test por variante. Siguiente (resto, sin orden; Papal States ✅, Abyssinia ✅): Red Brigade, Procession, St Methodius, Tenth Plague, Fida'i, Trench Ghosts, Knights of Avarice, Naval Raiders, Dirge, Great Hunger, Pecados. Sin modelar en ninguna variante: composición de Fireteams (New Antioch 2, Prussia 3).
+- [ ] **Variantes en Forge: datos + legalidad** (decisión de Marcos 2026-09-27; orden: Iron Wall ✅ → House of Wisdom ✅ → Alba ✅ → Prussia ✅ → Éire ✅ → resto): por cada variante, armería propia, costes/Limit (`armouryOverrides`), límites de unidades (`unitOverrides`), unidades propias y restricciones, con test por variante. Siguiente (resto, sin orden; Papal States ✅, Abyssinia ✅, Procession ✅, St Methodius ✅): Red Brigade, Tenth Plague, Fida'i, Trench Ghosts, Knights of Avarice, Naval Raiders, Dirge, Great Hunger, Pecados. Sin modelar en ninguna variante: composición de Fireteams (New Antioch 2, Prussia 3).
 - [ ] **Iron Wall: Grand Cannon como gun battery** (sin modelar): Forge solo permite el cañón en un Brazen Bull; el segundo (o sin Brazen Bull) como batería estacionaria de la armería de la banda no se puede añadir.
 
 

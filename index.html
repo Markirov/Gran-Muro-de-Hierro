@@ -6211,6 +6211,10 @@ const DATA = {
             type:'1-Handed', range:'12"/Melee', weaponKeywords:['PISTOL'] },
           { id:'punt-gun-tp',     name:'Punt Gun',             cost:20, currency:'👑', restriction:'Limit: 2',
             type:'2-Handed', range:'18"', weaponKeywords:['+1 DICE','+1 INJURY DICE','HEAVY','SHOTGUN','SHRAPNEL'] },
+          // War Pilgrimage of Saint Methodius Armoury
+          { id:'auto-rifle-meth', name:'Automatic Rifle',      cost:40, currency:'👑',
+            variantOnly:'st-methodius', restriction:'Bayonet Lug · Limit: 1',
+            type:'2-Handed', range:'24"', weaponKeywords:['ASSAULT','AUTOMATIC 2'] },
           { id:'semi-rifle-tp',   name:'Semi-Automatic Rifle', cost:15, currency:'👑', restriction:'Bayonet Lug',
             type:'2-Handed', range:'24"', weaponKeywords:['ASSAULT'] },
           { id:'shotgun-tp',      name:'Shotgun',              cost:10, currency:'👑', restriction:'Bayonet Lug · Shield Combo',
@@ -6262,6 +6266,10 @@ const DATA = {
         armour: [
           { id:'reinforced-tp',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'ELITE only',
             type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER'] },
+          // Procession of the Sacred Affliction Armoury
+          { id:'holy-icon-armour-proc', name:'Holy Icon Armour', cost:30, currency:'👑',
+            variantOnly:'sacred-affliction',
+            type:'Armour', range:'-', weaponKeywords:['-1 INJURY MODIFIER','IMPERVIOUS'] },
           { id:'standard-tp',     name:'Standard Armour',      cost:15, currency:'👑',
             type:'Armour', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
@@ -6289,37 +6297,38 @@ const DATA = {
           { id:'flag-tp',         name:'Troop Flag',           cost:1,  currency:'☼', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
         ],
+        // (armas y armadura propias de variantes: ver ranged/armour)
         anchoriteRanged: [
-          { id:'anti-mat-rifle-anchor', name:'Anti-Materiel Rifle', cost:40, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'anti-mat-rifle-anchor', name:'Anti-Materiel Rifle', cost:40, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'36\"', weaponKeywords:['+1 INJURY DICE','CRITICAL','HEAVY','IGNORE ARMOUR'] },
-          { id:'autocannon-anchor',  name:'Autocannon',         cost:55, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'autocannon-anchor',  name:'Autocannon',         cost:55, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'48"', weaponKeywords:['+1 INJURY DICE','AUTOMATIC 3','HEAVY'],
             note:'2-Handed en su perfil, pero las armas a distancia del Anchorite cuentan como 1-Handed cuando las usa el Anchorite Shrine (sustituyen la Catherine Wheel). Full Auto: en cada Shoot ACTION eliges el perfil Bursts (arriba) o Full Auto: +1 INJURY DICE, AUTOMATIC 5, HEAVY, RELOAD, RISKY.' },
-          { id:'gas-censer-anchor',  name:'Gas Censer',         cost:50, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'gas-censer-anchor',  name:'Gas Censer',         cost:50, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'6"', weaponKeywords:['GAS','IGNORE ARMOUR','RELOAD','Cloud of Gas'] },
-          { id:'heavy-flame-anchor', name:'Heavy Flamethrower', cost:45, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'heavy-flame-anchor', name:'Heavy Flamethrower', cost:45, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'10\"', weaponKeywords:['-1 INJURY DICE','AUTOMATIC 2','FIRE','FLAMETHROWER','HEAVY','IGNORE ARMOUR'] },
-          { id:'punt-gun-anchor',    name:'Punt Gun',           cost:10, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'punt-gun-anchor',    name:'Punt Gun',           cost:10, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'18"', weaponKeywords:['+1 DICE','+1 INJURY DICE','HEAVY','SHOTGUN','SHRAPNEL'],
             note:'Overcharge: antes de disparar puedes sobrecargarlo si el modelo tiene STRONG o está en contacto con un aliado. El ataque gana BLAST 3" y RELOAD; después el tirador recibe 1 BLOOD MARKER y su activación termina.' },
-          { id:'trench-mortar-anchor', name:'Trench Mortar',    cost:40, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'trench-mortar-anchor', name:'Trench Mortar',    cost:40, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'6"-36"', weaponKeywords:['+1 INJURY DICE','BLAST 3"','FIRE','HEAVY','IGNORE COVER','SCATTER'],
             note:'High Trajectory: el modelo o punto objetivo no puede estar a 6" o menos del atacante (si el disparo hace Scatter sí puede acabar más cerca).' },
         ],
         anchoriteBattlekit: [
-          { id:'gas-filters-anchor',   name:'Gas Filters',     cost:5,  currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'gas-filters-anchor',   name:'Gas Filters',     cost:5,  currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'Special', range:'-', weaponKeywords:['NEGATE GAS'] },
-          { id:'grand-anchor-bk',      name:'Grand Anchorite', cost:15, currency:'👑', restriction:'Anchorite Shrine only · Limit: 1',
+          { id:'grand-anchor-bk',      name:'Grand Anchorite', cost:15, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only · Limit: 1',
             type:'Special', range:'-', weaponKeywords:['Impossible to Stop'] },
-          { id:'hallow-anchor-bk',     name:'Hallowed Anchorite', cost:10, currency:'👑', restriction:'Anchorite Shrine only · Limit: 1',
+          { id:'hallow-anchor-bk',     name:'Hallowed Anchorite', cost:10, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only · Limit: 1',
             type:'Special', range:'-', weaponKeywords:['Manifold Blessings'] },
-          { id:'diesel-engine-anchor', name:'Holy Diesel Engine', cost:10, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'diesel-engine-anchor', name:'Holy Diesel Engine', cost:10, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'Special', range:'-', weaponKeywords:['Advanced Design'] },
-          { id:'piston-legs-anchor',   name:'Piston Legs',     cost:10, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'piston-legs-anchor',   name:'Piston Legs',     cost:10, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'Special', range:'-', weaponKeywords:['Grind to Dust ACTION'] },
-          { id:'sacred-geo-anchor',    name:'Sacred Geometry', cost:10, currency:'👑', restriction:'Anchorite Shrine only · Limit: 1',
+          { id:'sacred-geo-anchor',    name:'Sacred Geometry', cost:10, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only · Limit: 1',
             type:'Special', range:'-', weaponKeywords:['Divine Accuracy'] },
-          { id:'cherub-face-anchor',   name:'Wrathful Cherub Face', cost:20, currency:'👑', restriction:'Anchorite Shrine only',
+          { id:'cherub-face-anchor',   name:'Wrathful Cherub Face', cost:20, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'Special', range:'-', weaponKeywords:['Cower Before The Lord'] },
         ],
       },
@@ -6348,7 +6357,8 @@ const DATA = {
           abilities:['Resurrection'],
           upgrades:[
             { id:'zealot-strength-pilgrim', name:'Zealot Strength', cost:5, currency:'👑',
-              addsKeywords:['STRONG'],
+              addsKeywords:['STRONG'], statOverride:{ base:'32mm' },
+              maxGroup:'zealot-tp', maxPerWarband:1,
               note:'Hasta 1 Trench Pilgrim de la banda puede tener STRONG por +5 👑 (cambia base a 32mm).' },
           ] },
         { id:'martyr-penitent', name:'Martyr Penitent', tier:'troops', limit:null, cost:45, currency:'👑',
@@ -6358,7 +6368,8 @@ const DATA = {
           note:'Solo por Resurrection: un Trench Pilgrim muerto tras una partida vuelve como Martyr Penitent por 45 👑 en el siguiente Quartermaster Step. Añade -1 INJURY DICE a las Injury Rolls contra él. Conserva Battlekit y Zealot Strength; pierde Scars, Experience y Advancements. Las Martyrdom Pills no le afectan.',
           upgrades:[
             { id:'zealot-strength-martyr', name:'Zealot Strength', cost:5, currency:'👑',
-              addsKeywords:['STRONG'],
+              addsKeywords:['STRONG'], statOverride:{ base:'32mm' },
+              maxGroup:'zealot-tp', maxPerWarband:1,
               note:'Hasta 1 Trench Pilgrim o Martyr Penitent de la banda (en total) puede tener STRONG por +5 👑 (cambia base a 32mm).' },
           ] },
         { id:'stigmatic-nuns', name:'Stigmatic Nuns', tier:'troops', limit:'0-4', cost:50, currency:'👑',
@@ -6372,8 +6383,13 @@ const DATA = {
           keywords:['PILGRIM'],
           permanentEquipment:['Iron Capirote'],
           battlekitAccess:{ forbidden:true },
-          battlekitNote:'Equipo fijo: Iron Capirote · Hasta 4 pueden tener Martyrdom Device por 35👑 (consultar reglas)',
-          abilities:['Awaited','Iron Capirote'] },
+          battlekitNote:'Equipo fijo: Iron Capirote · Hasta 4 pueden tener Martyrdom Device por 35 👑',
+          abilities:['Awaited','Iron Capirote'],
+          upgrades:[
+            { id:'martyrdom-device', name:'Martyrdom Device', cost:35, currency:'👑',
+              addsAbilities:['Trigger Martyrdom Device ACTION'], maxPerWarband:4,
+              note:'Hasta 4 Ecclesiastic Prisoners pueden tener un Martyrdom Device por 35 👑. Si lo detonan y sobreviven, hay que comprar otro o jugar sin él.' },
+          ] },
         { id:'anchorite-shrine', name:'Anchorite Shrine', tier:'troops', limit:'0-1', cost:140, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'-', melee:'+2 DICE', armour:'-3', base:'60mm' },
           keywords:['PILGRIM','FEAR','NEGATE SHRAPNEL','STRONG','TOUGH'],
@@ -6401,19 +6417,41 @@ const DATA = {
           //  - cannot have Iron Capirotes
           //  - no Machine Guns
           //  - Punt Guns Limit: 1 (instead of normal limit)
-          // Adds upgrade: Wrath of God for Castigator/Pilgrim
+          // Adds upgrade: Wrath of God for Castigator/Pilgrim/Martyr Penitent
+          armouryOverrides:{
+            'capirote-tp':        { forbidden:true },
+            'mg-tp':              { forbidden:true },
+            'antitank-hammer-tp': { restriction:'Limit: 3' },
+            'punt-gun-tp':        { restriction:'Limit: 1' },
+            'holy-icon-tp':       { cost:20, currency:'👑', restriction:'Shield Combo' },
+          },
+          unitOverrides:[
+            // Face thy Fears: los Ecclesiastic Prisoners no tienen Iron Capirote
+            { unitId:'eccl-prisoners', overrides:{ permanentEquipment:[], removeAbilities:['Iron Capirote'] } },
+          ],
+          // Zealot Strength: hasta 3 en vez de 1
+          upgradeOverrides:{
+            'zealot-strength-pilgrim': { maxPerWarband:3 },
+            'zealot-strength-martyr':  { maxPerWarband:3 },
+          },
           additionalUpgrades:[
+            { unitId:'martyr-penitent',
+              upgrade:{ id:'wrath-of-god', name:'Wrath of God', cost:15, currency:'👑',
+                addsKeywords:['NEGATE FEAR'], statOverride:{ base:'32mm' },
+                forbidsCategories:['ranged','armour'], maxGroup:'wrath-of-god', maxPerWarband:1,
+                note:'+15 👑. NEGATE FEAR. Sin BLOOD MARKERS. Sin Ranged ni Armadura (sí escudo). Base 32mm. Hasta 1 modelo del total con Wrath of God.' },
+            },
             { unitId:'castigator',
               upgrade:{ id:'wrath-of-god', name:'Wrath of God', cost:15, currency:'👑',
-                addsKeywords:['NEGATE FEAR'],
-                forbidsCategories:['ranged','armour'],
+                addsKeywords:['NEGATE FEAR'], statOverride:{ base:'32mm' },
+                forbidsCategories:['ranged','armour'], maxGroup:'wrath-of-god', maxPerWarband:1,
                 renamesTo:'Castigator (Wrath of God)',
                 note:'+15 👑. NEGATE FEAR. Sin BLOOD MARKERS. Sin Ranged ni Armadura (sí escudo). Cambia base a 32mm. No puede ser Broken on the Wheel.' },
             },
             { unitId:'pilgrim',
               upgrade:{ id:'wrath-of-god', name:'Wrath of God', cost:15, currency:'👑',
-                addsKeywords:['NEGATE FEAR'],
-                forbidsCategories:['ranged','armour'],
+                addsKeywords:['NEGATE FEAR'], statOverride:{ base:'32mm' },
+                forbidsCategories:['ranged','armour'], maxGroup:'wrath-of-god', maxPerWarband:1,
                 renamesTo:'Trench Pilgrim (Wrath of God)',
                 note:'+15 👑. NEGATE FEAR. Sin BLOOD MARKERS. Sin Ranged ni Armadura (sí escudo). Cambia base a 32mm. Hasta 1 modelo del total con Wrath of God.' },
             },
@@ -6424,12 +6462,22 @@ const DATA = {
           name:'War Pilgrimage of Saint Methodius',
           summary:'Orden ortodoxa de Akakios: hasta 2 Anchorite Shrines con Ranged +0 DICE y armería de Anchorite; sin Communicants ni Martyrdom Devices.',
           specialRule:'War Pilgrimage of Saint Methodius',
-          forbiddenUnitIds:['communicant'],  // No Communicants
+          // Communicant Heresy (también Ammo Monk y Anti-Tank Hunter) y Treasure in Heaven
+          forbiddenUnitIds:['communicant','ammo-monk','antitank-comm','martyr-penitent'],
+          // Mortal Sin: sin Martyrdom Device
+          forbiddenUpgradeIds:['martyrdom-device'],
+          // Chaste Order: las Stigmatic Nuns deben llevar Standard Armour
+          mandatoryUnitItems:[{ unitId:'stigmatic-nuns', itemId:'standard-tp' }],
+          armouryOverrides:{
+            'mg-tp':  { cost:50, currency:'👑', restriction:'Limit: 2' },
+            'smg-tp': { cost:30, currency:'👑', restriction:'Bayonet Lug · Shield Combo · Limit: 1' },
+          },
           // Override unit-specific data when this variant is active.
           // The Anchorite Shrine becomes 0-2 limit and gains Ranged +0 DICE
           unitOverrides: [
             { unitId:'anchorite-shrine',
               overrides:{ limit:'0-2', stats:{ ranged:'+0 DICE' } } },
+            { unitId:'stigmatic-nuns', overrides:{ limit:'0-3' } },
           ],
         },
         {
@@ -7513,6 +7561,10 @@ const ABILITY_LIBRARY = {
   'Agile': {
     type: 'passive',
     summary: '+1 DICE a la Risky Success Roll cuando el modelo trepa (Climb), salta (Jump), hace una Diving Charge o una Dash ACTION.',
+  },
+  'Trigger Martyrdom Device ACTION': {
+    type: 'action',
+    summary: 'El Martyrdom Device detona (un solo uso): Injury Roll a todos los modelos a 3" (amigos y enemigos, incluido el Prisoner). La del Prisoner se hace con 4D6 sumando los 4 dados, y los demás a 1" suman +1 INJURY DICE.',
   },
   'Awaited': {
     type: 'passive',
@@ -17403,6 +17455,9 @@ function allAvailableUpgrades(unit, wb) {
   if (av && av.forbiddenUpgradeIds) {
     base = base.filter(u => !av.forbiddenUpgradeIds.includes(u.id));
   }
+  if (av && av.upgradeOverrides) {
+    base = base.map(u => av.upgradeOverrides[u.id] ? Object.assign({}, u, av.upgradeOverrides[u.id]) : u);
+  }
   const variantUps = variantUpgradesForUnit(wb, unit.id);
   for (const up of variantUps) {
     // Avoid duplicates by id
@@ -17693,8 +17748,17 @@ function classifyUpgrade(up, model, unit, wb) {
   const active = model.upgrades || [];
   if (active.includes(up.id)) return { state: 'active' };
   if (up.maxPerWarband) {
+    // maxGroup: upgrades with different ids that share one cap (Zealot Strength
+    // of Trench Pilgrims and Martyr Penitents)
+    const groupIds = up.maxGroup
+      ? ((wb && wb.models) || []).reduce((acc, m) => {
+          const mu = getUnit(wb.factionId, m.unitId);
+          for (const u of allAvailableUpgrades(mu, wb)) if (u.maxGroup === up.maxGroup) acc.add(u.id);
+          return acc;
+        }, new Set([up.id]))
+      : new Set([up.id]);
     const used = ((wb && wb.models) || []).filter(m =>
-      m !== model && m.uid !== model.uid && (m.upgrades || []).includes(up.id)).length;
+      m !== model && m.uid !== model.uid && (m.upgrades || []).some(id => groupIds.has(id))).length;
     if (used >= up.maxPerWarband) {
       return { state: 'disabled', reason: `Máximo ${up.maxPerWarband} en la banda` };
     }
@@ -17753,6 +17817,16 @@ function checkUpgradeLegality(wb) {
             `Tienes ${count} en la banda — bórralos.`
           );
         }
+      }
+    }
+    // Variant: items some units must carry (Saint Methodius: Nuns with Standard Armour)
+    for (const req of (variant.mandatoryUnitItems || [])) {
+      const it = findBattlekitItem(wb.factionId, req.itemId);
+      const u = getUnit(wb.factionId, req.unitId);
+      const missing = wb.models.filter(m => m.unitId === req.unitId && !(m.battlekit || []).includes(req.itemId)).length;
+      if (missing) {
+        warnings.push(missing + ' ' + (u ? u.name : req.unitId) + ' sin ' + (it ? it.name : req.itemId) +
+          ' (' + variant.name + ': no pueden jugar sin ella).');
       }
     }
     // Variant: mandatory items missing (Papal States Crucifix)
@@ -20084,12 +20158,13 @@ function renderDetail() {
   }
 
   // Permanent equipment badge (Combat Engineers, MHI, Anchorite Shrine, etc.)
-  if (unit.permanentEquipment && unit.permanentEquipment.length) {
+  const permEq = ((wb && getUnitWithVariant(wb, unit.id)) || unit).permanentEquipment;
+  if (permEq && permEq.length) {
     html += `
       <div class="detail-section">
         <div class="detail-label">Equipo permanente</div>
         <div class="permanent-equipment">
-          ${unit.permanentEquipment.map(name => `<span class="perm-item">⚓ ${name}</span>`).join('')}
+          ${permEq.map(name => `<span class="perm-item">⚓ ${name}</span>`).join('')}
         </div>
       </div>`;
   }
