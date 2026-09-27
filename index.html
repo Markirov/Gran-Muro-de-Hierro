@@ -5980,6 +5980,15 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:['HELD'] },
           { id:'shovel-na',         name:'Shovel',               cost:5,  currency:'👑',
             type:'Equipment', range:'-', weaponKeywords:[] },
+          // ── The Red Brigade Special Equipment ──
+          { id:'red-banner-rb',     name:'Red Banner',           cost:2,  currency:'☼',
+            variantOnly:'red-brigade', restriction:'Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:[],
+            note:'Único estandarte de la banda. Mientras su portador no esté Out of Action, la banda nunca se retira: si falla un Morale test queda Shaken. Si el portador cae, Morale normal.' },
+          { id:'blood-cloak-rb',    name:'Blood Cloak',          cost:10, currency:'👑',
+            variantOnly:'red-brigade', restriction:'Limit: 4',
+            type:'Equipment', range:'-', weaponKeywords:['SKIRMISHER'],
+            note:'El portador gana SKIRMISHER.' },
           { id:'flag-na',           name:'Troop Flag',           cost:1,  currency:'☼',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
         ],
@@ -6030,6 +6039,37 @@ const DATA = {
           keywords:['NEW ANTIOCH','ELITE','NEGATE FEAR'],
           abilities:['God is With Us! ACTION','Onward Christian Soldiers!','Blessed Psalm ACTION','Arise and be Healed! ACTION'],
           note:'Holy Warriors: usa la entrada del Trench Cleric con Blessed Psalm ACTION y Arise and be Healed! ACTION. Una banda de Abyssinia puede tener 0-1 Trench Cleric y 0-2 Holy Warriors.' },
+        // ── Unidades exclusivas de la variante The Red Brigade ──
+        { id:'trench-dog-rb', name:'Trench Dog', tier:'troops', limit:null, cost:35, currency:'👑',
+          variantOnly:'red-brigade', maxVsOtherModels:true, cannotPromote:true,
+          stats:{ movement:'8"/Infantry', ranged:'-', melee:'+0 DICE', armour:'0', base:'25mm' },
+          keywords:[],
+          abilities:['Four Paws'],
+          battlekitAccess:{ forbidden:true },
+          battlekitNote:'Los perros no llevan Battlekit (solo Grenades para los demás, como mejora)',
+          note:'No más perros que otros modelos en la banda. Luchan sin penalización desarmados, cuentan como Troops no ELITE y no pueden ser ELITE. Por +5 👑 pueden formar FIRETEAM con 1 modelo (hasta 2 además de los normales).',
+          upgrades:[
+            { id:'guard-dog-rb', name:'Guard Dog', cost:5, currency:'👑', addsAbilities:['Guard Dog'],
+              mutuallyExclusiveGroup:'dog-type-rb', maxPerWarband:1,
+              note:'Ningún INFILTRATOR puede desplegar a 12" o menos; puede cargar a cualquier enemigo a 4" aunque no lo vea. Limit: 1.' },
+            { id:'mercy-dog-rb', name:'Mercy Dog', cost:5, currency:'👑', addsAbilities:['Mercy Dog'],
+              mutuallyExclusiveGroup:'dog-type-rb', maxPerWarband:2,
+              note:'Lleva un Medi-kit que puede usar cualquier amigo a 1"; arrastra a un modelo Down a 1" (base menor de 40mm). Limit: 2.' },
+            { id:'attack-dog-rb', name:'Attack Dog', cost:5, currency:'👑', statOverride:{ melee:'+1 DICE' },
+              mutuallyExclusiveGroup:'dog-type-rb',
+              note:'+1 DICE a sus Melee Attacks.' },
+            { id:'dog-grenades-rb', name:'Grenades', cost:5, currency:'👑', addsAbilities:['Dog Grenades'],
+              note:'El perro no las usa: cualquier otro modelo de la banda (no Aliados, Mercenarios, Combat Medic ni otros perros) a 1" del perro durante su activación puede usarlas.' },
+            { id:'dog-fireteam-rb', name:'Fireteam', cost:5, currency:'👑', maxPerWarband:2,
+              note:'Forma FIRETEAM con 1 modelo de la banda (hasta 2 además de los normales).' },
+          ] },
+        { id:'crimson-comm-rb', name:'Crimson Communicant', tier:'troops', limit:'0-1', cost:75, currency:'👑',
+          variantOnly:'red-brigade',
+          stats:{ movement:'6"/Infantry', ranged:'-1 DICE', melee:'+1 DICE', armour:'0', base:'40mm' },
+          keywords:['NEW ANTIOCH','STRONG','TOUGH'],
+          permanentEquipment:['Atonement Bell'],
+          abilities:['Atonement Bell','Strength through Pain'],
+          note:'Puede llevar cualquier arma, armadura y equipo de la armería de New Antioch; siempre lleva la Atonement Bell.' },
         { id:'combat-medic', name:'Combat Medic', tier:'troops', limit:'0-1', cost:65, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+0 DICE', armour:'-1', base:'25mm' },
           keywords:['NEW ANTIOCH','NEGATE FEAR'],
@@ -6233,6 +6273,18 @@ const DATA = {
           name:'The Red Brigade (Westfalia)',
           summary:'Hermandad de sangre de New Antioch con perros de trinchera: empieza con BLOOD MARKERS, nunca se retira del cuerpo a cuerpo y recupera el equipo de sus caídos.',
           specialRule:'The Red Brigade',
+          // Displeasure of the Church: máx. 2 clérigos (1 Trench Cleric + 1 Sniper Priest, o 2 Sniper Priests)
+          unitGroupMax:[{ unitIds:['trench-cleric','sniper-priests'], max:2, label:'Displeasure of the Church' }],
+          // El Red Banner es el único estandarte de la banda
+          armouryOverrides:{
+            'flag-na': { forbidden:true },
+          },
+          additionalUpgrades:[
+            // Guns Blazing
+            { unitId:'lieutenant', upgrade:{ id:'gunslinger-rb', name:'Gunslinger', cost:5, currency:'👑',
+                addsAbilities:['Gunslinger'],
+                note:'Guns Blazing: el Lieutenant puede comprar la habilidad Gunslinger por +5 👑.' } },
+          ],
         },
       ],
     },
@@ -8101,6 +8153,30 @@ const ABILITY_LIBRARY = {
   'Command Bereaved ACTION': {
     type: 'action',
     summary: 'Quita cualquier número de INFECTION MARKERS de modelos enemigos. Por cada uno, un Bereaved (Grail o Fly Thrall) a 18" o menos cumple una orden: Charge (carga), Fight (Melee Attack), Move (mueve, sin Charge ni Retreat) o Shoot (Ranged Attack). Máx. 1 orden por Bereaved y turno; no impide activarlo ese turno.',
+  },
+  'Four Paws': {
+    type: 'passive',
+    summary: '+1 DICE a Dash y a Jump o Diving Charge. No puede trepar superficies verticales.',
+  },
+  'Guard Dog': {
+    type: 'passive',
+    summary: 'Ningún INFILTRATOR puede desplegar a 12" o menos; puede cargar a cualquier enemigo a 4" aunque no lo vea.',
+  },
+  'Mercy Dog': {
+    type: 'passive',
+    summary: 'Lleva un Medi-kit que cualquier modelo amigo a 1" puede usar sobre sí mismo. Puede arrastrar a un modelo Down a 1" (base menor de 40mm) al moverse o hacer Dash, a la mitad de velocidad; si así sale del cuerpo a cuerpo, no provoca ataque gratuito.',
+  },
+  'Dog Grenades': {
+    type: 'passive',
+    summary: 'Cualquier otro modelo de la banda (no Aliados, Mercenarios, Combat Medic ni otros perros) a 1" del perro durante su activación puede usar sus Grenades.',
+  },
+  'Atonement Bell': {
+    type: 'passive',
+    summary: 'Ocupa una mano en cuerpo a cuerpo (no a distancia). Ataque Off-Hand sin daño: el enemigo impactado (base de 40mm o menor) se desplaza D3" en la dirección que elija el Communicant; puede sacarlo del cuerpo a cuerpo (ataques gratuitos), hacerle caer o meterlo en terreno peligroso, pero no llevarlo a otro combate.',
+  },
+  'Strength through Pain': {
+    type: 'passive',
+    summary: '+1 DICE a su Melee por cada BLOOD MARKER que tenga.',
   },
   'Undead Fortitude': {
     type: 'passive',
@@ -18595,6 +18671,19 @@ function canAddUnit(wb, unit) {
   if (unitForbiddenByVariant(wb, unit.id)) return false;
   // Variant-only units (Dervishes, Master Assassin...) need their variant
   if (unit.variantOnly && unit.variantOnly !== (wb && wb.variantId)) return false;
+  {
+    const v = getActiveVariant(wb);
+    // Shared cap for several units (Red Brigade, Displeasure of the Church)
+    for (const g of ((v && v.unitGroupMax) || [])) {
+      if (g.unitIds.includes(unit.id) &&
+          (wb.models || []).filter(m => g.unitIds.includes(m.unitId)).length >= g.max) return false;
+    }
+  }
+  // No more of this unit than other models (Red Brigade Trench Dogs)
+  if (unit.maxVsOtherModels) {
+    const mine = (wb.models || []).filter(m => m.unitId === unit.id).length;
+    if (mine + 1 > (wb.models || []).length - mine) return false;
+  }
   // Units that need the rest of the warband to be worth X 👑 (Great Maw: 1,000)
   if (unit.requiresWarbandValue) {
     const value = (wb.models || []).filter(m => m.unitId !== unit.id)
@@ -30293,6 +30382,8 @@ function summarizeWizardLoot(w) {
  */
 function canBePromoted(factionId, unitId) {
   if (!factionId) return true;
+  const pu = getUnit(factionId, unitId);
+  if (pu && pu.cannotPromote) return false;
   const list = CAMPAIGN_TABLES.cannotBePromoted[factionId];
   if (!list) return true;
   return !list.includes(unitId);
