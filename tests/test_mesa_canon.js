@@ -5,6 +5,9 @@
  *   (variante + mejoras), keywords y habilidades efectivas, nombres de
  *   mejoras (no ids), armas por categoría de armería, equipo permanente.
  * - Reglas de variante de toda la banda: sin reglas de una sola unidad.
+ * - Chips de efecto según el modelo: AIM con Aim ACTION, MEM con Memento
+ *   Mori, FEAR con Warrior's Prayer; CHARGED y OTRO siempre.
+ * - Battletracker PDF: filas de BLESSING e INFECTION MARKERS, sin BLES.
  */
 const fs = require('fs');
 const path = require('path');
@@ -16,7 +19,7 @@ const js = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
 const bootIdx = js.search(/\nfunction boot\(\)/);
 const dom = new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
 dom.window.alert = () => {};
-dom.window.eval(js.slice(0, bootIdx) + '\n;window.__X = { newTableSession, syncTableSession, getTableModelState, setTableBlessing, setTableInfection, toggleTableActivated, advanceTableTurn, getTableEffectCodes, buildModelCardData, getVariantFactionRules, VARIANT_FACTION_RULES };');
+dom.window.eval(js.slice(0, bootIdx) + '\n;window.__X = { newTableSession, syncTableSession, getTableModelState, setTableBlessing, setTableInfection, toggleTableActivated, advanceTableTurn, getTableEffectCodes, buildModelCardData, getVariantFactionRules, VARIANT_FACTION_RULES, drawTrackerPanelOnCanvas };');
 const X = dom.window.__X;
 
 let pass = 0, fail = 0;
@@ -30,7 +33,7 @@ ok(d.blessing === 0 && d.infection === 0, 'estado inicial: 0 BLESSING y 0 INFECT
 X.setTableBlessing(s, 'a', 9); ok(s.models.a.blessing === 6, 'BLESSING máx. 6');
 X.setTableBlessing(s, 'a', -1); ok(s.models.a.blessing === 0, 'BLESSING mín. 0');
 X.setTableInfection(s, 'a', 7); ok(s.models.a.infection === 6, 'INFECTION máx. 6');
-ok(!X.getTableEffectCodes({}).includes('BLES'), 'BLES ya no es un chip de efecto');
+ok(!X.getTableEffectCodes({ abilities: [{ name: 'Aim ACTION' }] }).includes('BLES'), 'BLES ya no es un chip de efecto');
 
 console.log('\nGroup 2: The Infection Spreads');
 X.setTableInfection(s, 'a', 2);
@@ -77,6 +80,33 @@ console.log('\nGroup 5: reglas de toda la banda');
 const unitOnly = ['Whirling Dervish', 'Lector', 'Loose Formation', 'Rapid Assault', 'Blood of the Lamb', "Hegemon's Will"];
 const all = Object.values(X.VARIANT_FACTION_RULES).flat().map(r => r.name);
 ok(!unitOnly.some(n => all.includes(n)), 'sin reglas de una sola unidad (' + unitOnly.join(', ') + ')');
+
+console.log('\nGroup 6: chips de efecto según el modelo');
+const codes = (abs) => X.getTableEffectCodes({ abilities: abs.map(n => ({ name: n })) }).join();
+ok(codes([]) === 'CHARGED,OTRO', 'modelo sin reglas de efecto: CHARGED y OTRO');
+ok(codes(['Aim ACTION']) === 'AIM,CHARGED,OTRO', 'Aim ACTION → AIM');
+ok(codes(['Memento Mori']) === 'MEM,CHARGED,OTRO', 'Memento Mori → MEM');
+ok(codes(["Warrior's Prayer ACTION"]) === 'FEAR,CHARGED,OTRO', "Warrior's Prayer → FEAR hasta fin de turno");
+ok(X.getTableEffectCodes({ abilities: [], hasElementalMastery: true }).join() === 'CHARGED,OTRO,FIRE,GAS,SHRAPNEL', 'Mastery of the Elements añade FIRE, GAS, SHRAPNEL');
+const sp = { uid: 's', unitId: 'sniper-priests', battlekit: [], upgrades: [] };
+ok(X.getTableEffectCodes(X.buildModelCardData(sp, { id: 'w5', factionId: 'new-antioch', models: [sp] })).includes('AIM'), 'Sniper Priest real: AIM');
+const wp = { uid: 'p', unitId: 'war-prophet', battlekit: [], upgrades: [] };
+const cWP = X.getTableEffectCodes(X.buildModelCardData(wp, { id: 'w6', factionId: 'trench-pilgrims', models: [wp] }));
+ok(cWP.includes('MEM') && !cWP.includes('AIM'), 'War Prophet real: MEM sin AIM');
+
+console.log('\nGroup 7: battletracker PDF');
+function panelTexts(card) {
+  const texts = [];
+  const ctx = new Proxy({}, { get: (t, k) => k === 'fillText' ? (txt) => texts.push(txt) : (k in t ? t[k] : () => ({ width: 10 })), set: (t, k, v) => { t[k] = v; return true; } });
+  X.drawTrackerPanelOnCanvas(ctx, 0, 0, 1000, 1160, card);
+  return texts;
+}
+const tPlain = panelTexts(X.buildModelCardData(an, { id: 'w4', factionId: 'heretic-legions', models: [an] }));
+ok(tPlain.includes('BLESSING MARKERS') && tPlain.includes('INFECTION MARKERS'), 'filas de BLESSING e INFECTION MARKERS');
+ok(!tPlain.includes('BLES'), 'sin casilla BLES');
+ok(!tPlain.includes('AIM') && tPlain.includes('CHARGED') && tPlain.includes('OTRO'), 'efectos filtrados por modelo');
+const tSP = panelTexts(X.buildModelCardData(sp, { id: 'w5', factionId: 'new-antioch', models: [sp] }));
+ok(tSP.includes('AIM'), 'Sniper Priest: AIM en el PDF');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

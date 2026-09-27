@@ -37476,13 +37476,15 @@ function drawTrackerPanelOnCanvas(ctx, x0, y0, w, h, data) {
   }
   sy += 80;
 
-  // 2) BLOOD MARKERS: 7 slots horizontales 0-6.
-  drawTextLeft(ctx, 'BLOOD MARKERS', sxLeft, sy, 'bold 14px serif', rgbStr(sectionColor));
-  sy += 30;
-  for (let i = 0; i < 7; i++) {
-    drawTrackerSlot(ctx, sxLeft + 30 + i * 60, sy, 18, String(i), p, false);
+  // 2) BLOOD, BLESSING e INFECTION MARKERS: 7 slots horizontales 0-6 cada uno.
+  for (const title of ['BLOOD MARKERS', 'BLESSING MARKERS', 'INFECTION MARKERS']) {
+    drawTextLeft(ctx, title, sxLeft, sy, 'bold 14px serif', rgbStr(sectionColor));
+    sy += 30;
+    for (let i = 0; i < 7; i++) {
+      drawTrackerSlot(ctx, sxLeft + 30 + i * 60, sy, 18, String(i), p, false);
+    }
+    sy += 80;
   }
-  sy += 80;
 
   // 3) HABILIDADES (1 uso): rejilla 3×2 = 6 slots.
   drawTextLeft(ctx, 'HABILIDADES (1 uso)', sxLeft, sy, 'bold 14px serif', rgbStr(sectionColor));
@@ -37510,18 +37512,14 @@ function drawTrackerPanelOnCanvas(ctx, x0, y0, w, h, data) {
     sy += 80;
   }
 
-  // 5) EFECTOS: rejilla 3×2 = 6 slots (BLES, AIM, MEM, FEAR, CHARGED, OTRO).
+  // 5) EFECTOS: los mismos chips que el modo mesa para este modelo, 3 por fila
+  //    (los elementos ya van en su bloque).
   drawTextLeft(ctx, 'EFECTOS', sxLeft, sy, 'bold 14px serif', rgbStr(sectionColor));
   sy += 30;
-  const efx = ['BLES', 'AIM', 'MEM', 'FEAR', 'CHARGED', 'OTRO'];
-  for (let row = 0; row < 2; row++) {
-    for (let col = 0; col < 3; col++) {
-      const idx = row * 3 + col;
-      const cx = sxLeft + 40 + col * 130;
-      const cy = sy + row * 70;
-      drawTrackerSlot(ctx, cx, cy, 22, efx[idx], p, false);
-    }
-  }
+  const efx = getTableEffectCodes(Object.assign({}, data, { hasElementalMastery: false }));
+  efx.forEach((code, idx) => {
+    drawTrackerSlot(ctx, sxLeft + 40 + (idx % 3) * 130, sy + Math.floor(idx / 3) * 70, 22, code, p, false);
+  });
 }
 
 /* ─── MODO MESA — sesión de partida en el móvil ─────────────────────
@@ -37671,10 +37669,19 @@ function tableActivationCount(session, wb) {
   return { activated, total };
 }
 
+// Solo los chips que el modelo puede necesitar: AIM con Aim ACTION (Sniper
+// Priest), MEM con Memento Mori (War Prophet), FEAR con Warrior's Prayer
+// (FEAR hasta fin de turno). CHARGED y OTRO valen para cualquiera.
+const TABLE_EFFECT_SOURCES = {
+  AIM: /^Aim ACTION\b/i,
+  MEM: /^Memento Mori\b/i,
+  FEAR: /^Warrior'?s Prayer\b/i,
+};
 function getTableEffectCodes(cardData) {
-  return cardData && cardData.hasElementalMastery
-    ? TABLE_EFFECTS_BASE.concat(TABLE_EFFECTS_ELEMENTAL)
-    : TABLE_EFFECTS_BASE.slice();
+  const names = ((cardData && cardData.abilities) || []).map(a => String((a && a.name) || a || ''));
+  const base = TABLE_EFFECTS_BASE.filter(code =>
+    !TABLE_EFFECT_SOURCES[code] || names.some(n => TABLE_EFFECT_SOURCES[code].test(n)));
+  return cardData && cardData.hasElementalMastery ? base.concat(TABLE_EFFECTS_ELEMENTAL) : base;
 }
 
 function _tableSessionKey(wbOrId) {

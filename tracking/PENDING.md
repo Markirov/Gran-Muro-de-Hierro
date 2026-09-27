@@ -16,7 +16,6 @@
 - [ ] **Keyword `ALCHEMIST`:** no aparece en los PDF 1.0.2; confirmar su origen o retirarla.
 
 - [ ] **PDFs canon fuera de su sitio** (Marcos): `herramientas/pdfs-reglamento/` está vacío (solo `trench-crusade-tarjetas.pdf`); los PDFs del reglamento están en `E:\_DUPLICADOS_PDF_revisar\` con el prefijo `E__Drive_Trench Crusade_herramientas_pdfs-reglamento_` (parece una limpieza de duplicados). Devolverlos a `herramientas/pdfs-reglamento/` para que la regla D.5 apunte a un sitio real.
-- [ ] **Battletracker PDF sin BLESSING / INFECTION** (Marcos decide): `drawTrackerPanelOnCanvas` aún tiene la casilla BLES y no tiene filas de BLESSING ni INFECTION MARKERS como el modo mesa. ¿Actualizarlo? También: ¿recortar los chips AIM / MEM / FEAR / CHARGED / OTRO (p. ej. AIM solo para quien tenga la acción)?
 - [ ] **Probar el modo mesa en partida real** (Marcos): usarlo en el Android durante 1-2 partidas y anotar aquí lo que falte o sobre. Ideas ya aparcadas en `IDEAS.md`.
 - [ ] **Validación física en mesa** (Domain & Product Owner / Marcos, no codeable): imprimir tarjetas y battletrackers de Cazadores del Muro y Herejes Infernales y jugar 2-3 partidas. Confirmar legibilidad, tamaño y encaje de imprenta antes de construir más encima. Hallazgos → aquí como tareas del Lead Developer.
 

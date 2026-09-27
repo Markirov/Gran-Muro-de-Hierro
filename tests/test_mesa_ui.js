@@ -59,7 +59,7 @@ ok(/MOV/.test(cards[0].textContent) && /ARM/.test(cards[0].textContent), 'etique
 ok($$('.tm-dot', ov).length === wb.models.length, 'un punto por ficha');
 ok(/Turno 1/.test($('.tm-turn', ov).textContent), 'cabecera "Turno 1"');
 ok(/0\/9 activadas/.test($('.tm-count', ov).textContent), 'contador "0/9 activadas"');
-ok($$('.tm-effect', cards[0]).length >= 5, 'chips de efectos (≥5)');
+ok($$('.tm-effect', cards[0]).map(b => b.dataset.effect).join() === 'CHARGED,OTRO', 'chips de efecto del Silahdar: CHARGED y OTRO');
 // Consulta completa visible (petición Marcos: cuanta más información, mejor).
 ok(!$('details.tm-ref', cards[0]), 'consulta ya no va plegada');
 ok(!!$('.tm-ref-weapons', cards[0]) && !!$('.tm-ref-equipment', cards[0]) && !!$('.tm-ref-abilities', cards[0]),
@@ -95,10 +95,10 @@ ok($$('.tm-blood-btn[data-blood][aria-pressed="true"]', c0).length === 1, 'solo 
 click($('.tm-blood-btn[data-blood="1"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
 ok($('.tm-blood-btn[data-blood="1"]', c0).getAttribute('aria-pressed') === 'true' && L.loadTableSession(wb).models[uid0].blood === 1, 'blood 1');
-click($('.tm-effect[data-effect="FEAR"]', c0));
+click($('.tm-effect[data-effect="CHARGED"]', c0));
 c0 = $(`.tm-card[data-uid="${uid0}"]`, ov);
-ok($('.tm-effect[data-effect="FEAR"]', c0).getAttribute('aria-pressed') === 'true', 'efecto FEAR encendido');
-ok(L.loadTableSession(wb).models[uid0].effects.includes('FEAR'), 'efecto guardado');
+ok($('.tm-effect[data-effect="CHARGED"]', c0).getAttribute('aria-pressed') === 'true', 'efecto CHARGED encendido');
+ok(L.loadTableSession(wb).models[uid0].effects.includes("CHARGED"), 'efecto guardado');
 const withSpent = $$('.tm-card', ov).find(c => $('.tm-spent', c));
 if (withSpent) {
   const ab = $('.tm-spent', withSpent).dataset.ability;
@@ -142,8 +142,8 @@ click(doc.getElementById('tm-close'));
 ok(!ov.classList.contains('show') && !doc.body.classList.contains('table-mode-open'), 'cerrado');
 click(btn);
 ok(/Turno 2/.test($('.tm-turn', ov).textContent), 'reabre en Turno 2');
-ok($('.tm-effect[data-effect="FEAR"]', $(`.tm-card[data-uid="${uid0}"]`, ov)).getAttribute('aria-pressed') === 'true',
-   'efecto FEAR conservado');
+ok($('.tm-effect[data-effect="CHARGED"]', $(`.tm-card[data-uid="${uid0}"]`, ov)).getAttribute('aria-pressed') === 'true',
+   'efecto CHARGED conservado');
 
 console.log('\nGroup 9: nueva partida');
 click(doc.getElementById('tm-reset'));

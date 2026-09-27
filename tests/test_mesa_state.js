@@ -110,8 +110,8 @@ c = L.tableActivationCount(s, wb2);
 ok(c.total === wb2.models.filter(m => L.getTableModelState(s, m.uid).status !== 'out').length, 'contador solo sobre modelos presentes');
 
 console.log('\nGroup 9: getTableEffectCodes');
-ok(L.getTableEffectCodes({}).join() === 'AIM,MEM,FEAR,CHARGED,OTRO', 'lista base (BLESSING es contador, no chip)');
-ok(L.getTableEffectCodes({ hasElementalMastery: true }).join() === 'AIM,MEM,FEAR,CHARGED,OTRO,FIRE,GAS,SHRAPNEL',
+ok(L.getTableEffectCodes({}).join() === 'CHARGED,OTRO', 'lista base (AIM/MEM/FEAR solo con su regla; BLESSING es contador)');
+ok(L.getTableEffectCodes({ hasElementalMastery: true }).join() === 'CHARGED,OTRO,FIRE,GAS,SHRAPNEL',
    'Maestro de Elementos añade FIRE, GAS, SHRAPNEL');
 
 console.log('\nGroup 10: persistencia');
