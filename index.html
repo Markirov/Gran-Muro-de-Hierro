@@ -7013,6 +7013,15 @@ const DATA = {
             type:'Shield', range:'-', weaponKeywords:['-1 INJURY MODIFIER'] },
         ],
         armour: [
+          // ── Trench Ghost Armoury ──
+          { id:'sarcophagus-tg',  name:'Sarcophagus Mine',     cost:30, currency:'👑',
+            variantOnly:'trench-ghosts', restriction:'Heretic Troopers only · Limit: 2', soleBattlekit:true,
+            type:'Armour', range:'-', weaponKeywords:['-3 INJURY MODIFIER','BLAST 3"'],
+            note:'Walking Bomb: no puede llevar otro Battlekit. Trigger ACTION: Risky Success Roll con +1 DICE; con Success o Critical detona. También puedes detonarla, interrumpiendo su activación, si un enemigo termina un movimiento a 3" o menos. Detonation: todos los modelos (amigos o enemigos) a 3" y en Line of Sight reciben un Ranged Attack con SHRAPNEL, con +1 INJURY DICE a 1" o menos; el portador queda Out of Action.' },
+          { id:'palanquin-tg',    name:'Tank Palanquin',       cost:60, currency:'👑',
+            variantOnly:'trench-ghosts', restriction:'Heretic Priest only', forbidsCategories:['shields'],
+            type:'Armour', range:'-', weaponKeywords:['-3 INJURY MODIFIER','STRONG'],
+            note:'Bulky: base 50mm, sin escudo y Charge Bonus D3" en vez de D6". Death From On High: +3" de altura para Elevated Position en sus Ranged Attacks. Standfast: un resultado Down en la tabla de Injury cuenta como Minor Hit.' },
           { id:'reinforced-hl',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'Anointed & ELITE only',
             type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER'] },
           { id:'standard-hl',     name:'Standard Armour',      cost:15, currency:'👑',
@@ -7090,6 +7099,13 @@ const DATA = {
           stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'-2', base:'32mm' },
           keywords:['HERETIC','STRONG'],
           permanentEquipment:['Reinforced Armour','Infernal Brand'] },
+        // ── Unidad exclusiva de la variante Trench Ghosts ──
+        { id:'banshee-tg', name:'Barbed Wire Banshee', tier:'elite', limit:'0-1', cost:65, currency:'👑',
+          variantOnly:'trench-ghosts', usesEntryOf:'chorister',
+          stats:{ movement:'6"/Infantry', ranged:'-2 DICE', melee:'+2 DICE', armour:'0', base:'32mm' },
+          keywords:['HERETIC','ELITE','FEAR'],
+          abilities:['Barbed Wire Banshee'],
+          note:'Sustituye al Chorister (mismo perfil y coste): no puede haber ambos en la banda.' },
         { id:'art-witch', name:'Artillery Witch', tier:'troops', limit:'0-1', cost:100, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'-1 DICE', armour:'0', base:'32mm' },
           keywords:['HERETIC','ARTIFICIAL'],
@@ -7101,10 +7117,22 @@ const DATA = {
           name:'Trench Ghosts',
           summary:'Espectros semicorpóreos: FEAR, NEGATE DIFFICULT TERRAIN y NEGATE GAS para todos, -1 INJURY DICE contra disparos y sin Mercenarios ni modelos ARTIFICIAL.',
           specialRule:'Trench Ghosts',
-          forbiddenUnitIds:[],
-          // Many restrictions: no ARTIFICIAL units, no Mercenaries, no Hellbound Soul Contracts
-          // Adds: Barbed Wire Banshee replaces Chorister, Sarcophagus Mine battlekit
-          // All models gain FEAR + NEGATE DIFFICULT TERRAIN + NEGATE GAS
+          // Lost Souls: sin modelos ARTIFICIAL
+          forbiddenUnitIds:['war-wolf','art-witch'],
+          // Enemies of All
+          noMercenaries:true,
+          // Barbed Wire Banshee en vez de Chorister
+          exclusiveUnitGroups:[['chorister','banshee-tg']],
+          unitOverrides:[
+            // Lost Souls: los Anointed no tienen Infernal Brand (siguen costando 95)
+            { unitId:'anointed', overrides:{ permanentEquipment:['Reinforced Armour'] } },
+          ],
+          armouryOverrides:{
+            'soul-contract-hl': { forbidden:true },
+            'inf-brand-hl':     { forbidden:true },
+          },
+          // Undead Horror
+          allModelsKeywords:['FEAR','NEGATE DIFFICULT TERRAIN','NEGATE GAS'],
         },
         {
           id:'avarice-knights',
@@ -7792,6 +7820,10 @@ const ABILITY_LIBRARY = {
   'Stealth Generator': {
     type: 'passive',
     summary: '-1 DICE a tiradas para ataques a distancia que tengan a este modelo como objetivo.',
+  },
+  'Barbed Wire Banshee': {
+    type: 'passive',
+    summary: '+1 INJURY DICE a las Injury Rolls contra modelos enemigos a 8" o menos de la Barbed Wire Banshee. (Sustituye a Unholy Hymns.)',
   },
   'Unholy Hymns': {
     type: 'passive',
@@ -18192,6 +18224,16 @@ function canAddUnit(wb, unit) {
   if (unitForbiddenByVariant(wb, unit.id)) return false;
   // Variant-only units (Dervishes, Master Assassin...) need their variant
   if (unit.variantOnly && unit.variantOnly !== (wb && wb.variantId)) return false;
+  {
+    const v = getActiveVariant(wb);
+    // Enemies of All (Trench Ghosts): no Mercenaries
+    if (v && v.noMercenaries && (DATA.mercenaries || []).some(m => m.id === unit.id)) return false;
+    // One unit instead of another (Barbed Wire Banshee instead of a Chorister)
+    for (const grp of ((v && v.exclusiveUnitGroups) || [])) {
+      if (grp.includes(unit.id) &&
+          (wb.models || []).some(m => m.unitId !== unit.id && grp.includes(m.unitId))) return false;
+    }
+  }
   if (mercNotHireable(wb, unit)) return false;
   if (eliteCapReached(wb, unit)) return false;
   if (perUnitLimitReached(wb, unit)) return false;
@@ -18292,6 +18334,7 @@ const RESTRICTION_UNIT_MAP = {
   'Amalgam':                     'amalgam',
   'Jabirean Alchemist':          'jabirean',
   'Heretic Troopers':            'heretic-troopers',
+  'Heretic Priest':              'heretic-priest',
   'Legionnaires':                'heretic-troopers',
   'Heralds':                     'heralds',
   'Anchorite Shrine':            'anchorite-shrine',
@@ -18809,6 +18852,23 @@ function classifyBattlekitItem(item, model, unit, wb) {
   }
 
   // ---- DISABLED: contextual restrictions ----
+
+  // Items that must be the model's only Battlekit (Sarcophagus Mine) and items
+  // that rule out a category (Tank Palanquin: no Shield)
+  {
+    const others = (model.battlekit || []).filter(k => k !== item.id)
+      .map(k => findBattlekitItem(wb.factionId, k, wb)).filter(Boolean);
+    const sole = others.find(o => o.soleBattlekit);
+    if (sole) return { state: 'disabled', reason: sole.name + ': no puede llevar otro Battlekit' };
+    if (item.soleBattlekit && others.length) {
+      return { state: 'disabled', reason: item.name + ': no puede llevar otro Battlekit' };
+    }
+    const blocker = others.find(o => (o.forbidsCategories || []).includes(category));
+    if (blocker) return { state: 'disabled', reason: 'Incompatible con ' + blocker.name };
+    const clash = (item.forbidsCategories || []).length &&
+      others.find(o => item.forbidsCategories.includes(getArmouryCategory(wb.factionId, o.id)));
+    if (clash) return { state: 'disabled', reason: 'Incompatible con ' + clash.name };
+  }
 
   // Warband cap on HEAVY Ranged Weapons (Abyssinia: 3, Satchel Charges excluded)
   {
