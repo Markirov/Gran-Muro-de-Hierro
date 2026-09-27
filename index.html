@@ -4395,7 +4395,6 @@ body.table-mode-open { overflow: hidden; }
       <button class="btn btn-icon" id="btn-config-menu" title="Configuración · cuenta · ayuda" aria-haspopup="true" aria-expanded="false" style="font-size:1.1rem;">⚙</button>
       <div class="config-menu-dropdown" id="config-menu-dropdown" role="menu">
         <button class="config-menu-item" data-config-action="account">☁ Tu cuenta (sync Google)</button>
-        <button class="config-menu-item" data-config-action="github">🔗 Backup avanzado (GitHub)</button>
         <button class="config-menu-item" data-config-action="welcome">❓ Tour de bienvenida</button>
         <button class="config-menu-item" data-config-action="disclaimer">⚠ Disclaimer fan-made</button>
       </div>
@@ -5400,7 +5399,7 @@ body.table-mode-open { overflow: hidden; }
       en TC, te deja experimentar variantes en sandbox, genera tarjetas/battletrackers imprimibles y simula
       tácticas en el Lab estadístico.</p>
       <p>Sin afiliación oficial. Sin recogida de datos personales. Tu información vive solo en tu navegador
-      (o en tu cuenta Google/GitHub si activas sincronización).</p>
+      (y en tu cuenta de Google si inicias sesión para sincronizar).</p>
       <p style="opacity:0.7;font-size:0.82rem;margin-top:1rem;">Versión single-file HTML, código fuente público.</p>
     </div>
     <div class="modal-actions">
@@ -5416,8 +5415,7 @@ body.table-mode-open { overflow: hidden; }
     <h3>☁ Tu cuenta</h3>
     <div id="fb-login-not-configured" style="display:none;">
       <p style="color:var(--parchment);font-size:0.85rem;">
-        La sincronización con cuenta de usuario no está configurada en esta instalación.
-        Usa el sistema clásico (GitHub Gist) si tienes cuenta GitHub.
+        No se pudo conectar con la sincronización. Tus bandas siguen guardadas en este navegador.
       </p>
     </div>
     <div id="fb-login-signed-out" style="display:none;text-align:center;padding:1rem 0;">
@@ -16936,7 +16934,99 @@ function serializeAppState() {
     warbands,
     campaigns,
     settings,
+    deleted: loadDeletedMarks(),
   };
+}
+
+/* Marcas de borrado ({ warbands: {id: fecha}, campaigns: {id: fecha} }):
+ * evitan que la sincronización resucite lo borrado en otro dispositivo. */
+const DELETED_MARKS_KEY = 'warband-forge-deleted';
+function loadDeletedMarks() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DELETED_MARKS_KEY) || '{}') || {};
+    return { warbands: d.warbands || {}, campaigns: d.campaigns || {} };
+  } catch (e) { return { warbands: {}, campaigns: {} }; }
+}
+function markDeleted(kind, id) {
+  if (typeof localStorage === 'undefined' || !id) return;
+  const d = loadDeletedMarks();
+  d[kind][id] = new Date().toISOString();
+  localStorage.setItem(DELETED_MARKS_KEY, JSON.stringify(d));
+}
+
+/* Fusiona el estado del dispositivo con el de la nube: de cada banda o
+ * campaña gana la versión con updatedAt más reciente; lo borrado después de
+ * su última edición no vuelve. Los ajustes del dispositivo mandan y los que
+ * falten vienen de la nube (los índices se reconstruyen al aplicar). */
+function mergeAppStates(local, remote) {
+  local = local || {}; remote = remote || {};
+  const ts = (x) => String((x && x.updatedAt) || '');
+  const deleted = { warbands: {}, campaigns: {} };
+  for (const src of [remote.deleted, local.deleted]) {
+    for (const kind of ['warbands', 'campaigns']) {
+      for (const [id, t] of Object.entries((src && src[kind]) || {})) {
+        if (!deleted[kind][id] || t > deleted[kind][id]) deleted[kind][id] = t;
+      }
+    }
+  }
+  const mergeList = (kind) => {
+    const out = new Map();
+    for (const x of (remote[kind] || []).concat(local[kind] || [])) {
+      if (!x || !x.id) continue;
+      const cur = out.get(x.id);
+      if (!cur || ts(x) >= ts(cur)) out.set(x.id, x);
+    }
+    for (const [id, x] of out) {
+      const del = deleted[kind][id];
+      if (del && del >= ts(x)) out.delete(id);
+      else if (del) delete deleted[kind][id];
+    }
+    return Array.from(out.values());
+  };
+  const settings = Object.assign({}, remote.settings || {}, local.settings || {});
+  delete settings['warband-forge-index'];
+  delete settings['warband-forge-campaigns-index'];
+  return { version: 1, exportedAt: new Date().toISOString(),
+           warbands: mergeList('warbands'), campaigns: mergeList('campaigns'),
+           settings, deleted };
+}
+
+/* Escribe en el navegador un estado fusionado: guarda bandas y campañas,
+ * quita las borradas y reconstruye los índices. */
+function applyMergedState(state) {
+  if (!state || typeof localStorage === 'undefined') return;
+  for (const wb of (state.warbands || [])) {
+    if (wb && wb.id) localStorage.setItem('warband-forge-v1:' + wb.id, JSON.stringify(wb));
+  }
+  for (const c of (state.campaigns || [])) {
+    if (c && c.id) localStorage.setItem('warband-forge-v1:cmp:' + c.id, JSON.stringify(c));
+  }
+  const del = state.deleted || { warbands: {}, campaigns: {} };
+  for (const id of Object.keys(del.warbands || {})) localStorage.removeItem('warband-forge-v1:' + id);
+  for (const id of Object.keys(del.campaigns || {})) localStorage.removeItem('warband-forge-v1:cmp:' + id);
+  localStorage.setItem(DELETED_MARKS_KEY, JSON.stringify(del));
+  for (const [k, v] of Object.entries(state.settings || {})) {
+    if (v != null && localStorage.getItem(k) == null) localStorage.setItem(k, v);
+  }
+  // Índices desde lo que queda guardado.
+  const wbIdx = [], cmpIdx = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k || k.indexOf('warband-forge-v1:') !== 0 ||
+        k === 'warband-forge-v1:current' || k === 'warband-forge-v1:mode') continue;
+    let o = null;
+    try { o = JSON.parse(localStorage.getItem(k)); } catch (e) {}
+    if (!o || !o.id) continue;
+    if (k.indexOf('warband-forge-v1:cmp:') === 0) {
+      cmpIdx.push({ id: o.id, name: o.name, warbands: (o.warbandIds || []).length,
+                    battles: (o.battles || []).length, updatedAt: o.updatedAt });
+    } else {
+      wbIdx.push({ id: o.id, name: o.name || '(Sin nombre)', factionId: o.factionId,
+                   models: (o.models || []).length, updatedAt: o.updatedAt });
+    }
+  }
+  localStorage.setItem('warband-forge-index', JSON.stringify(wbIdx));
+  localStorage.setItem('warband-forge-campaigns-index', JSON.stringify(cmpIdx));
 }
 
 function deserializeAppState(state) {
@@ -16966,6 +17056,7 @@ function deserializeAppState(state) {
   for (const k of Object.keys(settings)) {
     if (settings[k] != null) localStorage.setItem(k, settings[k]);
   }
+  if (state.deleted) localStorage.setItem(DELETED_MARKS_KEY, JSON.stringify(state.deleted));
   return { ok: true };
 }
 
@@ -16993,13 +17084,15 @@ function deserializeAppState(state) {
  * Si FIREBASE_CONFIG.apiKey está vacío, todo el sistema queda inactivo
  * (fallback al sistema GitHub PAT/OAuth previo).
  */
+// Config web del proyecto (pública por diseño; la seguridad está en las
+// reglas de Firestore). Sin Analytics: la app no recoge datos.
 const FIREBASE_CONFIG = {
-  apiKey: "",            // ← Marcos pega aquí (pública)
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: "",
+  apiKey: "AIzaSyBYu_vNIewXBSFWwCnBkGesUmnE5DxMkls",
+  authDomain: "murodehierrodelsultanato.firebaseapp.com",
+  projectId: "murodehierrodelsultanato",
+  storageBucket: "murodehierrodelsultanato.firebasestorage.app",
+  messagingSenderId: "213214152556",
+  appId: "1:213214152556:web:79e32c4d3ee9afd7fed549",
 };
 
 let _fbApp = null, _fbAuth = null, _fbDb = null, _fbUser = null;
@@ -17085,10 +17178,14 @@ async function firebaseSaveState() {
   if (!_fbReady || !_fbUser) return { ok: false, error: 'No autenticado.' };
   try {
     const { firestoreMod } = await _fbLoadModules();
-    const state = serializeAppState();
     const ref = firestoreMod.doc(_fbDb, 'users', _fbUser.uid);
+    // Nunca pisar la nube a ciegas: se fusiona con lo que haya allí.
+    const snap = await firestoreMod.getDoc(ref);
+    const remote = snap.exists() && snap.data() ? snap.data().state : null;
+    const state = remote ? mergeAppStates(serializeAppState(), remote) : serializeAppState();
+    if (remote) applyMergedState(state);
     await firestoreMod.setDoc(ref, { state, updatedAt: new Date().toISOString() });
-    return { ok: true };
+    return { ok: true, merged: !!remote };
   } catch (e) {
     return { ok: false, error: 'Firestore save: ' + (e.message || String(e)) };
   }
@@ -17410,6 +17507,8 @@ function deleteWarband(id) {
   localStorage.removeItem(STORAGE_KEY + ':' + id);
   const idx = loadIndex().filter(x => x.id !== id);
   saveIndex(idx);
+  markDeleted('warbands', id);
+  if (typeof _fbScheduleAutoSave === 'function') _fbScheduleAutoSave();
 }
 
 /* ====================================================================
@@ -23050,15 +23149,26 @@ function onFirebaseAuthChanged(user) {
   }
 }
 
+let _fbInitialSyncDone = false;
+// Tras fusionar, la banda abierta se relee del navegador (puede venir de otro dispositivo).
+function reloadAfterCloudSync() {
+  const cur = (typeof STATE !== 'undefined') ? STATE.currentWarband : null;
+  if (cur && cur.id) {
+    const fresh = loadWarband(cur.id);
+    if (fresh) STATE.currentWarband = fresh;
+  }
+  if (typeof renderAll === 'function') renderAll();
+}
 async function _fbAutoPullOnLogin() {
-  const r = await firebaseLoadState();
-  if (r.ok && !r.empty) {
-    console.log('[wf-fb] auto-pull al login OK · updatedAt:', r.updatedAt);
-    if (typeof renderAll === 'function') renderAll();
-  } else if (r.ok && r.empty) {
-    // Primera vez para este usuario — sube estado local actual como base.
-    console.log('[wf-fb] usuario nuevo, subiendo estado local como inicial');
-    firebaseSaveState();
+  // Fusiona las bandas del dispositivo con las de la cuenta y sube el resultado.
+  const r = await firebaseSaveState();
+  _fbInitialSyncDone = r.ok;
+  if (r.ok) {
+    console.log('[wf-fb] sync al iniciar sesión OK');
+    if (typeof reloadAfterCloudSync === 'function') reloadAfterCloudSync();
+    else if (typeof renderAll === 'function') renderAll();
+  } else {
+    console.warn('[wf-fb] sync al iniciar sesión falló:', r.error);
   }
 }
 
@@ -23108,7 +23218,7 @@ if (_btnFbPullNow) {
 /* Sub-FB-E — Auto-save debounced tras cada persistWarband. */
 let _fbAutoSaveTimer = null;
 function _fbScheduleAutoSave() {
-  if (!_fbReady || !_fbUser) return;
+  if (!_fbReady || !_fbUser || !_fbInitialSyncDone) return;
   if (_fbAutoSaveTimer) clearTimeout(_fbAutoSaveTimer);
   _fbAutoSaveTimer = setTimeout(async () => {
     _fbAutoSaveTimer = null;
@@ -28939,6 +29049,7 @@ function persistCampaign(c) {
   if (i >= 0) idx[i] = entry;
   else idx.push(entry);
   saveCampaignIndex(idx);
+  if (typeof _fbScheduleAutoSave === 'function') _fbScheduleAutoSave();
 }
 function loadCampaign(id) {
   const raw = localStorage.getItem(STORAGE_CAMPAIGN_PREFIX + id);
@@ -28948,6 +29059,8 @@ function loadCampaign(id) {
 function deleteCampaignStore(id) {
   localStorage.removeItem(STORAGE_CAMPAIGN_PREFIX + id);
   saveCampaignIndex(loadCampaignIndex().filter(x => x.id !== id));
+  markDeleted('campaigns', id);
+  if (typeof _fbScheduleAutoSave === 'function') _fbScheduleAutoSave();
 }
 
 /* ======================================================================

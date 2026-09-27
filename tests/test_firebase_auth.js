@@ -60,8 +60,8 @@ group('Group 1: FIREBASE_CONFIG placeholder presente', () => {
   ok('projectId' in FIREBASE_CONFIG, 'projectId field');
 });
 
-group('Group 2: isFirebaseConfigured detecta placeholder vacío', () => {
-  ok(isFirebaseConfigured() === false, 'config vacía → false');
+group('Group 2: isFirebaseConfigured con la config del proyecto', () => {
+  ok(isFirebaseConfigured() === true, 'config rellena → true');
 });
 
 group('Group 3: helpers existen pero rechazan sin auth', () => {
@@ -71,10 +71,10 @@ group('Group 3: helpers existen pero rechazan sin auth', () => {
   ok(firebaseCurrentUser() === null, 'currentUser null sin login');
 });
 
-await groupA('Group 4: firebaseInit sin config → error claro', async () => {
+await groupA('Group 4: firebaseInit sin red (jsdom) → error claro', async () => {
   const r = await firebaseInit();
   ok(r.ok === false, 'ok:false');
-  ok(/no configurad/i.test(r.error || ''), 'error menciona configurado');
+  ok(/Carga Firebase falló/.test(r.error || ''), 'error menciona la carga fallida');
 });
 
 await groupA('Group 5: firebaseSaveState sin auth → error', async () => {
