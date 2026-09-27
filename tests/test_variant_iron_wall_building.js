@@ -50,7 +50,7 @@ ok(state(IW, 'sappers', 'explosive-charges-iw') === 'available', 'Sappers pueden
 ok(state(IW, 'janofficer-iw', 'explosive-charges-iw') === 'hidden', 'Explosive Charges: solo Silahdar y Sappers');
 const sil = X.getUnit(IS, 'silahdar-iw');
 const vet = X.allAvailableUpgrades(sil, IW).find(u => u.id === 'veteran');
-ok(vet && vet.cost === 10, 'Silahdar puede ser Janissary Veteran (+10 👑)');
+ok(vet && vet.cost === 5, 'Silahdar puede ser Janissary Veteran (+5 👑, revisión de abril 2026)');
 
 console.log('\nGroup 3: Grand Cannons');
 ok(state(IW, 'brazen-bull', 'grand-cannon-iw') === 'available', 'Brazen Bull puede llevar un Grand Cannon');

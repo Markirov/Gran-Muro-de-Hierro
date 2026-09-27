@@ -6681,10 +6681,14 @@ const DATA = {
       specialRules: [],  // Warbands 1.0.2: sin reglas especiales de facción
       armoury: {
         ranged: [
-          { id:'alaybozan-is',    name:'Alaybozan',            cost:9,  currency:'👑', restriction:'Sappers only · Shield Combo',
-            type:'2-Handed', range:'12"', weaponKeywords:['SHRAPNEL'] },
+          // Revisión de reglas de abril 2026 (beta): Alaybozan, Flame Cannon,
+          // M.U.R.A.D. Bombard y Halberd-Gun nuevos; Gas Grenades, Al-inbīq Kit,
+          // Alchemical Fire, Corrosive Ammunition y Regimental Kaşık añadidos.
+          { id:'alaybozan-is',    name:'Alaybozan',            cost:10, currency:'👑', restriction:'Sappers only · Shield Combo',
+            type:'2-Handed', range:'12"', weaponKeywords:['SHOTGUN','SHRAPNEL'] },
           { id:'flame-cannon-is', name:'Flame Cannon',         cost:60, currency:'👑', restriction:'Brazen Bull only · Limit: 1',
-            type:'1-Handed', range:'12"', weaponKeywords:['FIRE','HEAVY','IGNORE ARMOUR'] },
+            type:'1-Handed', range:'12"', weaponKeywords:['ASSAULT','FIRE','HEAVY','IGNORE ARMOUR'],
+            note:'Greek Fire: al hacer un Ranged Attack no hay Success Roll. Traza una línea recta de 1mm de ancho y hasta 12" desde el atacante hasta un punto del suelo o de la base de un modelo; se detiene en un terreno más alto que el atacante. Haz una Injury Roll a cada modelo (amigo o enemigo) que toque la línea, salvo el atacante.' },
           { id:'flamethrower-is', name:'Flamethrower',         cost:30, currency:'👑', restriction:'Limit: 3',
             type:'2-Handed', range:'8"', weaponKeywords:['-1 INJURY DICE','FIRE','FLAMETHROWER','IGNORE ARMOUR'] },
           { id:'jezzail-is',      name:'Jezzail',              cost:7,  currency:'👑', restriction:'',
@@ -6692,7 +6696,8 @@ const DATA = {
           { id:'mg-is',           name:'Machine Gun',          cost:50, currency:'👑', restriction:'Limit: 1',
             type:'2-Handed', range:'36"', weaponKeywords:['AUTOMATIC 3','HEAVY','RELOAD'] },
           { id:'murad-bombard-is',name:'M.U.R.A.D. Bombard',   cost:50, currency:'👑', restriction:'Brazen Bull only · Limit: 1',
-            type:'1-Handed', range:'36"', weaponKeywords:['BLAST 3"','HEAVY','SCATTER'] },
+            type:'1-Handed', range:'36"', weaponKeywords:['+1 DICE','BLAST 3"','HEAVY','SCATTER'],
+            note:'Echoing Blast: si la Success Roll contra un enemigo es Success o Critical, o si falla y el punto de impacto se desvía sobre la base de un modelo, aplica DEADLY a la Injury Roll de ese modelo. El resto de modelos en el radio de la explosión (o todos, si no impactó ni se desvió sobre una base) quedan Down sin Injury Roll.' },
           { id:'musket-is',       name:'Musket',               cost:5,  currency:'👑', restriction:'Bayonet Lug',
             type:'2-Handed', range:'18"', weaponKeywords:['-1 INJURY DICE'] },
           { id:'pistol-is',       name:'Pistol',               cost:6,  currency:'👑',
@@ -6726,8 +6731,8 @@ const DATA = {
             type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY MODIFIER','HEAVY'] },
           { id:'great-sword-is',  name:'Great Sword/Axe',      cost:12, currency:'👑',
             type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY DICE','CRITICAL','HEAVY'] },
-          { id:'halberd-gun-is',  name:'Halberd-Gun',          cost:20, currency:'👑', restriction:'ELITE only',
-            type:'2-Handed', range:'Melee/24"', weaponKeywords:['ASSAULT','BLOCK','CUMBERSOME'] },
+          { id:'halberd-gun-is',  name:'Halberd-Gun',          cost:30, currency:'👑', restriction:'ELITE only · Shield Combo · Limit: 2',
+            type:'2-Handed', range:'Melee/24"', weaponKeywords:['+1 INJURY DICE','ASSAULT','BLOCK','CUMBERSOME','HEAVY'] },
           { id:'polearm-is',      name:'Polearm',              cost:7,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'Melee', weaponKeywords:['BLOCK','CUMBERSOME'] },
           { id:'sword-is',        name:'Sword/Axe',            cost:4,  currency:'👑',
@@ -6742,6 +6747,8 @@ const DATA = {
         grenades: [
           { id:'frag-is',         name:'Frag Grenades',        cost:7,  currency:'👑',
             type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','BLAST 2"','IGNORE COVER','IGNORE LONG RANGE','SHRAPNEL'] },
+          { id:'gas-is',          name:'Gas Grenades',         cost:10, currency:'👑', restriction:'Limit: 4',
+            type:'Grenade', range:'8"', weaponKeywords:['-1 INJURY DICE','ASSAULT','BLAST 3"','GAS','IGNORE ARMOUR','IGNORE COVER','IGNORE LONG RANGE'] },
           { id:'incend-is',       name:'Incendiary Grenades',  cost:15, currency:'👑', restriction:'Jabirean Alchemist only',
             type:'Grenade', range:'8"', weaponKeywords:['ASSAULT','FIRE','IGNORE COVER','IGNORE LONG RANGE'],
             note:'Liquid Fire: si la Success Roll del ataque es un Crítico, la Injury Roll gana IGNORE ARMOUR.', critIgnoreArmour:true },
@@ -6771,6 +6778,12 @@ const DATA = {
         equipment: [
           { id:'alch-ammo-is',    name:'Alchemical Ammunition',cost:3,  currency:'👑', restriction:'',
             type:'Equipment', range:'-', weaponKeywords:['AMMUNITION (+1 DICE)'] },
+          { id:'al-inbiq-is',     name:'Al-inbīq Kit',         cost:15, currency:'👑', restriction:'Jabirean Alchemist only',
+            type:'Equipment', range:'-', weaponKeywords:[] },
+          { id:'alch-fire-is',    name:'Alchemical Fire',      cost:10, currency:'👑', restriction:'ELITE only · Limit: 3',
+            type:'Equipment', range:'-', weaponKeywords:[] },
+          { id:'corrosive-ammo-is', name:'Corrosive Ammunition', cost:10, currency:'👑', restriction:'Limit: 5',
+            type:'Equipment', range:'-', weaponKeywords:['AMMUNITION (ARMOUR PIERCING)'] },
           { id:'binoculars-is',   name:'Binoculars',           cost:10, currency:'👑', restriction:'ELITE only',
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'cloak-alamut-is', name:'Cloak of Alamut',      cost:25, currency:'👑', restriction:'ELITE only · Limit: 1',
@@ -6795,6 +6808,8 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'flag-is',         name:'Troop Flag',           cost:1,  currency:'☼', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
+          { id:'kasik-is',        name:'Regimental Kaşık',     cost:4,  currency:'☼', restriction:'Janissaries & Yüzbaşı with Janissary Veteran only · Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:['LEADER'] },
           // ── Fida'i of Alamut Armoury ──
           { id:'hashashin-leaf-fid', name:'Hashashin Leaf',    cost:5,  currency:'👑',
             variantOnly:'fidai-alamut', restriction:'Consumable · Limit: 4',
@@ -6823,15 +6838,14 @@ const DATA = {
         ],
       },
       units: [
-        { id:'yuzbasi', name:'Yüzbaşı', tier:'elite', limit:'1', mandatory:true, cost:70, currency:'👑',
+        { id:'yuzbasi', name:'Yüzbaşı', tier:'elite', limit:'1', mandatory:true, cost:75, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+2 DICE', melee:'+2 DICE', armour:'0', base:'32mm' },
-          keywords:['SULTANATE','ELITE','LEADER','NEGATE FEAR','TOUGH'],
+          keywords:['SULTANATE','ELITE','LEADER','NEGATE FEAR','STRONG','TOUGH'],
           abilities:['Mubarizun'],
           upgrades:[
-            { id:'veteran', name:'Janissary Veteran', cost:10, currency:'👑',
-              addsKeywords:['STRONG'],
-              addsAbilities:['Counter-Charge'],
-              note:'Convierte al Yüzbaşı en Veterano: añade STRONG y la habilidad Counter-Charge.' },
+            { id:'veteran', name:'Janissary Veteran', cost:5, currency:'👑',
+              addsAbilities:['Mehterân'],
+              note:'Janissary Veteran: el Yüzbaşı gana Mehterân (+1 DICE a la Risky de Dash a 4" de un Musical Instrument amigo).' },
           ] },
         { id:'jabirean', name:'Jabirean Alchemist', tier:'elite', limit:'0-1', cost:55, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+2 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
@@ -6859,6 +6873,9 @@ const DATA = {
           keywords:['SULTANATE','ARTIFICIAL'],
           abilities:['Lion Agile','Artificial Life','Teeth and Claws','Pin'],
           upgrades:[
+            { id:'lion-claws', name:'Ferocious Claws', cost:5, currency:'👑',
+              addsAbilities:['Ferocious Claws'],
+              note:'Ferocious Claws: sus Melee Attacks tienen CLEAVE 2 (+5 👑 cada uno).' },
             { id:'lion-fear', name:'Roar of the Lion', cost:5, currency:'👑',
               addsKeywords:['FEAR'],
               note:'Cualquier número de Lions of Jabir pueden tener FEAR por +5 👑 cada uno.' },
@@ -6866,26 +6883,26 @@ const DATA = {
         { id:'janissaries', name:'Janissaries', tier:'troops', limit:'0-6', cost:55, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
           keywords:['SULTANATE','STRONG'],
-          abilities:['Counter-Charge'] },
-        { id:'brazen-bull', name:'Brazen Bull', tier:'troops', limit:'0-1', cost:100, currency:'👑',
+          abilities:['Mehterân'] },
+        { id:'brazen-bull', name:'Brazen Bull', tier:'troops', limit:'0-1', cost:115, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'+2 DICE', armour:'0', base:'60mm' },
-          keywords:['SULTANATE','ARTIFICIAL','FEAR','STRONG','TOUGH'],
+          keywords:['SULTANATE','ARTIFICIAL','FEAR','NEGATE SHRAPNEL','STRONG','TOUGH'],
           battlekitAccess:{ weaponsMustHaveKeyword:'HEAVY' },
           battlekitNote:'Solo armas con HEAVY · No puede llevar Shovel (excepto Marid Shovel)',
-          abilities:['Artificial Life','Trample ACTION'] },
+          abilities:['Artificial Life','Living Battering Ram ACTION','Trample ACTION'] },
         // ── Unidades exclusivas de la variante Defenders of the Iron Wall ──
         // Solo aparecen en el catálogo cuando la variante 'iron-wall-def' está
         // activa (campo `variantOnly`). getUnit() las sigue resolviendo para
         // lookups de modelos ya en banda.
-        { id:'silahdar-iw', name:'Silahdar', tier:'elite', limit:'1', cost:70, currency:'👑',
+        { id:'silahdar-iw', name:'Silahdar', tier:'elite', limit:'1', cost:75, currency:'👑',
           variantOnly:'iron-wall-def',
           stats:{ movement:'6"/Infantry', ranged:'+2 DICE', melee:'+2 DICE', armour:'0', base:'32mm' },
           keywords:['SULTANATE','ELITE','LEADER','NEGATE FEAR','TOUGH','STRONG'],
           abilities:[],
           // Usa la entrada del Yüzbaşı → también puede ser Janissary Veteran.
-          upgrades:[{ id:'veteran', name:'Janissary Veteran', cost:10, currency:'👑',
-            addsKeywords:['STRONG'], addsAbilities:['Counter-Charge'],
-            note:'Janissary Veteran (entrada del Yüzbaşı): STRONG y Counter-Charge por +10 👑.' }],
+          upgrades:[{ id:'veteran', name:'Janissary Veteran', cost:5, currency:'👑',
+            addsAbilities:['Mehterân'],
+            note:'Janissary Veteran (entrada del Yüzbaşı, revisión de abril 2026): Mehterân por +5 👑.' }],
           note:'Comandante del Iron Wall (guardia personal del Sultán). Usa la entrada del Yüzbaşı pero cambia la habilidad Mubarizun por la keyword STRONG, y puede llevar un Alaybozan (armería Iron Sultanate) y un Anq Guard y Explosive Charges (armería Defenders of the Iron Wall) a su coste. Obligatorio: cada banda Defenders incluye 1 Silahdar.' },
         { id:'sipahi-iw', name:'Sipahi', tier:'elite', limit:'0-1', cost:110, currency:'👑',
           variantOnly:'iron-wall-def',
@@ -6898,7 +6915,7 @@ const DATA = {
           variantOnly:'iron-wall-def',
           stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
           keywords:['SULTANATE','STRONG','ELITE'],
-          abilities:['Counter-Charge'],
+          abilities:['Mehterân'],
           note:'Janissary Officers: una banda Defenders puede tener 0-2 Janissaries con la keyword ELITE sin coste adicional.' },
         // ── Unidad exclusiva de la variante The House of Wisdom ──
         // ── Unidades exclusivas de la variante Fida'i of Alamut ──
@@ -6919,7 +6936,7 @@ const DATA = {
           variantOnly:'house-wisdom',
           stats:{ movement:'6"/Infantry', ranged:'+1 DICE', melee:'+1 DICE', armour:'0', base:'32mm' },
           keywords:['SULTANATE','STRONG','ELITE'],
-          abilities:['Counter-Charge'],
+          abilities:['Mehterân'],
           note:'Noble Guardians: una banda House of Wisdom puede incluir 0-2 Fāris, que usan la entrada de Janissary con la keyword ELITE sin coste adicional.' },
         { id:'takwin-how', name:'Takwin Homunculus', tier:'troops', limit:null, limitPerUnit:'jabirean', cost:40, currency:'👑',
           variantOnly:'house-wisdom',
@@ -8163,6 +8180,18 @@ const ABILITY_LIBRARY = {
   'Artificial Life': {
     type: 'passive',
     summary: '-1 INJURY DICE en tiradas de lesión contra este modelo.',
+  },
+  'Mehterân': {
+    type: 'passive',
+    summary: '+1 DICE a la Risky Success Roll de un Dash ACTION si está a 4" o menos de un modelo amigo con Musical Instrument (+2 DICE en total con Fanfare).',
+  },
+  'Living Battering Ram ACTION': {
+    type: 'action',
+    summary: 'Si termina una Charge ACTION a 1" o menos de enemigos, puede tomar esta ACTION: Success Roll por cada enemigo a 1" (-1 DICE si su base es de 40mm o más). Con Success o Critical, el enemigo queda Down.',
+  },
+  'Ferocious Claws': {
+    type: 'passive',
+    summary: 'Sus Melee Attacks tienen la keyword CLEAVE 2.',
   },
   'Trample ACTION': {
     type: 'action',
@@ -36052,6 +36081,23 @@ const EQUIPMENT_IMPLICIT_ABILITIES = {
   'Medi-kit': [{
     name: 'Treat ACTION',
     desc: 'Risky Success Roll: si falla, la activación termina. Con éxito, retira 1 BLOOD MARKER del modelo o de un aliado a 1", o levanta a un aliado Down a 1".',
+  }],
+  // Revisión de reglas de abril 2026 (beta): equipo nuevo del Iron Sultanate.
+  'Al-inbīq Kit': [{
+    name: "'Ilm al-Mīzān ACTION",
+    desc: 'Si no está a 1" de enemigos: Risky Success Roll. Con Success o Critical, elige un modelo amigo ARTIFICIAL a 6" y en Line of Sight: puede levantarse sin gastar movimiento y le quitas hasta D3 BLOOD MARKERS y/o INFECTION MARKERS.',
+  }],
+  'Alchemical Fire': [{
+    name: 'Unfettered Flame',
+    desc: 'Las Injury Rolls de los Ranged Attacks del portador no se ven afectadas por NEGATE FIRE.',
+  }],
+  'Corrosive Ammunition': [{
+    name: 'Volatile Concoction',
+    desc: 'Solo se puede usar con Alaybozan, Halberd-Gun, Jezzail o Siege Jezzail (aunque el Alaybozan tenga SHRAPNEL). En campaña no se puede reasignar a otro modelo.',
+  }],
+  'Regimental Kaşık': [{
+    name: 'Brotherhood of the Spoon',
+    desc: 'En la Morale Phase no cuentan los Janissaries amigos Down u Out of Action mientras haya en mesa un Janissary amigo con el Regimental Kaşık. Cuenta como Musical Instrument para Mehterân.',
   }],
   // Changelog 1.0.2 p.76: AMMUNITION (+1 DICE) + Guiding Path.
   'Alchemical Ammunition': [{

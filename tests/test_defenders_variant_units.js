@@ -66,7 +66,7 @@ group('Group 1: variant units present in DATA', () => {
   ok(byId['sipahi-iw'].equipmentLocked === true, 'Sipahi equipment locked');
   ok(byId['sipahi-iw'].limit === '0-1', 'Sipahi limit 0-1');
 
-  ok(byId['silahdar-iw'].cost === 70, 'Silahdar cost 70');
+  ok(byId['silahdar-iw'].cost === 75, 'Silahdar cost 75 (Yüzbaşı de la revisión de abril 2026)');
   ok(byId['silahdar-iw'].keywords.includes('STRONG'), 'Silahdar has STRONG');
   ok(!byId['silahdar-iw'].abilities.includes('Mubarizun'), 'Silahdar lacks Mubarizun');
 
