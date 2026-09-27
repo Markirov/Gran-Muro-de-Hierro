@@ -6988,6 +6988,11 @@ const DATA = {
             type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY DICE','FIRE'] },
           { id:'polearm-hl',      name:'Polearm',              cost:7,  currency:'👑', restriction:'Shield Combo',
             type:'2-Handed', range:'Melee', weaponKeywords:['BLOCK','CUMBERSOME'] },
+          // ── Knights of Avarice Armoury ──
+          { id:'coin-hammer-ka',  name:'Coin Hammer',          cost:20, currency:'👑',
+            variantOnly:'avarice-knights', restriction:'Limit: 2',
+            type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY DICE','HEAVY'],
+            note:'Rune of Mammon: si la Injury Roll de un ataque con el Coin Hammer pone 1 o más BLOOD MARKERS al objetivo, pon 1 BLESSING MARKER junto al atacante.' },
           { id:'sacrif-blade-hl', name:'Sacrificial Blade',    cost:23, currency:'👑', restriction:'ELITE only · Limit: 2',
             type:'1-Handed', range:'Melee', weaponKeywords:['+2 INJURY MODIFIER','RISKY'] },
           { id:'sword-hl',        name:'Sword/Axe',            cost:4,  currency:'👑',
@@ -7022,6 +7027,11 @@ const DATA = {
             variantOnly:'trench-ghosts', restriction:'Heretic Priest only', forbidsCategories:['shields'],
             type:'Armour', range:'-', weaponKeywords:['-3 INJURY MODIFIER','STRONG'],
             note:'Bulky: base 50mm, sin escudo y Charge Bonus D3" en vez de D6". Death From On High: +3" de altura para Elevated Position en sus Ranged Attacks. Standfast: un resultado Down en la tabla de Injury cuenta como Minor Hit.' },
+          // ── Knights of Avarice Armoury ──
+          { id:'tarnished-ka',    name:'Tarnished Armour',     cost:25, currency:'👑',
+            variantOnly:'avarice-knights', restriction:'Limit: 1',
+            type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER','NEGATE GAS'],
+            note:'Target of Wrath: un enemigo que carga debe elegir como objetivo al modelo con Tarnished Armour si lo tiene en Line of Sight, no está ya a 1" de un enemigo y puede alcanzarlo sin Climb, Jump, Diving Charge ni cruzar Dangerous terrain.' },
           { id:'reinforced-hl',   name:'Reinforced Armour',    cost:40, currency:'👑', restriction:'Anointed & ELITE only',
             type:'Armour', range:'-', weaponKeywords:['-2 INJURY MODIFIER'] },
           { id:'standard-hl',     name:'Standard Armour',      cost:15, currency:'👑',
@@ -7048,6 +7058,15 @@ const DATA = {
             type:'Equipment', range:'-', weaponKeywords:[] },
           { id:'flag-hl',         name:'Troop Flag',           cost:1,  currency:'☼', restriction:'Limit: 1',
             type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'] },
+          // ── Knights of Avarice Armoury ──
+          { id:'calf-altar-ka',   name:'Golden Calf Altar',    cost:20, currency:'👑',
+            variantOnly:'avarice-knights', restriction:'Limit: 3',
+            type:'Equipment', range:'-', weaponKeywords:['DEPLOYABLE','HEAVY'],
+            note:'Pieza de terreno de ½" de alto en base 25mm; Impassable terrain. Illusions: los enemigos tratan el terreno a 3" del portador o del altar como Difficult terrain, incluso con FLYING. Place Altar ACTION: despliégalo a 1"; el modelo deja de llevarlo y el altar se pierde al final de la partida (se retira del Roster).' },
+          { id:'standard-mammon-ka', name:'Standard of Mammon', cost:25, currency:'👑',
+            variantOnly:'avarice-knights', restriction:'Limit: 1',
+            type:'Equipment', range:'-', weaponKeywords:['HELD','LEADER'],
+            note:'Kneel Before Me: un enemigo Down a 1" no puede levantarse. Los enemigos que terminan una carga a 1" hacen una Success Roll: con Failure quedan Down.' },
           { id:'unholy-relic-hl', name:'Unholy Relic',         cost:15, currency:'👑',
             type:'Equipment', range:'-', weaponKeywords:['FEAR'] },
           { id:'unholy-trinket-hl',name:'Unholy Trinket',      cost:15, currency:'👑', restriction:'Consumable',
@@ -7108,8 +7127,12 @@ const DATA = {
           note:'Sustituye al Chorister (mismo perfil y coste): no puede haber ambos en la banda.' },
         { id:'art-witch', name:'Artillery Witch', tier:'troops', limit:'0-1', cost:100, currency:'👑',
           stats:{ movement:'6"/Infantry', ranged:'+0 DICE', melee:'-1 DICE', armour:'0', base:'32mm' },
-          keywords:['HERETIC','ARTIFICIAL'],
-          abilities:['Abiotic Life'] },
+          keywords:['HERETIC','ARTIFICIAL','NEGATE FEAR','NEGATE GAS'],
+          permanentEquipment:['Infernal Bombs'],
+          battlekitAccess:{ forbidCategories:['ranged','grenades'] },
+          battlekitNote:'Siempre tiene Infernal Bombs · Sin armas a distancia ni granadas',
+          abilities:['Abiotic Life','Levitate','Infernal Bombs'],
+          note:'Artillery Witch Battery: 0-2 Artillery Witches si el resto de la banda (con su Battlekit) suma 1.000 👑 o más.' },
       ],
       variants: [
         {
@@ -7139,8 +7162,31 @@ const DATA = {
           name:'Knights of Avarice',
           summary:'Adoradores de Mammón: nada con FIRE ni SHRAPNEL, modelos de al menos 80 👑 (salvo Wretched), Goetic Warlocks y Price of Greed.',
           specialRule:'Knights of Avarice',
+          // Infernal Rivalry
           forbiddenUnitIds:['death-commando'],
-          // Many other rules: Patron always Mammon, Goetic Warlocks as Mercs, no models <80 👑 (except Wretched), no FIRE/SHRAPNEL
+          // Corrupt Merchants
+          foreignArmoury:[
+            { factionId:'new-antioch',    max:1, label:'Corrupt Merchants' },
+            { factionId:'iron-sultanate', max:1, label:'Corrupt Merchants' },
+          ],
+          // Preserve the Loot: nada con FIRE ni SHRAPNEL (ni que los dé)
+          forbiddenItemKeywords:['FIRE','SHRAPNEL'],
+          armouryOverrides:{
+            'grenade-launcher-hl': { weaponKeywords:['-1 INJURY DICE','BLAST 3"','GAS','HEAVY','IGNORE ARMOUR','IGNORE COVER'],
+              note:'Preserve the Loot: cambia SHRAPNEL por -1 INJURY DICE, GAS e IGNORE ARMOUR.' },
+          },
+          // Mammon's Chosen: ningún modelo por debajo de 80 👑 salvo Wretched
+          minModelCost:{ cost:80, exceptUnitIds:['wretched-hl'] },
+          unitOverrides:[
+            // Gas Bombs
+            { unitId:'art-witch', overrides:{ permanentEquipment:['Gas Bombs'],
+                removeAbilities:['Infernal Bombs'], addAbilities:['Gas Bombs'],
+                battlekitNote:'Siempre tiene Gas Bombs · Sin armas a distancia ni granadas' } },
+            // Goetic Warlocks: hasta 2; el primero cuesta 110 👑 en vez de Glory
+            { unitId:'goetic-warlock', overrides:{ limit:'0-2', firstCost:{ cost:110, currency:'👑' } } },
+            // Price of Greed
+            { unitId:'heretic-priest', overrides:{ removeAbilities:['Puppet Master ACTION'], addAbilities:['Price of Greed ACTION'] } },
+          ],
         },
         {
           id:'naval-raiders',
@@ -7813,6 +7859,22 @@ const ABILITY_LIBRARY = {
   },
 
   // ----- Heretic Legions -----
+  'Price of Greed ACTION': {
+    type: 'action',
+    summary: 'Risky Success Roll; si falla, su activación termina. Con Success o Critical, Injury Roll a un enemigo a 12" en Line of Sight: +1 INJURY DICE con Critical y +1 INJURY DICE por cada -1 INJURY MODIFIER del objetivo (el modificador se sigue aplicando). Sustituye a Puppet Master en Knights of Avarice.',
+  },
+  'Levitate': {
+    type: 'passive',
+    summary: 'No hace Risky Success Roll al Climb o Jump, ni Injury Roll al caer.',
+  },
+  'Infernal Bombs': {
+    type: 'passive',
+    summary: 'Infernal Bomb (1-Handed, 36"): BLAST 3", IGNORE COVER, IGNORE ELEVATED POSITION, IGNORE LONG RANGE, RELOAD, SCATTER, SHRAPNEL. Duck: -1 INJURY DICE si el modelo está en contacto con terreno de ½" o más entre él y el punto objetivo. Infernal Strike: con Success o Critical contra un enemigo (o si falla y el punto cae sobre una base), la Injury Roll de ese modelo tiene DEADLY. Mighty Explosion: el modelo impactado que no queda Out of Action sale despedido D3" en línea recta.',
+  },
+  'Gas Bombs': {
+    type: 'passive',
+    summary: 'Gas Bomb (1-Handed, 36"): -1 INJURY DICE, BLAST 3", GAS, IGNORE ARMOUR, IGNORE COVER, IGNORE ELEVATED POSITION, IGNORE LONG RANGE, RELOAD, SCATTER. Choking Gas: el modelo impactado que no queda Out of Action se tambalea D3" en línea recta (el objetivo, en la dirección que elige el atacante; los del BLAST, alejándose del punto objetivo). Sustituye a las Infernal Bombs en Knights of Avarice.',
+  },
   'Puppet Master ACTION': {
     type: 'action',
     summary: 'Risky Success Roll. Si falla, la activación del Heretic Priest termina. Con Success o Critical, elige 1 modelo (amigo o enemigo, no él mismo) a 12" o menos y en Line of Sight y muévelo D6" en línea recta en cualquier dirección: puede acabar a 1" de un enemigo, retirarse, trepar o saltar, pero no hacer una Diving Charge ni contar como carga.',
@@ -17519,7 +17581,8 @@ function findBattlekitItem(factionId, kitId, wb) {
     if (!ff) continue;
     for (const cat of Object.values(ff.armoury)) {
       const found = cat.find(x => x.id === kitId);
-      if (found) return Object.assign({}, found, { _foreignFaction: fa.factionId });
+      if (found) return Object.assign({}, found, { _foreignFaction: fa.factionId },
+        itemHasForbiddenKeyword(v, found) ? { forbidden: true } : {});
     }
   }
   return null;
@@ -17537,7 +17600,7 @@ function foreignArmouryItems(wb) {
     for (const [cat, list] of Object.entries((ff && ff.armoury) || {})) {
       if (/^anchorite/.test(cat)) continue;
       for (const it of list) {
-        if (it.variantOnly) continue;
+        if (it.variantOnly || itemHasForbiddenKeyword(v, it)) continue;
         items.push(Object.assign({}, it, { _foreignFaction: fa.factionId }));
       }
     }
@@ -17553,10 +17616,22 @@ function foreignArmouryItems(wb) {
  *   forbidden: true              — the variant cannot take it
  *   note                         — replaces the rules note
  */
+/** Item has (or gives, e.g. AMMUNITION (FIRE)) one of the variant's banned keywords. */
+function itemHasForbiddenKeyword(v, item) {
+  const banned = (v && v.forbiddenItemKeywords) || [];
+  if (!banned.length) return false;
+  return (item.weaponKeywords || []).some(k => {
+    const m = String(k).match(/^AMMUNITION \((.+)\)$/i);
+    return banned.includes(m ? m[1] : k);
+  });
+}
+
 function variantArmouryItem(wb, item) {
   const v = wb ? getActiveVariant(wb) : null;
   const ov = v && v.armouryOverrides && v.armouryOverrides[item.id];
   let out = ov ? Object.assign({}, item, ov, { _variantOverride: true }) : item;
+  // Preserve the Loot (Knights of Avarice): no FIRE / SHRAPNEL Battlekit
+  if (itemHasForbiddenKeyword(v, out)) out = Object.assign({}, out, { forbidden: true });
   // Masters of the Grenade (Prussia): +X" to every Grenade's range
   if (v && v.grenadeRangeBonus && /^\d+"$/.test(out.range || '') &&
       getArmouryCategory(wb.factionId, item.id) === 'grenades') {
@@ -17960,6 +18035,20 @@ function checkUpgradeLegality(wb) {
           ' (' + variant.name + ': no pueden jugar sin ella).');
       }
     }
+    // Variant: minimum model cost (Knights of Avarice, Mammon's Chosen)
+    if (variant.minModelCost) {
+      const mc = variant.minModelCost;
+      for (const m of wb.models) {
+        if ((mc.exceptUnitIds || []).includes(m.unitId)) continue;
+        const u = getUnitWithVariant(wb, m.unitId);
+        if (!u || u.currency !== '👑') continue;
+        const c = modelCost(m, wb.factionId, wb);
+        if (c.ducados < mc.cost) {
+          warnings.push(u.name + ' cuesta ' + c.ducados + ' 👑 con su Battlekit: ' + variant.name +
+            ' no admite modelos por debajo de ' + mc.cost + ' 👑.');
+        }
+      }
+    }
     // Variant: mandatory items missing (Papal States Crucifix)
     for (const iid of (variant.mandatoryItems || [])) {
       const has = wb.models.some(m => (m.battlekit || []).includes(iid));
@@ -18149,6 +18238,11 @@ function modelCost(model, factionId, wb) {
   const altOk = unitCostAltAllowed(wb, u);
   let ducados = u.currency === '👑' ? (model.costVariant === 'alt' && altOk ? (u.costAlt||u.cost) : u.cost) : 0;
   let glory   = u.currency === '☼' ? u.cost : 0;
+  // First model of this unit at another price (Knights of Avarice: first Goetic Warlock 110 👑)
+  if (u.firstCost && wb && (wb.models || []).find(m => m.unitId === model.unitId) === model) {
+    ducados = u.firstCost.currency === '👑' ? u.firstCost.cost : 0;
+    glory   = u.firstCost.currency === '☼' ? u.firstCost.cost : 0;
+  }
   // Add cost of active upgrades
   for (const up of activeUpgrades(model, u)) {
     if (up.currency === '👑') ducados += up.cost || 0;
