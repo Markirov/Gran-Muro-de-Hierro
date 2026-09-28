@@ -3,7 +3,7 @@
 > Arriba solo lo pendiente, por prioridad. Al cerrar una tarea, su entrada se traslada íntegra a `## ✅ Completado` al final (no se deja `[x]` mezclado entre los `[ ]`).
 
 ## 🔴 Alta Prioridad
-- [ ] **Firebase: pasos pendientes (Marcos)** — (1) consola → Authentication → Sign-in method → activar Google; (2) GitHub → repo Gran-Muro-de-Hierro → Settings → Pages → desactivar; (3) iniciar sesión en https://murodehierrodelsultanato.web.app en PC y móvil y comprobar que las bandas aparecen en ambos. Firestore y sus reglas ya están creados y desplegados; `web.app` ya es dominio autorizado.
+- [ ] **Firebase: probar el inicio de sesión (Marcos)** — Google activado y GitHub Pages desactivado (2026-09-28). Falta iniciar sesión en https://murodehierrodelsultanato.web.app en PC y móvil y comprobar que las bandas aparecen en ambos.
 - [ ] **Variantes: lo que queda sin modelar** (no bloquea crear bandas): composición de Fireteams (New Antioch 2, Prussia 3, Killing Squad de Fida'i, Fireteam de los perros de Red Brigade: hoy solo nota); Envious Eyes (Envy) no abre la armería de otras facciones; Blood Magic (Hell Knight) y Blessing of the Serpent Moon (Sorcerer) no aparecen como hechizos gratuitos; Artillery Witch Battery (0-2 si la banda vale 1.000 👑) y Cradle Thralls fuera del Maximum Field Strength no se controlan.
 - [ ] **Iron Wall: Grand Cannon como gun battery** (sin modelar): Forge solo permite el cañón en un Brazen Bull; el segundo (o sin Brazen Bull) como batería estacionaria de la armería de la banda no se puede añadir.
 
