@@ -17,7 +17,7 @@
 
 Companion para Trench Crusade que se acompaña al builder oficial **Trench Companion** (https://trench-companion.com). No es un builder: importa JSONs de Companion, trackea progresión (XP, advancements, traumas, scars) en campañas y partidas libres, simula batallas en el Lab, y re-exporta a Companion sin pérdida.
 
-El archivo es **single-file HTML**: todo el código vive en `index.html` (~40k líneas). Se sirve desde Firebase Hosting (https://murodehierrodelsultanato.web.app), desplegado a mano con `bash scripts/deploy.sh` (pasa `verify.sh`, copia `index.html` y `assets/wwi-placeholders/` a `dist/` y publica hosting + `firestore.rules`); GitHub Pages está desactivado. No hay backend propio: el estado vive en `localStorage` y se sincroniza con Firestore al iniciar sesión con Google (fusión banda a banda; SDK cargado por `import()` dinámico).
+El archivo original era single-file HTML, pero se ha migrado a una arquitectura modular (HTML, CSS, JS separados en `/css` y `/js`) para facilitar el mantenimiento. Se sirve desde Firebase Hosting (https://murodehierrodelsultanato.web.app), desplegado a mano con `bash scripts/deploy.sh`. No hay backend propio: el estado vive en `localStorage` y se sincroniza con Firestore al iniciar sesión con Google (fusión banda a banda).
 
 ## Idioma y tono
 

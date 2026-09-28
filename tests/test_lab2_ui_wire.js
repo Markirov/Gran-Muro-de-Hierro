@@ -29,13 +29,21 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
 function group(name, fn) { console.log('\n' + name); fn(); }
 
-const dom = new JSDOM(html, { runScripts: 'outside-only' });
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const combinedJs = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
+const dom = new JSDOM(html.replace('</body>', '<script>' + combinedJs + '</script></body>'), { runScripts: 'outside-only' });
 const doc = dom.window.document;
 
 group('Group 1: tab Espacial presente con data-mode="spatial"', () => {
@@ -104,15 +112,15 @@ group('Group 7: botón Run + div de resultados', () => {
 });
 
 group('Group 8: handler JS wired al botón', () => {
-  ok(/btn-lab-spatial-run['"]\)\?\.addEventListener|getElementById\(['"]btn-lab-spatial-run['"]\)\.addEventListener/.test(html),
+  ok(/btn-lab-spatial-run['"]\)\?\.addEventListener|getElementById\(['"]btn-lab-spatial-run['"]\)\.addEventListener/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'handler getElementById(btn-lab-spatial-run).addEventListener presente');
-  ok(/runBattleSeriesSpatial/.test(html),
+  ok(/runBattleSeriesSpatial/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'cuerpo del script referencia runBattleSeriesSpatial');
 });
 
 group('Group 9: mode toggle handler maneja modo spatial', () => {
   // El handler change del lab-mode select debe mostrar/ocultar el panel.
-  const slice = html.slice(html.indexOf("document.getElementById('lab-mode')?.addEventListener('change'"));
+  const slice = html.slice((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).indexOf("document.getElementById('lab-mode')?.addEventListener('change'"));
   ok(/spatial/.test(slice.slice(0, 2000)),
      'change handler maneja mode=spatial');
 });

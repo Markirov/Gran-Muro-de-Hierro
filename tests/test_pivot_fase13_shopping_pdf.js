@@ -12,9 +12,15 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-const js = scriptMatch[1];
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
 
 const TMP = path.join(require('os').tmpdir(), 'warband_forge_pivot_fase13_pdf.js');
@@ -81,7 +87,7 @@ group('Group 2: generateShoppingListPdf con items devuelve blob', async () => {
   await new Promise(r => setTimeout(r, 50));
 
   // DOM presence checks.
-  const dom = new JSDOM(html, { runScripts: 'outside-only' });
+  const dom = new JSDOM(html.replace('</body>', '<script>' + js + '</script></body>'), { runScripts: 'outside-only' });
   const doc = dom.window.document;
   group('Group 3: UI presente', () => {
     ok(!!doc.getElementById('btn-open-shopping'), 'btn-open-shopping en header');
@@ -93,13 +99,14 @@ group('Group 2: generateShoppingListPdf con items devuelve blob', async () => {
   });
 
   group('Group 4: handlers wired', () => {
-    ok(/renderShoppingList/.test(html), 'renderShoppingList definido');
-    ok(/groupShoppingItems\(/.test(html), 'groupShoppingItems invocado');
-    ok(/generateShoppingListPdf\(/.test(html), 'generateShoppingListPdf invocado');
-    ok(/data-shopping-toggle/.test(html), 'delegation toggle');
-    ok(/data-shopping-remove/.test(html), 'delegation remove');
+    ok(/renderShoppingList/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'renderShoppingList definido');
+    ok(/groupShoppingItems\(/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'groupShoppingItems invocado');
+    ok(/generateShoppingListPdf\(/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'generateShoppingListPdf invocado');
+    ok(/data-shopping-toggle/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'delegation toggle');
+    ok(/data-shopping-remove/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'delegation remove');
   });
 
   console.log('\n' + pass + ' passed · ' + fail + ' failed');
   process.exit(fail === 0 ? 0 : 1);
 })();
+

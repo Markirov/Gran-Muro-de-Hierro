@@ -24,9 +24,15 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-const js = scriptMatch[1];
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
 
 const TMP = path.join(require('os').tmpdir(), 'warband_forge_lab2_rival.js');
@@ -84,7 +90,7 @@ group('Group 3: archetype desconocido → fallback razonable', () => {
 });
 
 group('Group 4: UI tiene dropdown rival con opciones', () => {
-  const dom = new JSDOM(html, { runScripts: 'outside-only' });
+  const dom = new JSDOM(html.replace('</body>', '<script>' + js + '</script></body>'), { runScripts: 'outside-only' });
   const doc = dom.window.document;
   const sel = doc.getElementById('lab-spatial-rival');
   ok(!!sel, '#lab-spatial-rival dropdown presente');
@@ -96,11 +102,12 @@ group('Group 4: UI tiene dropdown rival con opciones', () => {
 });
 
 group('Group 5: handler btn-lab-spatial-run lee dropdown', () => {
-  ok(/lab-spatial-rival/.test(html),
+  ok(/lab-spatial-rival/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'script referencia lab-spatial-rival');
-  ok(/_lab2SyntheticEnemyBand/.test(html),
+  ok(/_lab2SyntheticEnemyBand/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'script invoca _lab2SyntheticEnemyBand');
 });
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
+

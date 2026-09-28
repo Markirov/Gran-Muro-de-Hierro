@@ -23,9 +23,15 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-const js = scriptMatch[1];
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
 
 let pass = 0, fail = 0;
@@ -34,7 +40,7 @@ function group(name, fn) { console.log('\n' + name); fn(); }
 
 /* ------------------------------------------------------------------ */
 group('Group 1: HTML expone botón Glossary PDF', () => {
-  const dom = new JSDOM(html, { runScripts: 'outside-only' });
+  const dom = new JSDOM(html.replace('</body>', '<script>' + js + '</script></body>'), { runScripts: 'outside-only' });
   const btn = dom.window.document.getElementById('btn-glossary-pdf');
   ok(!!btn, 'botón #btn-glossary-pdf presente');
   if (btn) {
@@ -46,13 +52,13 @@ group('Group 1: HTML expone botón Glossary PDF', () => {
 });
 
 group('Group 2: función generateGlossaryPdf existe', () => {
-  ok(/(async\s+)?function\s+generateGlossaryPdf\(/.test(html),
+  ok(/(async\s+)?function\s+generateGlossaryPdf\(/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'function generateGlossaryPdf declarada');
 });
 
 group('Group 3: implementación reutiliza pdfRenderSpecialRulesSection', () => {
   // Mira el cuerpo de generateGlossaryPdf desde la declaración.
-  const idx = html.indexOf('function generateGlossaryPdf');
+  const idx = (html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).indexOf('function generateGlossaryPdf');
   ok(idx >= 0, 'generateGlossaryPdf localizada');
   if (idx >= 0) {
     const body = html.slice(idx, idx + 2500);
@@ -65,8 +71,8 @@ group('Group 3: implementación reutiliza pdfRenderSpecialRulesSection', () => {
 });
 
 group('Group 4: botón wired en script', () => {
-  ok(/getElementById\(['"]btn-glossary-pdf['"]\)\s*[^;]*addEventListener/.test(html) ||
-     /btn-glossary-pdf['"]\)\?\.addEventListener/.test(html),
+  ok(/getElementById\(['"]btn-glossary-pdf['"]\)\s*[^;]*addEventListener/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))) ||
+     /btn-glossary-pdf['"]\)\?\.addEventListener/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'btn-glossary-pdf tiene event listener');
 });
 
@@ -137,3 +143,4 @@ const URL = { createObjectURL(){ return 'blob:mock'; }, revokeObjectURL(){} };
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
+

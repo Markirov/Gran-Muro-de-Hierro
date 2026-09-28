@@ -8,10 +8,17 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const ROOT = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8');
-const js = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
+let html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
-const dom = new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
+const dom = new JSDOM(html.replace('</body>', '<script>' + js + '</script></body>').replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
 dom.window.alert = () => {};
 dom.window.eval(js.slice(0, bootIdx) + '\n;window.__X = { FIREBASE_CONFIG, isFirebaseConfigured, serializeAppState, mergeAppStates: typeof mergeAppStates === "function" ? mergeAppStates : null, applyMergedState: typeof applyMergedState === "function" ? applyMergedState : null, persistWarband, deleteWarband, loadIndex, persistCampaign, deleteCampaignStore, loadCampaignIndex };');
 const X = dom.window.__X;
@@ -22,8 +29,8 @@ function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else
 
 console.log('\nGroup 1: configuración');
 ok(X.isFirebaseConfigured() && X.FIREBASE_CONFIG.projectId === 'murodehierrodelsultanato', 'Firebase configurado (murodehierrodelsultanato)');
-ok(!/getAnalytics|firebase-analytics/.test(html), 'sin Firebase Analytics (la app no recoge datos)');
-ok(!/data-config-action="github"/.test(html), 'el menú ya no ofrece el backup de GitHub');
+ok(!/getAnalytics|firebase-analytics/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'sin Firebase Analytics (la app no recoge datos)');
+ok(!/data-config-action="github"/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'el menú ya no ofrece el backup de GitHub');
 
 console.log('\nGroup 2: fusión');
 ok(typeof X.mergeAppStates === 'function', 'mergeAppStates existe');

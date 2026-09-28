@@ -14,9 +14,15 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-const js = scriptMatch[1];
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
 
 const TMP = path.join(require('os').tmpdir(), 'warband_forge_firebase.js');
@@ -89,11 +95,11 @@ await groupA('Group 6: firebaseLoadState sin auth → error', async () => {
 });
 
 group('Group 7: UI modal + botón en DOM', () => {
-  const dom = new JSDOM(html, { runScripts: 'outside-only' });
+  const dom = new JSDOM(html.replace('</body>', '<script>' + js + '</script></body>'), { runScripts: 'outside-only' });
   const doc = dom.window.document;
   ok(!!doc.getElementById('modal-firebase-login'), 'modal-firebase-login');
   ok(!!doc.getElementById('btn-config-menu'), 'btn-config-menu header (config rueda)');
-  ok(/data-config-action="account"/.test(html), 'item "Tu cuenta" en menú config');
+  ok(/data-config-action="account"/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'item "Tu cuenta" en menú config');
   ok(!!doc.getElementById('btn-fb-login-google'), 'btn-fb-login-google');
   ok(!!doc.getElementById('btn-fb-logout'), 'btn-fb-logout');
   ok(!!doc.getElementById('btn-fb-force-sync'), 'btn force sync');
@@ -103,19 +109,20 @@ group('Group 7: UI modal + botón en DOM', () => {
 });
 
 group('Group 8: copy clave UI', () => {
-  ok(/Continuar con Google/.test(html), 'CTA "Continuar con Google"');
-  ok(/Tu cuenta/.test(html), 'header "Tu cuenta"');
-  ok(/sincronicen autom[áa]ticamente/i.test(html), 'menciona sync automático');
-  ok(/Tus datos viven en tu cuenta personal/.test(html), 'tagline privacidad');
+  ok(/Continuar con Google/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'CTA "Continuar con Google"');
+  ok(/Tu cuenta/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'header "Tu cuenta"');
+  ok(/sincronicen autom[áa]ticamente/i.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'menciona sync automático');
+  ok(/Tus datos viven en tu cuenta personal/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'tagline privacidad');
 });
 
 group('Group 9: Setup doc para Marcos en código', () => {
-  ok(/console\.firebase\.google\.com/.test(html), 'link consola Firebase');
-  ok(/Sign-in method.*Google/.test(html), 'instrucción Google provider');
-  ok(/Firestore Rules/.test(html), 'reglas Firestore');
-  ok(/Enable Device Flow|Add project/.test(html), 'instrucción crear proyecto');
+  ok(/console\.firebase\.google\.com/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'link consola Firebase');
+  ok(/Sign-in method.*Google/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'instrucción Google provider');
+  ok(/Firestore Rules/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'reglas Firestore');
+  ok(/Enable Device Flow|Add project/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'instrucción crear proyecto');
 });
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
 })();
+

@@ -15,13 +15,21 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
 function group(name, fn) { console.log('\n' + name); fn(); }
 
-const dom = new JSDOM(html, { runScripts: 'outside-only' });
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const combinedJs = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
+const dom = new JSDOM(html.replace('</body>', '<script>' + combinedJs + '</script></body>'), { runScripts: 'outside-only' });
 const doc = dom.window.document;
 
 group('Group 1: botones export en modal replay', () => {
@@ -32,9 +40,9 @@ group('Group 1: botones export en modal replay', () => {
 });
 
 group('Group 2: handlers wired al script', () => {
-  ok(/btn-lab2-replay-export-png/.test(html), 'PNG handler referenciado');
-  ok(/btn-lab2-replay-export-json/.test(html), 'JSON handler referenciado');
-  ok(/toDataURL/.test(html), 'canvas.toDataURL usado');
+  ok(/btn-lab2-replay-export-png/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'PNG handler referenciado');
+  ok(/btn-lab2-replay-export-json/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'JSON handler referenciado');
+  ok(/toDataURL/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'canvas.toDataURL usado');
 });
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');

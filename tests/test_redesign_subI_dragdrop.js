@@ -15,9 +15,15 @@ const fs = require('fs');
 const path = require('path');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-const js = scriptMatch[1];
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
 
 const TMP = path.join(require('os').tmpdir(), 'warband_forge_subI_dnd.js');
@@ -152,11 +158,12 @@ group('Group 7: refresh con modelo ELIMINADO de TC → desaparece', () => {
 });
 
 group('Group 8: roster cards renderizan draggable="true"', () => {
-  ok(/card\.draggable\s*=\s*true.*Sub-I/.test(html), 'rosterCardCompanion draggable');
+  ok(/card\.draggable\s*=\s*true.*Sub-I/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'rosterCardCompanion draggable');
   // Doble chequeo del nativo rosterCard también.
-  const matches = (html.match(/card\.draggable\s*=\s*true/g) || []);
+  const matches = ((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).match(/card\.draggable\s*=\s*true/g) || []);
   ok(matches.length >= 2, 'ambos rosterCard + rosterCardCompanion (got ' + matches.length + ')');
 });
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
+

@@ -11,13 +11,21 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
 function group(name, fn) { console.log('\n' + name); fn(); }
 
-const dom = new JSDOM(html, { runScripts: 'outside-only' });
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const combinedJs = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
+const dom = new JSDOM(html.replace('</body>', '<script>' + combinedJs + '</script></body>'), { runScripts: 'outside-only' });
 const doc = dom.window.document;
 
 group('Group 1: botones + modal sandbox presentes', () => {
@@ -29,35 +37,35 @@ group('Group 1: botones + modal sandbox presentes', () => {
 });
 
 group('Group 2: handlers Fase 12-B wired en script', () => {
-  ok(/renderSandboxList/.test(html), 'renderSandboxList definido');
-  ok(/btn-open-sandbox.*click/.test(html), 'btn-open-sandbox listener');
-  ok(/btn-sandbox-create.*click/.test(html), 'btn-sandbox-create listener');
-  ok(/data-sandbox-promote/.test(html), 'delegation promote');
-  ok(/data-sandbox-delete/.test(html), 'delegation delete');
-  ok(/promoteVariantToShoppingList\(/.test(html), 'promote helper invocado');
-  ok(/removeVariant\(/.test(html), 'removeVariant invocado');
-  ok(/createVariant\(/.test(html), 'createVariant invocado');
+  ok(/renderSandboxList/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'renderSandboxList definido');
+  ok(/btn-open-sandbox.*click/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'btn-open-sandbox listener');
+  ok(/btn-sandbox-create.*click/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'btn-sandbox-create listener');
+  ok(/data-sandbox-promote/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'delegation promote');
+  ok(/data-sandbox-delete/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'delegation delete');
+  ok(/promoteVariantToShoppingList\(/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'promote helper invocado');
+  ok(/removeVariant\(/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'removeVariant invocado');
+  ok(/createVariant\(/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'createVariant invocado');
 });
 
 group('Group 3: filosofía sandbox visible en copy UI', () => {
-  ok(/banda canon/i.test(html), 'menciona "banda canon"');
-  ok(/Trench Companion.*verdad oficial/i.test(html) || /verdad oficial/i.test(html),
+  ok(/banda canon/i.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'menciona "banda canon"');
+  ok(/Trench Companion.*verdad oficial/i.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))) || /verdad oficial/i.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'menciona "verdad oficial"');
 });
 
 group('Group 4: Sub-Fase 12-C editor overrides wired', () => {
-  ok(/data-sandbox-edit/.test(html), 'botón editar variantes');
-  ok(/data-sandbox-duplicate/.test(html), 'botón duplicar variantes');
-  ok(/data-sandbox-save-overrides/.test(html), 'botón guardar overrides');
-  ok(/data-sandbox-overrides-json/.test(html), 'textarea JSON overrides');
-  ok(/Schema:.*add-equipment/.test(html), 'leyenda schema visible');
+  ok(/data-sandbox-edit/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'botón editar variantes');
+  ok(/data-sandbox-duplicate/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'botón duplicar variantes');
+  ok(/data-sandbox-save-overrides/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'botón guardar overrides');
+  ok(/data-sandbox-overrides-json/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'textarea JSON overrides');
+  ok(/Schema:.*add-equipment/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'leyenda schema visible');
 });
 
 group('Group 5: Sub-Fase 12-D integración Lab wired', () => {
-  ok(/data-sandbox-compare/.test(html), 'botón comparar Lab presente');
-  ok(/compareVariantVsCanon\(/.test(html), 'helper compareVariantVsCanon invocado');
-  ok(/Simulando/i.test(html), 'feedback "Simulando..."');
-  ok(/canon mejor|variante mejor/i.test(html), 'render diff por enemigo');
+  ok(/data-sandbox-compare/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'botón comparar Lab presente');
+  ok(/compareVariantVsCanon\(/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'helper compareVariantVsCanon invocado');
+  ok(/Simulando/i.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'feedback "Simulando..."');
+  ok(/canon mejor|variante mejor/i.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'render diff por enemigo');
 });
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');

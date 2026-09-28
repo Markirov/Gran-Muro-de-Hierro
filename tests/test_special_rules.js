@@ -17,9 +17,15 @@ const fs = require('fs');
 const path = require('path');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-const js = scriptMatch[1];
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
 
 const TMP = path.join(require('os').tmpdir(), 'warband_forge_t2_t3.js');
@@ -92,11 +98,12 @@ group('Group 6: computeConcentratedAttackDice — degenerate', () => {
 });
 
 group('Group 7: DOM markup mentions both rules', () => {
-  ok(/Concentrated Attack|concentrated-attack|concentratedAttack/.test(html),
+  ok(/Concentrated Attack|concentrated-attack|concentratedAttack/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'concentrated attack referenced in HTML');
-  ok(/Fireteam|fireteam|firet eams|firetteams|fireteams/i.test(html),
+  ok(/Fireteam|fireteam|firet eams|firetteams|fireteams/i.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'fireteams referenced in HTML');
 });
 
 console.log(`\n${pass} passed · ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
+

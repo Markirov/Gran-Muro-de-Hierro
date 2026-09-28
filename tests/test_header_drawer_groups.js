@@ -19,13 +19,21 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
 function group(name, fn) { console.log('\n' + name); fn(); }
 
-const dom = new JSDOM(html, { runScripts: 'outside-only' });
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const combinedJs = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
+const dom = new JSDOM(html.replace('</body>', '<script>' + combinedJs + '</script></body>'), { runScripts: 'outside-only' });
 const doc = dom.window.document;
 
 group('Group 1: cada secondary del header tiene data-action-group', () => {
@@ -48,20 +56,20 @@ group('Group 1: cada secondary del header tiene data-action-group', () => {
 group('Group 2: openHeaderDrawer define los 4 grupos canon', () => {
   const expected = ['companion-tc', 'banda', 'forge-json', 'impresion'];
   for (const g of expected) {
-    ok(html.includes("'" + g + "'"),
+    ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes("'" + g + "'"),
        'grupo "' + g + '" presente en GROUP_LABELS');
   }
-  ok(/GROUP_LABELS\s*=/.test(html), 'mapa GROUP_LABELS declarado');
+  ok(/GROUP_LABELS\s*=/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'mapa GROUP_LABELS declarado');
 });
 
 group('Group 3: helpers _appendDrawerButton + _appendDrawerHeader', () => {
-  ok(/function _appendDrawerButton/.test(html), '_appendDrawerButton definido');
-  ok(/function _appendDrawerHeader/.test(html), '_appendDrawerHeader definido');
+  ok(/function _appendDrawerButton/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), '_appendDrawerButton definido');
+  ok(/function _appendDrawerHeader/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), '_appendDrawerHeader definido');
 });
 
 group('Group 4: drawer respeta orden semántico y separa primarios/secundarios', () => {
   // Primarios + sin grupo arriba; luego grupos por orden GROUP_LABELS.
-  const idx = html.indexOf('openHeaderDrawer');
+  const idx = (html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).indexOf('openHeaderDrawer');
   ok(idx >= 0, 'openHeaderDrawer localizada');
   if (idx >= 0) {
     const snippet = html.slice(idx, idx + 4000);
@@ -74,9 +82,9 @@ group('Group 4: drawer respeta orden semántico y separa primarios/secundarios',
 });
 
 group('Group 5: CSS .header-drawer-section estiliza headers', () => {
-  ok(/\.header-drawer-section\s*\{/.test(html),
+  ok(/\.header-drawer-section\s*\{/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'regla .header-drawer-section presente');
-  ok(/\.header-drawer-section:first-child/.test(html),
+  ok(/\.header-drawer-section:first-child/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'first-child sin border-top (cosmético)');
 });
 

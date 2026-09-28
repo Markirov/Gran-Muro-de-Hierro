@@ -14,13 +14,21 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }
 function group(name, fn) { console.log('\n' + name); fn(); }
 
-const dom = new JSDOM(html, { runScripts: 'outside-only' });
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const combinedJs = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
+const dom = new JSDOM(html.replace('</body>', '<script>' + combinedJs + '</script></body>'), { runScripts: 'outside-only' });
 const doc = dom.window.document;
 
 group('Group 1: Nav sub-tabs presente', () => {
@@ -62,18 +70,18 @@ group('Group 4: data-subtab-panel correctos', () => {
 });
 
 group('Group 5: handlers wired en script', () => {
-  ok(/setBandaSubtab/.test(html), 'setBandaSubtab definido');
-  ok(/getActiveBandaSubtab/.test(html), 'getActiveBandaSubtab definido');
-  ok(/renderShoppingSubtab/.test(html), 'renderShoppingSubtab definido');
-  ok(/wf\.ui\.bandaSubtab/.test(html), 'localStorage key correcto');
-  ok(/banda-subtab.*addEventListener/.test(html) || /querySelectorAll\('\.banda-subtab'\)/.test(html),
+  ok(/setBandaSubtab/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'setBandaSubtab definido');
+  ok(/getActiveBandaSubtab/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'getActiveBandaSubtab definido');
+  ok(/renderShoppingSubtab/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'renderShoppingSubtab definido');
+  ok(/wf\.ui\.bandaSubtab/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'localStorage key correcto');
+  ok(/banda-subtab.*addEventListener/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))) || /querySelectorAll\('\.banda-subtab'\)/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))),
      'listeners click en subtabs');
 });
 
 group('Group 6: agrupación pool vs unit en render', () => {
-  ok(/POOL DE BANDA/.test(html), 'sección POOL DE BANDA');
-  ok(/byModel/.test(html), 'agrupación byModel');
-  ok(/Hist[oó]rico/.test(html), 'sección Histórico (tachados)');
+  ok(/POOL DE BANDA/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'sección POOL DE BANDA');
+  ok(/byModel/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'agrupación byModel');
+  ok(/Hist[oó]rico/.test(html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))), 'sección Histórico (tachados)');
 });
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');

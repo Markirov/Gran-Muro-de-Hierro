@@ -14,14 +14,19 @@ const fs = require('fs');
 const path = require('path');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
-const html = fs.readFileSync(HTML_PATH, 'utf8');
+let html = fs.readFileSync(HTML_PATH, 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  html += '\n<style>\n' + cssContent + '\n</style>\n';
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
+  html += '\n<script>\n' + jsContentAll + '\n</script>\n';
 
 /* ------------------------------------------------------------------ */
 /* Extract the inline <script> and cut at boot() to skip DOM bootstrap */
 /* ------------------------------------------------------------------ */
-const scriptMatch = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/);
-if (!scriptMatch) throw new Error('Could not locate inline <script> block');
-const js = scriptMatch[1];
+const JS_DIR = path.resolve(__dirname, '..', 'js');
+const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
+const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
 if (bootIdx < 0) throw new Error('Could not locate boot() function');
 
@@ -201,13 +206,13 @@ group('Group 8: id uniqueness', () => {
 /* Group 9: DOM static markup (jsdom-lite — just check strings exist) */
 /* ------------------------------------------------------------------ */
 group('Group 9: DOM markup present in HTML', () => {
-  ok(html.includes('id="btn-start-free-battle"'), 'btn-start-free-battle button exists in HTML');
-  ok(html.includes('id="modal-free-battle-wizard"'), 'modal-free-battle-wizard exists in HTML');
-  ok(html.includes('id="fbw-name"'), 'wizard has name input');
-  ok(html.includes('id="fbw-opponent"'), 'wizard has opponent input');
-  ok(html.includes('id="fbw-scenario"'), 'wizard has scenario selector');
-  ok(html.includes('id="fbw-dice"'), 'wizard has dice slider');
-  ok(html.includes('id="btn-fbw-confirm"'), 'wizard has confirm button');
+  ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes('id="btn-start-free-battle"'), 'btn-start-free-battle button exists in HTML');
+  ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes('id="modal-free-battle-wizard"'), 'modal-free-battle-wizard exists in HTML');
+  ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes('id="fbw-name"'), 'wizard has name input');
+  ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes('id="fbw-opponent"'), 'wizard has opponent input');
+  ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes('id="fbw-scenario"'), 'wizard has scenario selector');
+  ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes('id="fbw-dice"'), 'wizard has dice slider');
+  ok((html + (typeof combinedJs !== 'undefined' ? combinedJs : (typeof js !== 'undefined' ? js : ''))).includes('id="btn-fbw-confirm"'), 'wizard has confirm button');
 });
 
 /* ------------------------------------------------------------------ */
@@ -215,3 +220,4 @@ group('Group 9: DOM markup present in HTML', () => {
 /* ------------------------------------------------------------------ */
 console.log(`\n${pass} passed · ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
+
