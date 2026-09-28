@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Warband Forge — Trench Crusade Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cinzel:wght@400;600;800&family=Special+Elite&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"
+        onerror="(function(){
+  var fb=['https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js','https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js','./jspdf.umd.min.js'];
+  function tryNext(i){if(i>=fb.length){console.warn('jsPDF: todos los CDN fallaron. Funciones PDF deshabilitadas.');return;}var s=document.createElement('script');s.src=fb[i];s.onerror=function(){tryNext(i+1);};s.onload=function(){console.log('jsPDF cargado desde fallback '+i);};document.head.appendChild(s);}
+  tryNext(0);
+})();"></script>
+</head>
+<body data-side="faithful">
+
+<div class="shell">
+
+<!-- ============ HEADER ============ -->
+<header class="app-header">
+  <a href="index.html" class="brand" style="text-decoration:none;">
+    <h1>WARBAND FORGE</h1>
+    <span class="subtitle">Trench Crusade · Forjador de Bandas</span>
+    <span class="quote">«Durante ocho siglos la Iglesia ha librado su cruzada. Los ejércitos están en tablas.»</span>
+  </a>
+  <div class="mode-switcher">
+    <button class="mode-btn active" data-mode="banda">⚔ Banda</button>
+    <button class="mode-btn" data-mode="campana" title="Mis Campañas — listado y gestión de crónicas">📚 Campañas</button>
+    <button class="mode-btn" data-mode="lab">🔬 Lab</button>
+    <button class="mode-btn" data-mode="battle">📋 Partida</button>
+    <div class="config-menu-wrap" style="margin-left:auto;position:relative;">
+      <button class="btn btn-icon" id="btn-config-menu" title="Configuración · cuenta · ayuda" aria-haspopup="true" aria-expanded="false" style="font-size:1.1rem;">⚙</button>
+      <div class="config-menu-dropdown" id="config-menu-dropdown" role="menu">
+        <button class="config-menu-item" data-config-action="account">☁ Tu cuenta (sync Google)</button>
+        <button class="config-menu-item" data-config-action="welcome">❓ Tour de bienvenida</button>
+        <button class="config-menu-item" data-config-action="disclaimer">⚠ Disclaimer fan-made</button>
+      </div>
+    </div>
+  </div>
+  <div class="header-actions" id="actions-banda">
+    <!-- Botón volver (Inyectado para nueva UI) -->
+    <button class="btn" id="btn-back-to-bandas-list" data-action-priority="primary" style="margin-right:1rem;" title="Cerrar roster y volver a la galería">← Volver a Mis Bandas</button>
+
+    <!-- 4 botones esenciales visibles en desktop. El resto via hamburguesa. -->
+    <button class="btn btn-primary" id="btn-import-companion" data-action-priority="primary" title="Importa una banda creada en Trench Companion (https://trench-companion.com)">⤓ Importar de Companion</button>
+    <button class="btn" id="btn-refresh-companion" data-action-priority="primary" title="Re-importa desde Companion preservando variantes experimentales y lista de la compra">🔄 Refrescar</button>
+    <button class="btn" id="btn-open-sandbox" data-action-priority="primary" title="Bifurca variantes experimentales de loadout sin tocar la banda canon">🧪 Variantes</button>
+    <button class="btn" id="btn-open-shopping" data-action-priority="primary" title="Lista de la compra para programar adquisiciones futuras">🛒 Lista compra</button>
+    <button class="btn" id="btn-table-mode" data-action-priority="primary" title="Ficha por miniatura a pantalla completa para llevar la partida en el móvil: activación, estado, blood markers, efectos y usos">📱 Modo mesa</button>
+    <!-- Botones secundarios — accesibles vía ☰ siempre.
+         Agrupados por data-action-group: el drawer inserta separadores
+         con header de sección para reducir la fatiga visual de 10+
+         botones dispares. -->
+    <button class="btn" id="btn-export-companion" data-action-priority="secondary" data-action-group="companion-tc" title="Exporta esta banda en formato Companion JSON para volver a Trench Companion">⤒ Exportar a Companion</button>
+    <button class="btn" id="btn-new" data-action-priority="secondary" data-action-group="banda" title="Crea una banda manualmente con el catálogo local (modo offline)">✠ Nueva Manual</button>
+    <button class="btn" id="btn-load" data-action-priority="secondary" data-action-group="banda">📜 Cargar</button>
+    <button class="btn" id="btn-save-as" data-action-priority="secondary" data-action-group="banda">💾 Guardar Como</button>
+    <button class="btn" id="btn-export" data-action-priority="secondary" data-action-group="forge-json">⤓ Exportar JSON Forge</button>
+    <button class="btn" id="btn-import" data-action-priority="secondary" data-action-group="forge-json">⤒ Importar JSON Forge</button>
+    <button class="btn" id="btn-print" data-action-priority="secondary" data-action-group="impresion">🖨 Imprimir</button>
+    <button class="btn" id="btn-pdf" data-action-priority="secondary" data-action-group="impresion">📜 PDF</button>
+    <button class="btn" id="btn-cards-pdf" data-action-priority="secondary" data-action-group="impresion"
+            title="Genera PDF con las tarjetas de los modelos: 9 por folio (tamaño Magic) o 4 por folio (grande)">
+      🃏 Tarjetas PDF
+    </button>
+    <button class="btn" id="btn-trackers-pdf" data-action-priority="secondary" data-action-group="impresion"
+            title="Genera PDF con los battletrackers (cuarto folio, 2 por hoja A4)">
+      ⊞ Battletrackers PDF
+    </button>
+    <button class="btn" id="btn-glossary-pdf" data-action-priority="secondary" data-action-group="impresion"
+            title="Genera PDF con el Glosario: reglas de facción, habilidades ELITE y términos generales referenciados por la banda. Útil para llevar a mesa.">
+      📖 Glosario PDF
+    </button>
+    <!-- Botones legacy ocultos pero presentes para no romper handlers. -->
+    <button class="btn" id="btn-open-github-sync" data-action-priority="secondary" style="display:none;" title="(legacy) Backup via GitHub Gist">☁ GitHub legacy</button>
+    <button class="btn" id="btn-show-welcome" data-action-priority="secondary" style="display:none;" title="(legacy) Welcome">❓ Welcome</button>
+    <button class="btn btn-icon header-menu-toggle" id="header-menu-banda" aria-label="Menú" title="Más acciones">☰</button>
+    <span style="margin-left:auto;font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);letter-spacing:0.15em;text-transform:uppercase;" id="auto-save-status">Auto-save activo</span>
+  </div>
+  <div class="header-actions" id="actions-campana" style="display:none;">
+    <button class="btn btn-primary" id="btn-new-campaign" data-action-priority="primary">✠ Nueva Campaña</button>
+    <button class="btn" id="btn-add-warband-to-camp" data-action-priority="secondary">⊕ Añadir Banda</button>
+    <button class="btn btn-danger" id="btn-record-battle" data-action-priority="primary">🩸 Registrar Batalla</button>
+    <button class="btn" id="btn-campaign-settings" data-action-priority="secondary">⚙ Ajustes</button>
+    <button class="btn" id="btn-delete-campaign" data-action-priority="secondary">✕ Eliminar Campaña</button>
+    <button class="btn btn-icon header-menu-toggle" id="header-menu-campana" aria-label="Menú" title="Más acciones">☰</button>
+    <span style="margin-left:auto;font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);letter-spacing:0.15em;text-transform:uppercase;" id="campaign-status">—</span>
+  </div>
+  <div class="header-actions" id="actions-lab" style="display:none;">
+    <button class="btn btn-primary" id="btn-lab-run" data-action-priority="primary" title="Simula N batallas vs los enemigos seleccionados">▶ Ejecutar simulación</button>
+    <button class="btn" id="btn-lab-terrain" data-action-priority="secondary" title="Compara rendimiento en los 3 terrenos (open/mixed/urban)">🌍 Analizar terrenos</button>
+    <button class="btn" id="btn-lab-history" data-action-priority="secondary" title="Ver simulaciones anteriores">📜 Histórico</button>
+    <button class="btn" id="btn-lab-clear" data-action-priority="secondary">✕ Limpiar resultados</button>
+    <button class="btn btn-icon header-menu-toggle" id="header-menu-lab" aria-label="Menú" title="Más acciones">☰</button>
+    <span style="margin-left:auto;font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);letter-spacing:0.15em;text-transform:uppercase;" id="lab-status">Listo</span>
+  </div>
+  <div class="header-actions" id="actions-battle" style="display:none;">
+    <button class="btn btn-primary" id="btn-battle-new" data-action-priority="primary" title="Crear una nueva partida con la banda actual y un scenario">+ Nueva partida</button>
+    <button class="btn" id="btn-battle-back" data-action-priority="secondary" style="display:none;" title="Volver al lobby">← Volver</button>
+    <span style="margin-left:auto;font-family:var(--font-mono);font-size:0.7rem;color:var(--parchment-dim);letter-spacing:0.15em;text-transform:uppercase;" id="battle-status">Lobby</span>
+  </div>
+  <!-- Active campaign breadcrumb: visible across both modes when a campaign is loaded -->
+  <div class="campaign-breadcrumb" id="campaign-breadcrumb" style="display:none;">
+    <span class="bc-icon">🗡</span>
+    <span class="bc-label">Campaña activa:</span>
+    <span class="bc-name" id="bc-name" title="Click para ir al modo Campaña">—</span>
+    <span class="bc-sep">·</span>
+    <span class="bc-game-label">Game</span>
+    <span class="bc-game" id="bc-game">—</span>
+    <span class="bc-warband" id="bc-warband"></span>
+    <span class="bc-threshold" id="bc-threshold"></span>
+  </div>
+</header>
+
+<!-- ============ HAMBURGER DRAWER (mobile only) ============ -->
+<div class="header-drawer-backdrop" id="header-drawer-backdrop"></div>
+<aside class="header-drawer" id="header-drawer" role="dialog" aria-label="Menú de acciones">
+  <div class="header-drawer-header">
+    <span class="header-drawer-title">Acciones</span>
+    <button class="modal-close header-drawer-close" id="header-drawer-close" aria-label="Cerrar menú">×</button>
+  </div>
+  <div class="header-drawer-body" id="header-drawer-body"></div>
+</aside>
+
+<!-- SPEC-rediseno-ui Sub-B — botón toggle sidebar facción (position:fixed, FUERA de main para no ocupar celda del grid). -->
+<button class="faction-sidebar-toggle" id="btn-toggle-faction-sidebar"
+        aria-label="Mostrar/ocultar catálogo de facciones"
+        title="Mostrar/ocultar catálogo de facciones">
+  <span class="faction-sidebar-toggle-icon">▸</span>
+  <span class="faction-sidebar-toggle-label">Facciones</span>
+</button>
+
+<!-- SPEC-rediseno-ui Sub-C — Sub-tabs BANDA (FUERA de main para ocupar fila propia). -->
+<nav class="banda-subtabs" id="banda-subtabs" role="tablist" aria-label="Vistas de la banda">
+  <button class="banda-subtab active" data-subtab="roster" role="tab" aria-selected="true">Roster</button>
+  <button class="banda-subtab" data-subtab="variantes" role="tab" aria-selected="false">🧪 Variantes</button>
+  <button class="banda-subtab" data-subtab="shopping" role="tab" aria-selected="false">🛒 Lista de compra</button>
+</nav>
+
+<!-- ============ MAIN ============ -->
+<main>
+
+  <!-- GESTOR DE BANDAS: LISTA FULLSCREEN -->
+  <section class="panel" id="view-bandas-list" style="grid-column: 1 / -1; padding: 2rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; max-width:1000px; margin-left:auto; margin-right:auto;">
+      <h2>Tus Bandas</h2>
+      <button class="btn btn-primary" id="btn-bandas-list-create" style="font-size:1.2rem; padding: 0.8rem 1.5rem;">+ Crear Banda</button>
+    </div>
+    <div id="bandas-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; max-width:1000px; margin-left:auto; margin-right:auto;">
+      <!-- Tarjetas inyectadas por JS -->
+    </div>
+  </section>
+
+  <!-- GESTOR DE BANDAS: CREACIÓN -->
+  <section class="panel" id="view-banda-create" style="grid-column: 1 / -1; padding: 2rem;">
+    <div style="max-width:800px; margin:0 auto;">
+      <button class="btn" id="btn-banda-create-back" style="margin-bottom: 1.5rem;">← Volver a Mis Bandas</button>
+      <h2 style="margin-bottom: 2rem;">Nueva Banda</h2>
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <!-- Vía Companion -->
+        <div class="panel" style="padding: 1.5rem; border: 1px solid var(--rust); background: rgba(0,0,0,0.2);">
+          <h3 style="color:var(--gold); margin-bottom:1rem;">⤓ Importar de Companion</h3>
+          <p style="font-size:0.85rem; color:var(--parchment-dim); margin-bottom:1rem;">Pega el JSON exportado desde Trench Companion.</p>
+          <textarea id="create-companion-textarea" placeholder='{"warband-name":"Mi Banda",...}' style="width:100%; height:120px; font-family:var(--font-mono); font-size:0.75rem; background:var(--ink-black); color:var(--parchment); border:1px solid var(--rust); padding:0.5rem; margin-bottom:1rem;"></textarea>
+          <button class="btn btn-primary" id="btn-create-companion-import" style="width:100%;">Importar Banda</button>
+          <div id="create-companion-feedback" style="margin-top:0.75rem;font-size:0.85rem;min-height:1.2em;"></div>
+        </div>
+
+        <!-- Vía Manual -->
+        <div class="panel" style="padding: 1.5rem; border: 1px solid var(--rust); background: rgba(0,0,0,0.2);">
+          <h3 style="color:var(--gold); margin-bottom:1rem;">✠ Forja Manual</h3>
+          <p style="font-size:0.85rem; color:var(--parchment-dim); margin-bottom:1rem;">Crea una banda desde cero usando el catálogo local.</p>
+          <button class="btn btn-primary" id="btn-create-manual" style="width:100%; margin-bottom:1rem;">Abrir Catálogo de Facciones</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- HOME LANDING -->
+  <!-- LEFT: Bandas cargadas (default) o Catálogo facción (modo offline) -->
+  <section class="panel panel-left" id="panel-catalogue">
+    <!-- Vista bandas cargadas: lista de bandas en localStorage. -->
+    <div id="panel-bands-list">
+      <h2 class="panel-title">Tus bandas</h2>
+      <p class="panel-subtitle">Click para activar · drag para reordenar</p>
+      <div id="loaded-bands-list" style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.5rem;"></div>
+      <button id="btn-show-faction-catalogue" class="btn" style="margin-top:1rem;width:100%;font-size:0.78rem;" title="Cambia a vista catálogo facción (modo Nueva Manual)">
+        ⇄ Ver catálogo de facción
+      </button>
+    </div>
+    <!-- Vista catálogo facción (modo manual). -->
+    <div id="panel-faction-catalogue" style="display:none;">
+      <button id="btn-show-bands-list" class="btn" style="margin-bottom:0.8rem;width:100%;font-size:0.78rem;">
+        ← Volver a tus bandas
+      </button>
+      <h2 class="panel-title">Facción</h2>
+      <p class="panel-subtitle">Elige tu bando en la Gran Guerra</p>
+
+      <div class="faction-select" id="faction-select"></div>
+
+      <div class="variant-select" id="variant-select" style="display:none;">
+        <label>Variante de Banda</label>
+        <select class="variant-dropdown" id="variant-dropdown"></select>
+      </div>
+
+      <h2 class="panel-title" style="margin-top:1.5rem;">Unidades</h2>
+      <p class="panel-subtitle">Tap para reclutar</p>
+      <div id="unit-catalogue"></div>
+    </div>
+  </section>
+
+  <!-- CENTER: Warband Roster -->
+  <section class="panel panel-center" id="panel-roster" data-subtab-panel="roster">
+    <div class="roster-header">
+      <div style="flex:1;">
+        <input type="text" class="warband-name-input" id="warband-name" placeholder="Nombra a tu banda…" />
+        <div class="warband-meta" id="warband-meta-line">— · — · 0 modelos</div>
+      </div>
+      <div class="budget-display" id="budget-display-block">
+        <div class="budget-label">Presupuesto inicial</div>
+        <div class="budget-edit-row">
+          <input type="number" min="0" max="9999" id="budget-input" class="budget-input" value="700" />
+          <span class="budget-unit">👑</span>
+          <input type="number" min="0" max="999" id="glory-input" class="budget-input" value="0" />
+          <span class="budget-unit">☼</span>
+        </div>
+        <div class="budget-quick-select">
+          <label class="budget-quick-label">Game (canon Threshold Table):</label>
+          <select id="budget-game-select" class="budget-quick-select-input">
+            <option value="">— manual —</option>
+            <!-- options injected from CAMPAIGN_TABLES.warbandThresholdByGame -->
+          </select>
+        </div>
+        <div class="budget-value" id="budget-value">700 / 700</div>
+        <div class="budget-bar"><div class="budget-fill" id="budget-fill" style="width:0%;"></div></div>
+        <div class="budget-detail" id="budget-detail">Restantes: 700 👑</div>
+        <div class="budget-detail" id="glory-detail" style="display:none;"></div>
+        <button id="btn-promotion-step" class="btn-promotion-step" style="display:none;">
+          🎲 Iniciar Promotion Step
+        </button>
+        <button id="btn-reinforcements-step" class="btn-promotion-step" style="display:none;">
+          📯 Call for Reinforcements
+        </button>
+        <button id="btn-start-free-battle" class="btn-promotion-step" style="display:none;" title="Configura escenario, oponente y dados de Exploration para una partida libre">
+          ⚔ Empezar partida libre
+        </button>
+        <button id="btn-open-qm-free" class="btn-promotion-step" style="display:none;" title="Abre el Quartermaster con el strongbox de partidas libres">
+          🛒 Quartermaster (libre)
+        </button>
+        <button id="btn-warband-campaigns" class="btn-promotion-step" style="display:none;" title="Campañas donde esta banda participa">
+          📚 Campañas de esta banda
+        </button>
+        <button id="btn-add-pool-shopping" class="btn-promotion-step btn-pool-shopping" title="Añade un item al pool de la banda (no asociado a modelo concreto)">
+          🛒 + Lista pool
+        </button>
+      </div>
+    </div>
+
+    <div id="roster-content"></div>
+  </section>
+
+  <!-- RIGHT: Unit Detail / Battlekit -->
+  <aside class="panel panel-right" id="panel-detail" data-subtab-panel="roster">
+    <h2 class="panel-title">Detalle</h2>
+    <p class="panel-subtitle">Selecciona un modelo</p>
+    <div id="detail-content">
+      <div class="detail-empty">
+        Selecciona un modelo del roster para ver sus stats y editar su equipamiento.
+      </div>
+    </div>
+  </aside>
+
+  <!-- SUB-TAB: Variantes (placeholder hasta Fase 12 funcional) -->
+  <section class="panel panel-fullwidth" id="panel-variantes" data-subtab-panel="variantes" style="display:none;">
+    <h2 class="panel-title">🧪 Variantes experimentales</h2>
+    <p class="panel-subtitle">Bifurca tu banda para probar loadouts experimentales sin perder la configuración original.</p>
+    <div style="padding:1.5rem;text-align:center;color:var(--parchment);">
+      <p style="margin-bottom:1rem;">Próximamente: editor visual de variantes integrado en esta vista.</p>
+      <p style="margin-bottom:1rem;font-size:0.85rem;opacity:0.75;">Por ahora, accede al modal completo desde el botón <strong style="color:var(--gold);">🧪 Variantes</strong> del header.</p>
+      <button class="btn btn-primary" id="btn-subtab-open-sandbox">Abrir modal de variantes</button>
+    </div>
+  </section>
+
+  <!-- SUB-TAB: Lista de compra (vista agrupada) -->
+  <section class="panel panel-fullwidth" id="panel-shopping" data-subtab-panel="shopping" style="display:none;">
+    <h2 class="panel-title">🛒 Lista de la compra</h2>
+    <p class="panel-subtitle">Wishlist por banda — agrupada por scope (pool / por modelo).</p>
+    <div id="shopping-subtab-content" style="padding:0.5rem;"></div>
+    <div style="display:flex;gap:0.5rem;padding:0.5rem;border-top:1px solid rgba(127,107,67,0.3);">
+      <button class="btn btn-primary" id="btn-shopping-subtab-add">+ Añadir item</button>
+      <button class="btn" id="btn-shopping-subtab-pdf">🖨 PDF Lista</button>
+      <button class="btn" id="btn-shopping-subtab-clear">🗑 Limpiar tachados</button>
+    </div>
+  </section>
+
+  <!-- LAB: Battle simulator (visible only in mode='lab') -->
+  <section class="panel" id="panel-lab" style="grid-column:1 / -1;padding:1.5rem;">
+    <div style="max-width:900px;margin:0 auto;">
+      <h2 class="panel-title" style="margin-bottom:0.5rem;">🔬 Battle Lab</h2>
+      <p class="panel-subtitle" style="margin-bottom:1.5rem;">
+        Simulador estadístico de batallas. Carga una banda en el modo Banda, vuelve aquí, elige enemigos y ejecuta.
+      </p>
+
+      <div id="lab-no-warband" class="detail-empty" style="display:none;">
+        <p>No hay ninguna banda cargada. Importa una de Companion en el modo <strong>Banda</strong> primero.</p>
+      </div>
+
+      <div id="lab-content" style="display:none;">
+        <div style="background:rgba(127,107,67,0.08);border:1px solid rgba(127,107,67,0.3);padding:1rem;margin-bottom:1.5rem;">
+          <strong>Banda actual:</strong> <span id="lab-band-name">—</span><br>
+          <span style="font-size:0.85em;color:var(--parchment-dim);">
+            <span id="lab-band-info">—</span>
+          </span>
+        </div>
+
+        <!-- Mode tabs: Analizar / Duelo / Comparar / Loadout -->
+        <div style="margin-bottom:1.5rem;">
+          <div style="display:flex;gap:0;border-bottom:2px solid var(--rust);flex-wrap:wrap;">
+            <button class="lab-mode-tab active" data-mode="analyze" style="background:none;border:none;padding:0.6rem 1.2rem;color:var(--gold);font-family:var(--font-display);font-size:0.95rem;cursor:pointer;border-bottom:3px solid var(--gold);margin-bottom:-2px;letter-spacing:0.05em;">
+              📊 Analizar
+            </button>
+            <button class="lab-mode-tab" data-mode="duel" style="background:none;border:none;padding:0.6rem 1.2rem;color:var(--parchment-dim);font-family:var(--font-display);font-size:0.95rem;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;letter-spacing:0.05em;">
+              ⚔ Duelo
+            </button>
+            <button class="lab-mode-tab" data-mode="compare" style="background:none;border:none;padding:0.6rem 1.2rem;color:var(--parchment-dim);font-family:var(--font-display);font-size:0.95rem;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;letter-spacing:0.05em;">
+              🔬 Comparar
+            </button>
+            <button class="lab-mode-tab" data-mode="loadout" style="background:none;border:none;padding:0.6rem 1.2rem;color:var(--parchment-dim);font-family:var(--font-display);font-size:0.95rem;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;letter-spacing:0.05em;">
+              ⚒ Loadout
+            </button>
+            <button class="lab-mode-tab" data-mode="spatial" style="background:none;border:none;padding:0.6rem 1.2rem;color:var(--parchment-dim);font-family:var(--font-display);font-size:0.95rem;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;letter-spacing:0.05em;">
+              🗺 Espacial
+            </button>
+          </div>
+          <p style="font-size:0.78em;color:var(--parchment-dim);margin-top:0.5rem;margin-bottom:0;">
+            <span class="lab-mode-hint" data-for="analyze" style="display:block;">
+              Tu banda enfrentada a las 6 facciones canónicas escaladas a tu coste. Útil para ver matchups generales.
+            </span>
+            <span class="lab-mode-hint" data-for="duel" style="display:none;">
+              Tu banda enfrentada a una banda específica importada desde Companion. Útil para preparar partidas concretas.
+            </span>
+            <span class="lab-mode-hint" data-for="compare" style="display:none;">
+              Compara dos versiones de tu banda contra las mismas facciones, lado a lado. Útil para A/B testing de upgrades y configuraciones.
+            </span>
+            <span class="lab-mode-hint" data-for="loadout" style="display:none;">
+              Compara variantes de equipo en un solo modelo de tu banda. Mide win rate de la banda, eficiencia (winRate/coste) y versatilidad (uniformidad entre matchups). Útil para decidir si vale la pena un Heavy Shotgun vs un Shotgun normal en un Yeoman.
+            </span>
+            <span class="lab-mode-hint" data-for="spatial" style="display:none;">
+              Lab 2.0: simulador con conciencia espacial. Tu banda se enfrenta a un espejo en un mapa real con posiciones, LoS, cover y rango canon-medido. Útil para entender cómo el terreno cambia los matchups vs el modelo abstracto del Lab clásico.
+            </span>
+          </p>
+          <!-- Hidden select retained for backwards compatibility with the existing handler -->
+          <select id="lab-mode" style="display:none;">
+            <option value="analyze" selected>Analizar</option>
+            <option value="duel">Duelo</option>
+            <option value="compare">Comparar</option>
+            <option value="loadout">Loadout</option>
+            <option value="spatial">Espacial</option>
+          </select>
+        </div>
+
+        <!-- Duel rival panel (hidden by default, shown when mode=duel) -->
+        <div id="lab-duel-panel" style="display:none;margin-bottom:1.5rem;padding:1rem;border:1px solid var(--gold);background:rgba(176,141,87,0.05);">
+          <h3 style="font-size:1rem;margin-bottom:0.5rem;color:var(--gold);">⚔ Banda rival (Duelo)</h3>
+          <p style="font-size:0.85em;color:var(--parchment-dim);margin-bottom:0.5rem;">
+            Pega aquí un JSON exportado de Trench Companion para enfrentarte directamente a esa banda.
+          </p>
+          <textarea id="lab-duel-json" placeholder='{"warband-name":"…","faction":"…","models":[…]}' rows="3" style="width:100%;font-family:var(--font-mono);font-size:0.78rem;padding:0.5rem;background:var(--ink-black);border:1px solid var(--rust);color:var(--parchment);"></textarea>
+          <div style="display:flex;gap:0.5rem;margin-top:0.5rem;align-items:center;flex-wrap:wrap;">
+            <button id="btn-lab-duel-load" class="btn">Cargar banda rival</button>
+            <button id="btn-lab-duel-clear" class="btn" style="opacity:0.7;">Limpiar</button>
+            <span id="lab-duel-status" style="font-size:0.85em;color:var(--parchment-dim);">Sin banda rival.</span>
+          </div>
+        </div>
+
+        <!-- Compare panel (hidden by default, shown when mode=compare) -->
+        <div id="lab-compare-panel" style="display:none;margin-bottom:1.5rem;padding:1rem;border:1px solid var(--gold);background:rgba(176,141,87,0.05);">
+          <h3 style="font-size:1rem;margin-bottom:0.5rem;color:var(--gold);">🔬 Comparar bandas</h3>
+          <p style="font-size:0.85em;color:var(--parchment-dim);margin-bottom:0.8rem;">
+            Tu banda actual ("A") y hasta dos bandas adicionales (B y C) se enfrentarán a las mismas facciones en paralelo. Útil para evaluar upgrades o builds alternativas. La banda C es opcional.
+          </p>
+          <!-- Band B -->
+          <div style="margin-bottom:0.8rem;">
+            <label style="font-size:0.9em;font-weight:600;color:var(--gold);">Banda B</label>
+            <textarea id="lab-compare-json" placeholder='{"warband-name":"…","faction":"…","models":[…]}' rows="2" style="width:100%;font-family:var(--font-mono);font-size:0.78rem;padding:0.5rem;background:var(--ink-black);border:1px solid var(--rust);color:var(--parchment);margin-top:0.3rem;"></textarea>
+            <div style="display:flex;gap:0.5rem;margin-top:0.3rem;align-items:center;flex-wrap:wrap;">
+              <button id="btn-lab-compare-load" class="btn">Cargar B</button>
+              <button id="btn-lab-compare-clear" class="btn" style="opacity:0.7;">Limpiar B</button>
+              <span id="lab-compare-status" style="font-size:0.85em;color:var(--parchment-dim);">Sin banda B.</span>
+            </div>
+          </div>
+          <!-- Band C (opcional) -->
+          <div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px dashed rgba(127,107,67,0.3);">
+            <label style="font-size:0.9em;font-weight:600;color:var(--gold);">Banda C <span style="color:var(--parchment-dim);font-weight:400;">(opcional)</span></label>
+            <textarea id="lab-compare-c-json" placeholder='{"warband-name":"…","faction":"…","models":[…]}' rows="2" style="width:100%;font-family:var(--font-mono);font-size:0.78rem;padding:0.5rem;background:var(--ink-black);border:1px solid var(--rust);color:var(--parchment);margin-top:0.3rem;"></textarea>
+            <div style="display:flex;gap:0.5rem;margin-top:0.3rem;align-items:center;flex-wrap:wrap;">
+              <button id="btn-lab-compare-c-load" class="btn">Cargar C</button>
+              <button id="btn-lab-compare-c-clear" class="btn" style="opacity:0.7;">Limpiar C</button>
+              <span id="lab-compare-c-status" style="font-size:0.85em;color:var(--parchment-dim);">Sin banda C.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loadout panel (hidden by default, shown when mode=loadout) -->
+        <div id="lab-loadout-panel" style="display:none;margin-bottom:1.5rem;padding:1rem;border:1px solid var(--gold);background:rgba(176,141,87,0.05);">
+          <h3 style="font-size:1rem;margin-bottom:0.5rem;color:var(--gold);">⚒ Loadout Lab</h3>
+          <p style="font-size:0.85em;color:var(--parchment-dim);margin-bottom:0.8rem;">
+            Compara variantes de equipo en un modelo de tu banda. Reemplaza el equipo del modelo seleccionado por cada variante, simula la banda completa contra las facciones canónicas, y mide su contribución (kills del modelo, OoA rate, win rate de la banda).
+          </p>
+
+          <!-- Model selector -->
+          <div style="margin-bottom:0.8rem;">
+            <label style="font-size:0.9em;font-weight:600;color:var(--gold);">Modelo a analizar</label>
+            <select id="lab-loadout-model" style="margin-left:0.5rem;background:var(--ink-black);border:1px solid var(--rust);color:var(--parchment);padding:0.3rem 0.5rem;font-family:var(--font-mono);font-size:0.85rem;">
+              <option value="">— Selecciona un modelo —</option>
+            </select>
+            <span id="lab-loadout-model-info" style="font-size:0.78em;color:var(--parchment-dim);margin-left:0.5rem;"></span>
+          </div>
+
+          <!-- Variants builder -->
+          <div id="lab-loadout-variants" style="margin-top:0.8rem;display:none;">
+            <label style="font-size:0.9em;font-weight:600;color:var(--gold);">Variantes a comparar</label>
+            <p style="font-size:0.78em;color:var(--parchment-dim);margin:0.2rem 0 0.6rem;">
+              Crea hasta 4 variantes con diferentes combinaciones de armoury items. Solo las weapons del armoury de la facción están disponibles (limitada a las 1H/2H que el modelo puede equipar canónicamente).
+            </p>
+            <div id="lab-loadout-variant-list" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+            <button id="btn-loadout-add-variant" class="btn" style="margin-top:0.5rem;font-size:0.85em;padding:0.3rem 0.7rem;">+ Añadir variante</button>
+
+            <!-- Scenario selector -->
+            <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px dashed rgba(127,107,67,0.3);">
+              <label style="font-size:0.9em;font-weight:600;color:var(--gold);display:block;margin-bottom:0.3rem;">Probar en escenarios</label>
+              <p style="font-size:0.78em;color:var(--parchment-dim);margin:0 0 0.5rem;">
+                El estilo de juego del escenario afecta drásticamente qué armas funcionan. <strong>HEAVY</strong> en defensivo es viable (no te mueves), en relic-hunt te paraliza (no llegas al objetivo). Selecciona los escenarios que más te interesen.
+              </p>
+              <div id="lab-loadout-scenarios" style="display:flex;flex-direction:column;gap:0.3rem;font-size:0.85em;">
+                <label style="display:flex;align-items:center;gap:0.4rem;">
+                  <input type="checkbox" data-loadout-scenario="default" checked />
+                  <span><strong>Genérico</strong> <span style="color:var(--parchment-dim);">(sin escenario, terrain mixto)</span></span>
+                </label>
+                <label style="display:flex;align-items:center;gap:0.4rem;">
+                  <input type="checkbox" data-loadout-scenario="hold-the-line" />
+                  <span><strong>Hold the Line / Defender</strong> <span style="color:var(--parchment-dim);">(defensivo: HEAVY libre, ranges cortos viables)</span></span>
+                </label>
+                <label style="display:flex;align-items:center;gap:0.4rem;">
+                  <input type="checkbox" data-loadout-scenario="assault-attacker" />
+                  <span><strong>Assault Attacker</strong> <span style="color:var(--parchment-dim);">(ofensivo: cierra rápido, pocos turnos para HEAVY)</span></span>
+                </label>
+                <label style="display:flex;align-items:center;gap:0.4rem;">
+                  <input type="checkbox" data-loadout-scenario="capture-hold" />
+                  <span><strong>Capture & Hold / Relic Hunt</strong> <span style="color:var(--parchment-dim);">(rush al centro: HEAVY paraliza, mobility crítica)</span></span>
+                </label>
+                <label style="display:flex;align-items:center;gap:0.4rem;">
+                  <input type="checkbox" data-loadout-scenario="great-war" />
+                  <span><strong>Great War</strong> <span style="color:var(--parchment-dim);">(aniquilación general, balanced)</span></span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spatial panel (Lab 2.0): mapa + nBattles + canon engine + run + results. -->
+        <div id="lab-spatial-panel" style="display:none;margin-bottom:1.5rem;padding:1rem;border:1px solid var(--gold);background:rgba(176,141,87,0.05);">
+          <h3 style="font-size:1rem;margin-bottom:0.5rem;color:var(--gold);">🗺 Simulación espacial (Lab 2.0)</h3>
+          <p style="font-size:0.85em;color:var(--parchment-dim);margin-bottom:0.8rem;">
+            Tu banda contra un espejo en un mapa con posiciones canon (48"×32"), LoS Bresenham, cover deterministic por celda y rango medido en pulgadas. Versión inicial: mirror match. Futuro: selector de banda rival.
+          </p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.6rem;align-items:end;">
+            <label style="font-size:0.85em;">
+              Mapa
+              <select id="lab-spatial-map" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="open-ground">Open Ground (mesa limpia)</option>
+                <option value="ruined-village">Ruined Village (aldea bombardeada)</option>
+                <option value="trenchworks">Trenchworks (trincheras paralelas)</option>
+                <option value="highland-pass">Highland Pass (colinas + rocas)</option>
+                <option value="city-streets">City Streets (urbano denso)</option>
+                <option value="river-crossing">River Crossing (3 puentes)</option>
+                <option value="forest-edge">Forest Edge (claros y árboles)</option>
+                <option value="bunker-complex">Bunker Complex (defensivo WWI)</option>
+                <option value="mountain-pass-canyon">Mountain Pass Canyon (paredes + colinas)</option>
+                <option value="desert-convoy">Desert Convoy (caravana central)</option>
+                <option value="hellscape">Hellscape (demoníaco)</option>
+              </select>
+            </label>
+            <label style="font-size:0.85em;">
+              Batallas
+              <input type="number" id="lab-spatial-nbattles" value="50" min="1" max="500" step="1"
+                     style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);font-family:var(--font-mono);" />
+            </label>
+            <label style="font-size:0.85em;">
+              Max turnos
+              <input type="number" id="lab-spatial-max-turns" value="20" min="1" max="60" step="1"
+                     style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);font-family:var(--font-mono);" />
+            </label>
+            <label style="font-size:0.85em;display:flex;flex-direction:column;gap:0.2rem;">
+              <span>Motor de daño</span>
+              <span style="display:flex;align-items:center;gap:0.4rem;">
+                <input type="checkbox" id="lab-spatial-canon" />
+                <span style="font-size:0.8em;">Canon engine (lento, fidelidad TC)</span>
+              </span>
+            </label>
+            <label style="font-size:0.85em;">
+              Loadout friendly
+              <select id="lab-spatial-loadout" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="canon">Canon (banda original)</option>
+                <!-- Las variantes experimentales se inyectan dinámicamente al abrir el modo -->
+              </select>
+            </label>
+            <label style="font-size:0.85em;">
+              Escenario
+              <select id="lab-spatial-scenario" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="pitched-battle">⚔ Pitched Battle (wipeout)</option>
+                <option value="breakthrough">🏃 Breakthrough (cruza al otro lado)</option>
+                <option value="hold-the-line">🛡 Hold the Line (defender mitad)</option>
+                <option value="capture-point">🎯 Capture Point (objetivo (24,16))</option>
+              </select>
+            </label>
+            <label style="font-size:0.85em;">
+              Banda rival
+              <select id="lab-spatial-rival" style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);">
+                <option value="mirror">Espejo (clon del wb)</option>
+                <option value="newAntioch">⚔ New Antioch (Yeomen)</option>
+                <option value="trenchPilgrims">✠ Trench Pilgrims (Pilgrims)</option>
+                <option value="ironSultanate">☾ Iron Sultanate (Azebs)</option>
+                <option value="hereticLegions">☩ Heretic Legions (Troopers)</option>
+                <option value="blackGrail">☠ Black Grail (Thralls)</option>
+                <option value="courtSerpent">🐍 Court of the Serpent (Yoke Fiends)</option>
+                <option value="json">📋 Paste JSON Companion…</option>
+              </select>
+            </label>
+          </div>
+          <!-- Textarea + botón visibles solo cuando rival === 'json'. -->
+          <div id="lab-spatial-rival-json-row" style="display:none;margin-top:0.6rem;">
+            <label style="font-size:0.85em;">
+              JSON Companion del rival
+              <textarea id="lab-spatial-rival-json" rows="3" placeholder='{"warband-name":"…","models":[…]}'
+                        style="width:100%;margin-top:0.2rem;padding:0.4rem;background:var(--ink-black);color:var(--parchment);border:1px solid var(--rust);font-family:var(--font-mono);font-size:0.78rem;"></textarea>
+            </label>
+            <div style="display:flex;gap:0.5rem;margin-top:0.3rem;align-items:center;flex-wrap:wrap;">
+              <button id="btn-lab-spatial-rival-load" class="btn">Cargar JSON rival</button>
+              <span id="lab-spatial-rival-status" style="font-size:0.78em;color:var(--parchment-dim);">Sin rival JSON.</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:0.5rem;margin-top:0.8rem;align-items:center;flex-wrap:wrap;">
+            <button id="btn-lab-spatial-run" class="btn btn-primary">▶ Simular en mapa</button>
+            <button id="btn-lab-spatial-replay" class="btn" disabled title="Ver replay 2D de la última batalla">🎬 Ver replay</button>
+            <span id="lab-spatial-status" style="font-size:0.85em;color:var(--parchment-dim);">Listo.</span>
+          </div>
+          <div id="lab-spatial-results" style="margin-top:1rem;font-family:var(--font-mono);font-size:0.85em;line-height:1.5;color:var(--parchment);white-space:pre-wrap;"></div>
+        </div>
+
+        <div id="lab-analyze-config" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;">
+          <div>
+            <h3 style="font-size:1rem;margin-bottom:0.5rem;">Enemigos a probar</h3>
+            <div id="lab-enemy-checkboxes" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+          </div>
+          <div>
+            <h3 style="font-size:1rem;margin-bottom:0.5rem;">Configuración</h3>
+            <label style="display:block;margin-bottom:0.5rem;">
+              Coste enemigo:
+              <select id="lab-enemy-cost" style="margin-left:0.5rem;">
+                <option value="same">= banda usuario</option>
+                <option value="110">+10% (110%)</option>
+                <option value="120">+20% (120%)</option>
+                <option value="custom">Personalizado</option>
+              </select>
+              <input type="number" id="lab-enemy-cost-custom" placeholder="700" min="100" max="2500" style="display:none;width:5em;margin-left:0.3em;" />
+            </label>
+            <label style="display:block;margin-bottom:0.5rem;">
+              Batallas por enemigo:
+              <select id="lab-n-battles" style="margin-left:0.5rem;">
+                <option value="50">50 (rápido)</option>
+                <option value="100" selected>100</option>
+                <option value="250">250</option>
+                <option value="500">500</option>
+                <option value="1000">1000 (alta confianza)</option>
+                <option value="2000">2000</option>
+                <option value="5000">5000 (precisión máxima · puede tardar 30s+)</option>
+              </select>
+            </label>
+            <label style="display:block;margin-bottom:0.5rem;" title="El terreno afecta la probabilidad de cobertura en ataques a distancia. IGNORE COVER e IGNORE DEFENDED OBSTACLE neutralizan ese efecto.">
+              Terreno:
+              <select id="lab-terrain" style="margin-left:0.5rem;">
+                <option value="open">Campo abierto (≈10% cover)</option>
+                <option value="mixed" selected>Mixto (≈30% cover)</option>
+                <option value="urban">Urbano denso (≈50% cover)</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div id="lab-results" style="margin-top:1.5rem;"></div>
+
+        <div style="margin-top:2rem;padding:1rem;border-left:3px solid var(--gold);background:rgba(176,141,87,0.05);font-size:0.85em;color:var(--parchment-dim);">
+          <strong style="color:var(--gold);">⚠ Limitaciones del simulador:</strong> No modela posicionamiento, line-of-sight ni escenarios con objetivos. <span style="color:var(--gold);">Sí</span> modela el terreno como abstracción (open/mixed/urban: probabilidad de cobertura -1 DICE en ranged, IGNORE COVER lo neutraliza, IGNORE DEFENDED OBSTACLE lo neutraliza en charges) y distribución de fuego (probabilidad de que un atacante NO pueda focusear al modelo más amenazante).
+          <br><br>
+          <span style="color:var(--gold);">Sí</span> modela: stats canónicos, keywords (HEAVY/CRITICAL/CLEAVE/SHOTGUN/AUTOMATIC/BLAST/FLAMETHROWER/FIRE/GAS/SHRAPNEL/CUMBERSOME), TOUGH/STRONG/NEGATE HEAVY,
+          FEAR (Risky Roll al cargar) y NEGATE FEAR, INFILTRATOR (despliegue avanzado, Trench Mole upgrade incluido),
+          Counter-Charge, Marksmanship of the Iron Wall (≈30% trigger rate, requiere elevación),
+          Siege Jezzail Teams (solo armas Siege Jezzail con aliado cercano),
+          Mastery of the Elements (Alchemist da SHRAPNEL a sus armas),
+          Aim ACTION (Sniper Priest, Risky+2 → +2 DICE ranged si pasa, fail cancela activación),
+          Hold Your Fire! (Lt sacrifica activación → enemigo top a 50% damage),
+          Shock Charge (Shocktrooper carga T1 como si fuera engagement, sin esperar mid),
+          God is With Us! (Trench Cleric → BLESSING MARKERS al pool de banda; aliados gastan en Failures para reroll +1 DICE),
+          Onward Christian Soldiers! (aura del Cleric: aliados NEW ANTIOCH ganan NEGATE FEAR efectivo),
+          Memento Mori (War Prophet: 1ª OoA → No Effect, una vida extra),
+          Loudspeakers (War Prophet: aliados PILGRIM cargan T1 como si fuera engagement),
+          Laying on of Hands (Cleric/War Prophet ACTION: ~50% éxito → cura 1 BLOOD MARKER de aliado, 5% Critical → cura 3),
+          Dark Blessing (Wretched OoA → +1 BLESSING MARKER al pool si hay ELITE+HERETIC vivo),
+          Battlefield Demolition (Combat Engineer: Satchel Charge ignora HEAVY filter),
+          Set Mine ACTION (Combat Engineer/Sultanate Sapper en T1, ~80% éxito → mina al pool de banda; chargers enemigos sufren ~25% trigger SHRAPNEL injury, FLYING reduce a 12.5%, NEGATE MINED inmune),
+          Defuse Mine (~50% éxito al chargear con engineer enemigo: anula la mina sin detonar),
+          Puppet Master ACTION (Heretic Priest: ~50% Risky → +1 BLOOD MARKER al elite enemigo más blando; representa pull fuera de cobertura),
+          AMMUNITION (X) (Alchemical Ammunition, Dum-Dum, Tracer, Incendiary, Armour-Piercing — añade keyword al weapon),
+          CUMBERSOME (-1 INJURY MODIFIER al cargar),
+          HEAVY no puede mover y disparar (filtra arma sin STRONG en mid/eng),
+          PISTOL ASSAULT, RELOAD básico, REGENERATE, ARTIFICIAL.
+          <br><br>
+          <span style="opacity:0.85;">No</span> modela aún: Goetic Spells (Court of Serpent: Black Heart, Body of Gold, Slavemaster, Levitate), Tormentor Chains, Eye of Beelzebub (Black Grail Antipope), Fortify ACTION, Price of Greed (Knights of Avarice variant), y otras ACTIONs específicas de variantes.
+          Las bandas con muchas ACTIONs sin modelar suelen rendir <strong>+1 a +3pp por encima</strong> del simulador.
+          Usa los resultados como referencia táctica, no como verdad absoluta.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-battle" style="grid-column:1 / -1;padding:1.5rem;">
+    <div style="max-width:1100px;margin:0 auto;">
+      <!-- Lobby view: list of saved sessions + new game button -->
+      <div id="battle-lobby">
+        <h2 class="panel-title" style="margin-bottom:0.5rem;">📋 Seguimiento de Partida</h2>
+        <p class="panel-subtitle" style="margin-bottom:1.5rem;">
+          Tracking en vivo de tu partida: scenario, status de modelos, BLOOD MARKERS, kills, Glorious Deeds y XP. Las partidas se guardan automáticamente; puedes reabrir cualquiera para continuar o consultar el resultado.
+        </p>
+        <div id="battle-no-warband" class="detail-empty" style="display:none;">
+          <p>No hay ninguna banda cargada. Importa una de Companion en el modo <strong>Banda</strong> primero, luego vuelve aquí para crear una partida.</p>
+        </div>
+        <div id="battle-content" style="display:none;">
+          <div style="background:rgba(127,107,67,0.08);border:1px solid rgba(127,107,67,0.3);padding:1rem;margin-bottom:1.5rem;">
+            <strong>Banda actual:</strong> <span id="battle-band-name">—</span><br>
+            <span style="font-size:0.85em;color:var(--parchment-dim);" id="battle-band-info">—</span>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:0.5rem;color:var(--gold);">Partidas guardadas</h3>
+          <div id="battle-sessions-list" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+        </div>
+      </div>
+
+      <!-- Game view: shown when a battle session is active -->
+      <div id="battle-game" style="display:none;"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Mobile tabs -->
+<nav class="mobile-tabs">
+  <button data-tab="catalogue" class="active">Facción</button>
+  <button data-tab="roster">Banda</button>
+  <button data-tab="detail">Detalle</button>
+</nav>
+
+<!-- Footer -->
+<footer class="app-footer">
+  <span>Warband Forge · Companion offline para Trench Crusade · localStorage</span>
+  <span class="legal">Trench Crusade es propiedad de Factory Fortress Inc. — Esta es una herramienta de fan no oficial. La gestión oficial de bandas se hace en <a href="https://trench-companion.com" target="_blank" rel="noopener" style="color:var(--gold);">Trench Companion</a>.</span>
+</footer>
+
+</div>
+
+<!-- ============ MODO MESA — ficha móvil por miniatura ============ -->
+<div id="table-mode" role="dialog" aria-label="Modo mesa">
+  <div class="tm-top">
+    <div class="tm-top-row">
+      <span class="tm-band"></span>
+      <button type="button" id="tm-close" class="tm-icon" aria-label="Cerrar modo mesa">✕</button>
+    </div>
+    <div class="tm-top-row">
+      <span class="tm-turn">Turno 1</span>
+      <span class="tm-count">0/0 activadas</span>
+    </div>
+    <div class="tm-top-row">
+      <button type="button" id="tm-next-turn" class="tm-top-btn">Pasar turno ▸</button>
+      <button type="button" id="tm-reset" class="tm-top-btn tm-top-btn-dim">Nueva partida</button>
+    </div>
+    <div id="tm-nostore" hidden>Sin guardado: el progreso se perderá al cerrar.</div>
+  </div>
+  <div class="tm-track"></div>
+  <nav class="tm-dots" data-current="0"></nav>
+</div>
+
+<!-- ============ MODALS ============ -->
+
+<div class="modal-backdrop" id="modal-cards-layout">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>🃏 Tarjetas PDF</h3>
+    <p class="panel-subtitle">Elige cuántas tarjetas por folio A4</p>
+    <div class="modal-actions">
+      <button class="btn" data-cards-layout="3x3" title="Tamaño carta Magic, 63×88 mm">9 por folio (tamaño carta)</button>
+      <button class="btn" data-cards-layout="2x2" title="Tarjetas ×1,5, 94,5×132 mm — más legibles impresas">4 por folio (grande)</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-load">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Cargar Banda</h3>
+    <p class="panel-subtitle">Bandas guardadas en este navegador</p>
+    <div id="warband-list"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-save-as">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Guardar Banda</h3>
+    <label>Nombre</label>
+    <input type="text" id="save-name-input" placeholder="ej. Compañía de la Cruz Negra" />
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-do-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-import">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Importar Banda (JSON)</h3>
+    <label>Pega el JSON exportado</label>
+    <textarea id="import-textarea" placeholder='{"name":"...","factionId":"...","models":[...]}'></textarea>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-do-import">Importar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-export">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Exportar Banda</h3>
+    <p class="panel-subtitle">Copia este JSON o descárgalo</p>
+    <textarea id="export-textarea" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="btn-copy-export">Copiar al portapapeles</button>
+      <button class="btn btn-primary" id="btn-download-export">Descargar .json</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COMPANION IMPORT MODAL ============ -->
+<div class="modal-backdrop" id="modal-import-companion">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>⤓ Importar de Trench Companion</h3>
+    <p style="color:var(--parchment);font-size:0.9rem;margin:0.5rem 0 1rem;">
+      Pega aquí el JSON exportado desde
+      <a href="https://trench-companion.com" target="_blank" rel="noopener" style="color:var(--gold);">Trench Companion</a>.
+      En Companion: abre tu banda → menú ⋮ → "Export Warband Information" → copia el JSON.
+    </p>
+    <textarea id="companion-import-textarea"
+              placeholder='{"warband-name":"Mi Banda","models":[...]}'
+              style="width:100%;min-height:240px;font-family:var(--font-mono);font-size:0.8rem;"></textarea>
+    <div id="companion-import-feedback" style="margin-top:0.75rem;font-size:0.85rem;min-height:1.2em;"></div>
+    <details id="refresh-preserve-options" style="margin-top:0.5rem;padding:0.5rem;border:1px solid rgba(127,107,67,0.25);border-radius:3px;font-size:0.85rem;">
+      <summary style="cursor:pointer;color:var(--gold);user-select:none;">⚙ Qué conservar al refrescar (opcional)</summary>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.3rem 1rem;margin-top:0.5rem;">
+        <label><input type="checkbox" data-refresh-preserve="experimentalVariants" checked> Variantes experimentales</label>
+        <label><input type="checkbox" data-refresh-preserve="shoppingList" checked> Lista de la compra</label>
+        <label><input type="checkbox" data-refresh-preserve="freeBattles" checked> Partidas libres</label>
+        <label><input type="checkbox" data-refresh-preserve="campaignIds" checked> Campañas</label>
+        <label><input type="checkbox" data-refresh-preserve="discoveredLocations" checked> Ubicaciones descubiertas</label>
+      </div>
+    </details>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-do-import-companion">Importar como banda nueva</button>
+      <button class="btn" id="btn-do-merge-companion" title="Conserva la progresión de campaña de los modelos que sigan presentes">Re-importar (mantener progresión)</button>
+      <button class="btn" id="btn-do-refresh-companion" title="Re-importa preservando estado local seleccionado">Refrescar (preservar local)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ COMPANION EXPORT MODAL ============ -->
+<div class="modal-backdrop" id="modal-export-companion">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>⤒ Exportar a Trench Companion</h3>
+    <p style="color:var(--parchment);font-size:0.9rem;margin:0.5rem 0 1rem;">
+      Este JSON es compatible con
+      <a href="https://trench-companion.com" target="_blank" rel="noopener" style="color:var(--gold);">Trench Companion</a>.
+      Cópialo o descárgalo. La progresión de campaña (XP, advancements, scars) NO se exporta porque
+      Companion no la soporta — esa información se queda en Forge.
+    </p>
+    <textarea id="companion-export-textarea" readonly
+              style="width:100%;min-height:280px;font-family:var(--font-mono);font-size:0.8rem;"></textarea>
+    <div class="modal-actions">
+      <button class="btn" id="btn-copy-companion-export">Copiar al portapapeles</button>
+      <button class="btn btn-primary" id="btn-download-companion-export">Descargar .json</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-lab-history">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>📜 Histórico de simulaciones</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin:0.5rem 0 1rem;">
+      Resultados guardados en este navegador. Útil para comparar el rendimiento
+      de tu banda antes y después de cambios. <span style="color:var(--parchment-dim);font-size:0.85em;">Máximo 100 entries — las más antiguas se eliminan automáticamente.</span>
+    </p>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap;">
+      <label style="font-size:0.85rem;">
+        <input type="checkbox" id="lab-history-current-only" checked />
+        Solo banda actual
+      </label>
+      <button class="btn" id="btn-lab-history-clear" style="opacity:0.7;margin-left:auto;">✕ Vaciar histórico</button>
+    </div>
+    <div id="lab-history-list" style="max-height:50vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-confirm">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3 id="confirm-title">Confirmar</h3>
+    <p id="confirm-message" style="color:var(--parchment);"></p>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-yes">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST CONTAINER (Fase 6.5) ============ -->
+<div id="toast-container"></div>
+
+<!-- ============ WARBAND CAMPAIGNS MODAL (Fase 7.4) ============ -->
+<div class="modal-backdrop" id="modal-warband-campaigns">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Campañas de la banda</h3>
+    <p id="wbcamp-subtitle" style="color:var(--parchment);font-size:0.85rem;margin:0.25rem 0 1rem;"></p>
+    <div id="wbcamp-list"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CHOOSE-BATTLEKIT RESOLVER MODAL (P2/4) ============ -->
+<div class="modal-backdrop" id="modal-choose-battlekit">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Elegir battlekit</h3>
+    <p id="choose-bk-subtitle" style="color:var(--parchment);font-size:0.85rem;margin:0.25rem 0 1rem;"></p>
+    <div id="choose-bk-list"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GRANT-XP-TO-ELITES RESOLVER MODAL (Fase 5.5) ============ -->
+<div class="modal-backdrop" id="modal-grant-xp-elites">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Asignar XP a ELITES</h3>
+    <p id="grant-xp-subtitle" style="color:var(--parchment);font-size:0.85rem;margin:0.25rem 0 1rem;"></p>
+    <div id="grant-xp-list"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-grant-xp-confirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EXPLORATION OPTION PICKER MODAL (Fase 5.1) ============ -->
+<div class="modal-backdrop" id="modal-exploration-option">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3 id="explopt-title">Elegir opción</h3>
+    <div id="explopt-narrative" style="color:var(--parchment);font-size:0.85rem;font-style:italic;margin:0.5rem 0 1rem;"></div>
+    <div id="explopt-options"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FREE BATTLE WIZARD MODAL (Fase 3) ============ -->
+<div class="modal-backdrop" id="modal-free-battle-wizard">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>⚔ Empezar partida libre</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin:0.25rem 0 1rem;">
+      Las partidas libres alimentan progresión (XP, traumas, Exploration) sin pertenecer a una campaña formal.
+      El contexto se guarda en memoria — si refrescas pierdes la batalla en curso.
+    </p>
+
+    <label for="fbw-name" style="display:block;font-size:0.85rem;margin-bottom:0.25rem;">Nombre (opcional)</label>
+    <input type="text" id="fbw-name" placeholder="Libre · 11 may · vs ..." style="width:100%;margin-bottom:0.75rem;" />
+
+    <label for="fbw-opponent" style="display:block;font-size:0.85rem;margin-bottom:0.25rem;">Oponente</label>
+    <input type="text" id="fbw-opponent" placeholder="Heretic Legions de Marcos" style="width:100%;margin-bottom:0.75rem;" />
+
+    <label for="fbw-scenario" style="display:block;font-size:0.85rem;margin-bottom:0.25rem;">Escenario</label>
+    <select id="fbw-scenario" style="width:100%;margin-bottom:0.75rem;"></select>
+
+    <label for="fbw-dice" style="display:block;font-size:0.85rem;margin-bottom:0.25rem;">
+      Dados de Exploration: <strong id="fbw-dice-value" style="color:var(--gold);">3</strong>
+    </label>
+    <input type="range" id="fbw-dice" min="1" max="10" value="3" step="1" style="width:100%;margin-bottom:1rem;" />
+
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-fbw-confirm">Empezar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADVANCEMENT ROLL MODAL ============ -->
+<div class="modal-backdrop" id="modal-advancement">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>Advancement Roll</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin-top:0;" id="adv-roll-subtitle">
+      Elige 2 Skill Tables, tira 2D6 en cada una, y luego elige una de las 2 Skills resultantes.
+    </p>
+    <div id="adv-roll-content"></div>
+  </div>
+</div>
+
+<!-- ============ TRAUMA ROLL MODAL ============ -->
+<div class="modal-backdrop" id="modal-trauma">
+  <div class="modal modal-md">
+    <button class="modal-close" data-close>×</button>
+    <h3>Trauma Roll (D66)</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin-top:0;" id="trauma-subtitle">
+      Tira 1D6 (decenas) y otro 1D6 (unidades) para consultar la Trauma Table.
+    </p>
+    <div id="trauma-content"></div>
+  </div>
+</div>
+
+<!-- ============ HOUSE RULES — TRAUMA OVERRIDES MODAL ============ -->
+<div class="modal-backdrop" id="modal-house-rules">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>⚙ House Rules — Trauma D66</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin-top:0;">
+      Personaliza entradas de la Trauma Table para tu campaña. Las entradas no editadas usan los valores canónicos. Cambia sólo lo que tu grupo haya pactado modificar.
+    </p>
+    <div id="house-rules-content" style="max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- ============ PROMOTION MODAL ============ -->
+<div class="modal-backdrop" id="modal-promotion">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>Promotion Step — Troops → ELITE</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin-top:0;" id="promotion-subtitle">
+      Construye el Promotion Pool, asigna dados a tus Troops, y tíralos. El primer 6 asciende.
+    </p>
+    <div id="promotion-content"></div>
+  </div>
+</div>
+
+<!-- ============ CANONICAL DEEDS PICKER MODAL ============ -->
+<div class="modal-backdrop" id="modal-canonical-deeds">
+  <div class="modal modal-md">
+    <button class="modal-close" data-close>×</button>
+    <h3>📖 Glorious Deeds canónicas</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin-top:0;">
+      Selecciona una gesta del canon para registrarla. Los nombres y descripciones provienen del Trench Crusade Digital Rulebook.
+    </p>
+    <div id="canonical-deeds-list-content"></div>
+  </div>
+</div>
+
+<!-- ============ REINFORCEMENTS MODAL ============ -->
+<div class="modal-backdrop" id="modal-reinforcements">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>📯 Call for Reinforcements</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin-top:0;" id="reinforcements-subtitle">
+      Decisión irreversible: pierdes Arsenal, Strongbox y los Steps de Exploration y Quartermaster.
+    </p>
+    <div id="reinforcements-content"></div>
+  </div>
+</div>
+
+<!-- ============ CAMPAIGN MODALS ============ -->
+
+<div class="modal-backdrop" id="modal-new-campaign">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Nueva Campaña</h3>
+    <div class="post-game-reporter-banner">
+      <strong>📜 Tracking oficial vive en Trench Companion</strong>
+      Warband Forge guarda los resultados de cada partida de forma local
+      (estadísticas, BLOOD MARKERS, anotaciones tácticas). Para que el XP,
+      los avances y la progresión oficial de tu banda queden bien registrados,
+      apunta cada partida también en el
+      <a href="https://trench-companion.com" target="_blank" rel="noopener">Post Game Reporter de Trench Companion</a>.
+    </div>
+    <label>Nombre</label>
+    <input type="text" id="new-campaign-name" placeholder="ej. Frente del Mosa, Otoño 1916" />
+    <label>Descripción (opcional)</label>
+    <textarea id="new-campaign-desc" style="min-height:80px;font-family:var(--font-mono);font-size:0.78rem;"
+      placeholder="Notas, escenario marco, jugadores…"></textarea>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-do-new-campaign">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LAB 2.0 REPLAY MODAL (Sprint 12) ============ -->
+<div class="modal-backdrop" id="modal-lab2-replay">
+  <div class="modal" style="max-width:900px;">
+    <button class="modal-close" data-close>×</button>
+    <h3 style="margin-bottom:0.5rem;">🎬 Replay batalla espacial</h3>
+    <p style="font-size:0.82em;color:var(--parchment-dim);margin-bottom:0.8rem;">
+      Reproducción 2D de la última batalla simulada. Disparos en línea continua = hit; punteada = miss. ✕ rojo = KO.
+    </p>
+    <canvas id="lab2-replay-canvas" width="780" height="520" style="display:block;background:#1a1410;border:2px solid var(--rust);margin:0 auto;"></canvas>
+    <div style="margin-top:0.8rem;display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+      <button id="btn-lab2-replay-first" class="btn btn-sm" title="Ir al inicio">⏮</button>
+      <button id="btn-lab2-replay-prev"  class="btn btn-sm" title="Anterior">◀</button>
+      <button id="btn-lab2-replay-play"  class="btn btn-sm" title="Play / Pause">▶</button>
+      <button id="btn-lab2-replay-next"  class="btn btn-sm" title="Siguiente">▶</button>
+      <button id="btn-lab2-replay-last"  class="btn btn-sm" title="Ir al final">⏭</button>
+      <span style="margin-left:0.6rem;font-family:var(--font-mono);font-size:0.78em;color:var(--parchment);">
+        Frame <span id="lab2-replay-frame-idx">0</span> / <span id="lab2-replay-frame-total">0</span>
+      </span>
+      <input type="range" id="lab2-replay-slider" min="0" max="0" value="0" style="flex:1;min-width:200px;margin-left:0.6rem;" />
+      <button id="btn-lab2-replay-export-png" class="btn btn-sm" title="Descarga PNG del frame actual">📥 PNG</button>
+      <button id="btn-lab2-replay-export-json" class="btn btn-sm" title="Descarga JSON del replay completo">📥 JSON</button>
+    </div>
+    <div id="lab2-replay-result" style="margin-top:0.6rem;font-family:var(--font-mono);font-size:0.85em;color:var(--parchment);"></div>
+    <details style="margin-top:0.6rem;">
+      <summary style="cursor:pointer;font-size:0.85em;color:var(--gold);">📈 Curva de attrition (avg N batallas)</summary>
+      <canvas id="lab2-stats-canvas" width="780" height="220" style="display:block;background:#1a1410;border:1px solid var(--rust);margin:0.4rem auto;"></canvas>
+      <div style="font-size:0.75em;color:var(--parchment-dim);text-align:center;">
+        Dorado: friendly · Rojo: enemy · X: turno · Y: modelos vivos promedio
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- ============ DISCLAIMER FAN-MADE TOAST ============ -->
+<div id="disclaimer-toast" class="disclaimer-toast">
+  <div class="disclaimer-toast-inner">
+    <strong>⚠ Página fan-made</strong>
+    <p>Warband Forge es una herramienta no oficial creada por fans. Trench Crusade es propiedad de Factory Fortress Inc.</p>
+  </div>
+</div>
+
+<!-- ============ DISCLAIMER FULL MODAL (desde menú config) ============ -->
+<div class="modal-backdrop" id="modal-disclaimer">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>⚠ Disclaimer · Página fan-made</h3>
+    <div style="color:var(--parchment);font-size:0.9rem;line-height:1.6;padding:0.5rem 0;">
+      <p><strong>Warband Forge</strong> es una herramienta no oficial creada por la comunidad de fans de
+      <strong>Trench Crusade</strong>.</p>
+      <p>Trench Crusade y todas sus marcas, ilustraciones, textos canon y propiedad intelectual son propiedad
+      de <a href="https://www.trenchcrusade.com" target="_blank" rel="noopener" style="color:var(--gold);">Factory Fortress Inc.</a></p>
+      <p>Esta aplicación no compite con
+      <a href="https://trench-companion.com" target="_blank" rel="noopener" style="color:var(--gold);">Trench Companion</a>
+      (la herramienta oficial). Warband Forge actúa como companion físico-experimental: importa bandas creadas
+      en TC, te deja experimentar variantes en sandbox, genera tarjetas/battletrackers imprimibles y simula
+      tácticas en el Lab estadístico.</p>
+      <p>Sin afiliación oficial. Sin recogida de datos personales. Tu información vive solo en tu navegador
+      (y en tu cuenta de Google si inicias sesión para sincronizar).</p>
+      <p style="opacity:0.7;font-size:0.82rem;margin-top:1rem;">Versión single-file HTML, código fuente público.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" data-close>Entendido</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ FIREBASE LOGIN MODAL (Sub-FB-D) ============ -->
+<div class="modal-backdrop" id="modal-firebase-login">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>☁ Tu cuenta</h3>
+    <div id="fb-login-not-configured" style="display:none;">
+      <p style="color:var(--parchment);font-size:0.85rem;">
+        No se pudo conectar con la sincronización. Tus bandas siguen guardadas en este navegador.
+      </p>
+    </div>
+    <div id="fb-login-signed-out" style="display:none;text-align:center;padding:1rem 0;">
+      <p style="color:var(--parchment);font-size:0.95rem;margin:0.5rem 0 1rem;">
+        Inicia sesión para que tus bandas, campañas y settings se sincronicen automáticamente entre dispositivos.
+      </p>
+      <button class="btn btn-primary" id="btn-fb-login-google" style="font-size:1rem;padding:0.7rem 1.4rem;background:#fff;color:#333;border:1px solid #ddd;">
+        <span style="margin-right:0.5rem;">🔵</span> Continuar con Google
+      </button>
+      <p style="color:var(--parchment);opacity:0.6;font-size:0.75rem;margin-top:1rem;">
+        Tus datos viven en tu cuenta personal. Nadie más los ve.
+      </p>
+    </div>
+    <div id="fb-login-signed-in" style="display:none;text-align:center;padding:1rem 0;">
+      <img id="fb-user-avatar" src="" alt="" style="width:64px;height:64px;border-radius:50%;border:2px solid var(--gold);display:none;margin:0 auto 0.6rem;"/>
+      <p style="color:var(--gold);font-size:1rem;margin:0.3rem 0;" id="fb-user-name">—</p>
+      <p style="color:var(--parchment);opacity:0.7;font-size:0.8rem;" id="fb-user-email">—</p>
+      <p id="fb-user-sync-status" style="font-size:0.8rem;color:#7fb069;margin-top:0.8rem;">✓ Sincronizado</p>
+      <div class="modal-actions">
+        <button class="btn" id="btn-fb-force-sync" title="Subir el estado actual ahora">⤒ Forzar sync</button>
+        <button class="btn" id="btn-fb-pull-now" title="Descargar estado de la nube ahora">⤓ Restaurar de nube</button>
+        <button class="btn btn-danger" id="btn-fb-logout">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GITHUB OAUTH LOGIN MODAL (Sub-OA-B) ============ -->
+<div class="modal-backdrop" id="modal-github-login">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>🔐 Iniciar sesión con GitHub</h3>
+    <div id="gh-oauth-phase-setup" style="display:none;">
+      <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0;">
+        Primera vez: necesitas crear una OAuth App en tu cuenta GitHub (5 min, una sola vez).
+      </p>
+      <details style="margin:0.5rem 0;padding:0.5rem;border:1px solid rgba(127,107,67,0.3);border-radius:3px;">
+        <summary style="cursor:pointer;color:var(--gold);">📋 Cómo crear la OAuth App</summary>
+        <ol style="font-size:0.82rem;line-height:1.5;color:var(--parchment);padding-left:1.2rem;margin-top:0.5rem;">
+          <li>Ve a <a href="https://github.com/settings/applications/new" target="_blank" rel="noopener" style="color:var(--gold);">github.com/settings/applications/new</a></li>
+          <li>Application name: <code>Warband Forge</code></li>
+          <li>Homepage URL: la URL donde despliegas la app (ej. <code>https://markirov.github.io/Gran-Muro-de-Hierro</code>)</li>
+          <li>Authorization callback URL: la misma URL anterior</li>
+          <li><strong>IMPORTANTE</strong>: marca "Enable Device Flow" ✓</li>
+          <li>Crea la app → copia el <strong>Client ID</strong> (NO necesitas Client Secret)</li>
+          <li>Pega el Client ID abajo y pulsa "Guardar"</li>
+        </ol>
+      </details>
+      <label style="display:block;color:var(--gold);font-size:0.85rem;margin-bottom:0.3rem;">Client ID de tu OAuth App:</label>
+      <input type="text" id="gh-oauth-clientid" placeholder="Iv1.abc123def456..." autocomplete="off" style="width:100%;font-family:var(--font-mono);font-size:0.8rem;"/>
+      <div class="modal-actions">
+        <button class="btn" data-close>Cancelar</button>
+        <button class="btn btn-primary" id="btn-gh-oauth-save-clientid">Guardar Client ID</button>
+      </div>
+    </div>
+
+    <div id="gh-oauth-phase-login" style="display:none;">
+      <p style="color:var(--parchment);font-size:0.9rem;margin:0.4rem 0 0.8rem;">
+        Pulsa el botón. GitHub te dará un código corto. Lo introduces en su web y autorizas. Una vez por dispositivo.
+      </p>
+      <div class="modal-actions">
+        <button class="btn" data-close>Cancelar</button>
+        <button class="btn btn-primary" id="btn-gh-oauth-start-login">🔐 Iniciar login con GitHub</button>
+        <button class="btn" id="btn-gh-oauth-reset-clientid" title="Cambiar Client ID">⚙ Cambiar Client ID</button>
+      </div>
+    </div>
+
+    <div id="gh-oauth-phase-code" style="display:none;text-align:center;">
+      <p style="color:var(--parchment);font-size:0.95rem;margin:0.6rem 0;">
+        1. Pulsa <a id="gh-oauth-verify-link" href="#" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline;">aquí para abrir GitHub</a> (o ya está abierto en otra pestaña)
+      </p>
+      <p style="color:var(--parchment);font-size:0.95rem;margin:0.4rem 0;">
+        2. Introduce este código:
+      </p>
+      <div id="gh-oauth-user-code" style="font-family:var(--font-mono);font-size:2.4rem;font-weight:bold;color:var(--gold);letter-spacing:0.3em;padding:1rem;background:rgba(20,12,8,0.5);border:2px dashed var(--gold);border-radius:4px;margin:1rem auto;display:inline-block;">XXXX-XXXX</div>
+      <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0;">
+        3. Autoriza la app. Esta ventana detecta el login automáticamente.
+      </p>
+      <div id="gh-oauth-polling-status" style="font-size:0.82rem;color:var(--gold);min-height:1.5em;margin-top:0.5rem;">
+        Esperando autorización...
+      </div>
+      <div class="modal-actions">
+        <button class="btn" id="btn-gh-oauth-cancel-polling">Cancelar</button>
+      </div>
+    </div>
+
+    <div id="gh-oauth-phase-done" style="display:none;text-align:center;">
+      <p style="color:#7fb069;font-size:1.1rem;margin:1rem 0;">✓ Sesión iniciada correctamente</p>
+      <p id="gh-oauth-done-detail" style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0;"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" data-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GITHUB BACKUP/RESTORE MODAL (Sub-GH-C) ============ -->
+<div class="modal-backdrop" id="modal-github-sync">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>☁ Sincronización con GitHub Gist</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0 0.8rem;">
+      Guarda todas tus bandas, campañas y settings en un GitHub Gist privado.
+      Sin server propio: solo tu cuenta GitHub.
+    </p>
+    <details style="margin-bottom:0.8rem;padding:0.5rem;border:1px solid rgba(127,107,67,0.3);border-radius:3px;">
+      <summary style="cursor:pointer;color:var(--gold);">📋 Cómo configurar (primera vez)</summary>
+      <ol style="font-size:0.82rem;line-height:1.5;color:var(--parchment);padding-left:1.2rem;margin-top:0.5rem;">
+        <li>Crea un Personal Access Token en
+          <a href="https://github.com/settings/tokens/new?scopes=gist&description=Warband%20Forge%20backup" target="_blank" rel="noopener" style="color:var(--gold);">github.com/settings/tokens</a>
+          con scope <strong>gist</strong>.</li>
+        <li>Copia el token (empieza por <code>ghp_</code>) y pégalo abajo.</li>
+        <li>Pulsa <strong>Backup ahora</strong>. La primera vez crea un gist secreto;
+          siguientes veces sobrescribe el mismo.</li>
+        <li>Para restaurar en otro dispositivo: pega token + Gist ID y pulsa Restaurar.</li>
+      </ol>
+    </details>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:0.5rem 0.8rem;align-items:center;margin-bottom:0.8rem;">
+      <label for="gh-token" style="color:var(--gold);font-size:0.85rem;">Token GitHub:</label>
+      <input type="password" id="gh-token" placeholder="ghp_..." autocomplete="off" style="font-family:var(--font-mono);font-size:0.78rem;"/>
+      <label for="gh-gist-id" style="color:var(--gold);font-size:0.85rem;">Gist ID (vacío = crear nuevo):</label>
+      <input type="text" id="gh-gist-id" placeholder="(vacío para crear nuevo)" autocomplete="off" style="font-family:var(--font-mono);font-size:0.78rem;"/>
+    </div>
+    <div id="gh-sync-status" style="padding:0.5rem;background:rgba(20,12,8,0.4);border-radius:3px;font-size:0.82rem;color:var(--parchment);min-height:1.6em;">
+      Sin sincronizar aún.
+    </div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cerrar</button>
+      <button class="btn" id="btn-gh-restore" title="Descarga estado de gist y reemplaza localStorage">⤓ Restaurar</button>
+      <button class="btn btn-primary" id="btn-gh-backup" title="Sube estado actual al gist">⤒ Backup ahora</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADD SHOPPING ITEM MODAL (SPEC-rediseno-ui Sub-E) ============ -->
+<div class="modal-backdrop" id="modal-add-shopping-cat">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3 id="add-shopping-title">Añadir a wishlist</h3>
+    <p style="color:var(--parchment);font-size:0.82rem;margin:0.3rem 0 0.7rem;" id="add-shopping-subtitle">
+      Selecciona categoría y pulsa "Añadir →" sobre cada item. Puedes añadir varios sin cerrar.
+    </p>
+    <nav class="cat-tabs" id="add-shopping-cat-tabs" style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.6rem;border-bottom:1px solid rgba(127,107,67,0.3);padding-bottom:0.3rem;"></nav>
+    <div id="add-shopping-items" style="max-height:55vh;overflow-y:auto;padding:0.3rem;"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ONBOARDING WELCOME MODAL (Fase 15 PIVOT v2) ============ -->
+<div class="modal-backdrop" id="modal-welcome">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>👋 Bienvenido a Warband Forge</h3>
+    <p style="color:var(--parchment);font-size:0.95rem;line-height:1.5;margin:0.8rem 0;">
+      Companion offline para Trench Crusade. <strong style="color:var(--gold);">No es un builder</strong> — es un acompañante físico-experimental de mesa.
+    </p>
+    <div style="background:rgba(127,107,67,0.1);border:1px solid rgba(127,107,67,0.3);padding:0.8rem;border-radius:4px;margin:0.8rem 0;">
+      <strong style="color:var(--gold);">Flujo típico:</strong>
+      <ol style="margin:0.5rem 0 0;padding-left:1.5rem;color:var(--parchment);font-size:0.88rem;line-height:1.6;">
+        <li>Construye tu banda en <a href="https://trench-companion.com" target="_blank" rel="noopener" style="color:var(--gold);">Trench Companion</a> (oficial)</li>
+        <li>Exporta el JSON desde TC</li>
+        <li>Impórtala en Warband Forge para esa sesión / ciclo</li>
+        <li><strong>🧪 Variantes:</strong> bifurca configuraciones sin tocar la canon</li>
+        <li><strong>🛒 Lista compra:</strong> apunta lo que quieres adquirir, imprime PDF</li>
+        <li><strong>🃏 Tarjetas + ⊞ Battletrackers:</strong> imprime material físico</li>
+        <li><strong>⚔ Lab:</strong> simula tácticas y análisis estratégico</li>
+        <li>Juega la partida con el material físico</li>
+        <li>Anota XP/avances en TC con su Post Game Reporter</li>
+      </ol>
+    </div>
+    <p style="font-size:0.82rem;color:var(--parchment);opacity:0.75;font-style:italic;">
+      <strong style="color:var(--gold);">Trench Companion</strong> construye la banda. <strong style="color:var(--gold);">Warband Forge</strong> la lleva a la mesa, te deja experimentar, y te recuerda qué comprar.
+    </p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-welcome-dismiss">Entendido, empezar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SHOPPING LIST MODAL (Fase 13 PIVOT v2) ============ -->
+<div class="modal-backdrop" id="modal-shopping">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>🛒 Lista de la compra</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0 0.8rem;">
+      Wishlist por banda. Tacha items para moverlos a Histórico (no se borran). Genera PDF imprimible para el hobby shop.
+    </p>
+    <div style="display:flex;gap:0.4rem;flex-wrap:wrap;margin-bottom:0.8rem;">
+      <input type="text" id="shopping-new-name" placeholder="Nombre del item (ej. Long Rifle, Gas Mask, Mercenario X)" style="flex:1;min-width:240px;"/>
+      <select id="shopping-new-type" style="min-width:120px;">
+        <option value="equipment">Equipo</option>
+        <option value="model">Modelo</option>
+      </select>
+      <button class="btn btn-primary" id="btn-shopping-add">+ Añadir</button>
+    </div>
+    <div id="shopping-list-content" style="max-height:55vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cerrar</button>
+      <button class="btn" id="btn-shopping-clear-checked" title="Borra todos los items tachados del histórico">🧹 Limpiar histórico</button>
+      <button class="btn btn-primary" id="btn-shopping-pdf" title="Genera PDF imprimible con casillas físicas">🖨 PDF imprimible</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SANDBOX VARIANTS MODAL (Fase 12 PIVOT v2) ============ -->
+<div class="modal-backdrop" id="modal-sandbox">
+  <div class="modal modal-lg">
+    <button class="modal-close" data-close>×</button>
+    <h3>🧪 Variantes experimentales</h3>
+    <p style="color:var(--parchment);font-size:0.85rem;margin:0.4rem 0 0.8rem;">
+      Bifurca configuraciones sin tocar la banda canon. La canon (Trench Companion) sigue siendo la verdad oficial; las variantes son exploraciones locales.
+    </p>
+    <div style="display:flex;gap:0.5rem;align-items:flex-end;margin-bottom:1rem;">
+      <div style="flex:1;">
+        <label style="display:block;font-size:0.78rem;color:var(--gold);">Nombre de la nueva variante</label>
+        <input type="text" id="sandbox-new-variant-name" placeholder="ej. Silahdar con Long Rifle" style="width:100%;"/>
+      </div>
+      <button class="btn btn-primary" id="btn-sandbox-create">+ Crear variante</button>
+    </div>
+    <div id="sandbox-variants-list" style="display:flex;flex-direction:column;gap:0.6rem;max-height:60vh;overflow-y:auto;"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-add-warband">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Añadir Banda a la Campaña</h3>
+    <p class="panel-subtitle">Selecciona bandas guardadas para incluir</p>
+    <div id="add-warband-list"></div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-reward-defaults">
+  <div class="modal">
+    <button class="modal-close" data-close>×</button>
+    <h3>Recompensas por defecto</h3>
+    <p class="panel-subtitle">Estos valores se sugieren al registrar batallas. Puedes modificarlos puntualmente sin tocar estos defaults.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem;margin-top:0.8rem;">
+      <div>
+        <label>🏆 Victoria</label>
+        <div style="display:flex;gap:0.3rem;align-items:center;margin-top:0.3rem;">
+          <input type="number" id="rd-win-d" min="0" max="500" style="width:60px;" /><span class="budget-unit">👑</span>
+          <input type="number" id="rd-win-g" min="0" max="50" style="width:50px;" /><span class="budget-unit">☼</span>
+        </div>
+      </div>
+      <div>
+        <label>⚖ Empate</label>
+        <div style="display:flex;gap:0.3rem;align-items:center;margin-top:0.3rem;">
+          <input type="number" id="rd-draw-d" min="0" max="500" style="width:60px;" /><span class="budget-unit">👑</span>
+          <input type="number" id="rd-draw-g" min="0" max="50" style="width:50px;" /><span class="budget-unit">☼</span>
+        </div>
+      </div>
+      <div>
+        <label>💀 Derrota</label>
+        <div style="display:flex;gap:0.3rem;align-items:center;margin-top:0.3rem;">
+          <input type="number" id="rd-loss-d" min="0" max="500" style="width:60px;" /><span class="budget-unit">👑</span>
+          <input type="number" id="rd-loss-g" min="0" max="50" style="width:50px;" /><span class="budget-unit">☼</span>
+        </div>
+      </div>
+    </div>
+    <label style="margin-top:1rem;">Recuperación al vender</label>
+    <div style="display:flex;gap:0.3rem;align-items:center;margin-top:0.3rem;">
+      <input type="number" id="rd-sale-pct" min="0" max="100" step="5" style="width:70px;" />
+      <span class="budget-unit">% del coste original</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-reward-defaults">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ POST-BATTLE WIZARD ============ -->
+
+<div class="modal-backdrop" id="modal-wizard">
+  <div class="wizard">
+    <div class="wizard-steps" id="wizard-steps"></div>
+    <div class="wizard-body" id="wizard-body"></div>
+    <div class="wizard-footer">
+      <button class="btn" id="wizard-prev">← Anterior</button>
+      <button class="btn" id="wizard-cancel">Cancelar</button>
+      <button class="btn" id="wizard-skip" style="display:none;" title="Saltar este paso sin registrar datos">↷ Saltar</button>
+      <button class="btn btn-primary" id="wizard-next">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ QUARTERMASTER STEP ============ -->
+
+<div class="modal-backdrop" id="modal-quartermaster">
+  <div class="qm-shell">
+    <div class="qm-header">
+      <div>
+        <h3 id="qm-title">Quartermaster Step</h3>
+        <div class="panel-subtitle" id="qm-subtitle">—</div>
+      </div>
+      <div class="qm-balance">
+        <div class="qm-balance-label">Disponible</div>
+        <div class="qm-balance-value" id="qm-balance-value">— 👑 · — ☼</div>
+        <div class="qm-balance-detail" id="qm-balance-detail">—</div>
+      </div>
+      <button class="btn" id="qm-close">✓ Terminar</button>
+    </div>
+    <div class="qm-tabs" id="qm-tabs">
+      <button class="qm-tab active" data-qmtab="recruit" data-qmtab-campaign-only="1">⊕ Reclutar</button>
+      <button class="qm-tab" data-qmtab="roster">⚔ Roster</button>
+      <button class="qm-tab" data-qmtab="shopping">🛒 Lista</button>
+      <button class="qm-tab" data-qmtab="arsenal">⚓ Arsenal</button>
+      <button class="qm-tab" data-qmtab="status">📊 Estado</button>
+      <button class="qm-tab" data-qmtab="history">📅 Historial</button>
+      <button class="qm-tab" data-qmtab="log" data-qmtab-campaign-only="1">📜 Transacciones</button>
+    </div>
+    <div class="qm-body">
+      <div class="qm-pane qm-pane-recruit" id="qm-pane-recruit"></div>
+      <div class="qm-pane qm-pane-roster" id="qm-pane-roster" style="display:none;"></div>
+      <div class="qm-pane qm-pane-shopping" id="qm-pane-shopping" style="display:none;"></div>
+      <div class="qm-pane qm-pane-arsenal" id="qm-pane-arsenal" style="display:none;"></div>
+      <div class="qm-pane qm-pane-status" id="qm-pane-status" style="display:none;"></div>
+      <div class="qm-pane qm-pane-history" id="qm-pane-history" style="display:none;"></div>
+      <div class="qm-pane qm-pane-log" id="qm-pane-log" style="display:none;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DATA LAYER
+     ============================================================ -->
+<script src="js/01_trench_crusade_game_data.js"></script>
+  <script src="js/02_ability_library.js"></script>
+  <script src="js/03_keyword_glossary_canon_fuente_nica_de_lo.js"></script>
+  <script src="js/04_keyword_library.js"></script>
+  <script src="js/05_weapon_keyword_library.js"></script>
+  <script src="js/06_faction_special_rules_library.js"></script>
+  <script src="js/07_general_terms_library.js"></script>
+  <script src="js/08_stipulation_library.js"></script>
+  <script src="js/09_application_state.js"></script>
+  <script src="js/10_companion_json_importer_phase_a1.js"></script>
+  <script src="js/11_battle_lab_simulator_core_phase_b.js"></script>
+  <script src="js/12_loadout_lab_analyse_single_model_variant.js"></script>
+  <script src="js/13_trauma_step_post_battle_resolution_for_o.js"></script>
+  <script src="js/14_battlekit_deltas_armoury_upgrade_recomme.js"></script>
+  <script src="js/15_persistence.js"></script>
+  <script src="js/16_fase_6_1_shopping_list_helpers.js"></script>
+  <script src="js/17_backlog_p1_3_unified_warband_balance_loo.js"></script>
+  <script src="js/18_fase_6_5_toast_notifications.js"></script>
+  <script src="js/19_fase_3_live_free_battle_state_factory.js"></script>
+  <script src="js/20_cost_calculation.js"></script>
+  <script src="js/21_limit_validation.js"></script>
+  <script src="js/22_battlekit_legality_engine.js"></script>
+  <script src="js/23_rendering.js"></script>
+  <script src="js/24_actions.js"></script>
+  <script src="js/25_modals.js"></script>
+  <script src="js/26_header_actions.js"></script>
+  <script src="js/27_fase_3_free_battle_wizard_ui_handlers.js"></script>
+  <script src="js/28_mobile_tabs.js"></script>
+  <script src="js/29_chunk.js"></script>
+  <script src="js/30_fase_8_convert_campaign_battles_to_free_.js"></script>
+  <script src="js/31_fase_9_filtros_canon_extendido_para_cont.js"></script>
+  <script src="js/32_fase_7_1_warband_battle_history_free_cam.js"></script>
+  <script src="js/33_flag_consumers_usados_por_resolvers_del_.js"></script>
+  <script src="js/34_position_aware_lab_additions.js"></script>
+  <script src="js/35_fase_4_4_pure_xp_helpers_for_the_wizard_.js"></script>
+  <script src="js/36_skill_lookup_helpers_used_by_the_wildcar.js"></script>
+  <script src="js/37_fase_4_5_exploration_helpers_for_the_wiz.js"></script>
+  <script src="js/38_fase_4_6_loot_summary_helper_for_the_qua.js"></script>
+  <script src="js/39_fase_4_7_resumen_save_path_for_free_batt.js"></script>
+  <script src="js/40_fase_5_1_exploration_option_picker_helpe.js"></script>
+  <script src="js/41_fase_5_2_exploration_re_roll_mechanics.js"></script>
+  <script src="js/42_fase_5_3_apply_exploration_option_effect.js"></script>
+  <script src="js/43_fase_5_5_resolve_grant_xp_to_elites_pend.js"></script>
+  <script src="js/44_fase_5_6_arsenal_helpers_add_named_battl.js"></script>
+  <script src="js/45_backlog_p2_4_choose_battlekit_resolver.js"></script>
+  <script src="js/46_house_rules_per_campaign_customization_l.js"></script>
+  <script src="js/47_advancement_trauma_roller.js"></script>
+  <script src="js/48_campaign_ui.js"></script>
+  <script src="js/49_post_battle_wizard.js"></script>
+  <script src="js/50_fase_4_2_placeholder_steps_exploration_q.js"></script>
+  <script src="js/51_mode_switcher_integration.js"></script>
+  <script src="js/52_chunk.js"></script>
+  <script src="js/53_chunk.js"></script>
+  <script src="js/54_cards_battletrackers_system.js"></script>
+  <script src="js/55_lab_2_0_simulaci_n_espacial_sprint_1_fou.js"></script>
+  <script src="js/56_boot.js"></script>
+</body>
+</html>

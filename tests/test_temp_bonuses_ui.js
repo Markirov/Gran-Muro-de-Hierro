@@ -8,11 +8,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
+const HTML_PATH = path.resolve(__dirname, '..', 'public', 'app.html');
 let html = fs.readFileSync(HTML_PATH, 'utf8');
-  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'public', 'css', 'app.css'), 'utf8');
   html += '\n<style>\n' + cssContent + '\n</style>\n';
-  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'public', 'js');
   const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
   html += '\n<script>\n' + jsContentAll + '\n</script>\n';
 
@@ -29,3 +29,4 @@ group('Group 1: tempBonuses UI markup', () => {
 
 console.log(`\n${pass} passed · ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
+

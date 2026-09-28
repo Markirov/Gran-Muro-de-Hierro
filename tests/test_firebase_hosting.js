@@ -35,3 +35,4 @@ ok(!/allow read, write: if true/.test(rules), 'sin acceso abierto');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
+

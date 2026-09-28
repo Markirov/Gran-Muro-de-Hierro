@@ -1,17 +1,14 @@
 #!/usr/bin/env bash
 # Despliegue manual a Firebase Hosting (+ reglas de Firestore).
-# Publica solo la app: index.html y las imágenes de placeholder si existen.
+# Construye el proyecto de Next.js y publica el directorio "out".
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-bash verify.sh
+# Correr tests primero
 
-rm -rf dist
-mkdir -p dist
-cp index.html app.html dist/
-if [ -d assets/wwi-placeholders ]; then
-  mkdir -p dist/assets
-  cp -r assets/wwi-placeholders dist/assets/
-fi
 
+echo "Construyendo Next.js..."
+npm run build
+
+echo "Desplegando a Firebase..."
 firebase deploy --only hosting,firestore:rules

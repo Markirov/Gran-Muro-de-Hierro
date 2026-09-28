@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #111;
+}
+
+.landing-bg {
+  background-image: linear-gradient(rgba(17,17,17,0.9), rgba(17,17,17,0.9)), url('/assets/wwi-placeholders/bg.jpg');
+  background-size: cover;
+  background-position: center;
+}

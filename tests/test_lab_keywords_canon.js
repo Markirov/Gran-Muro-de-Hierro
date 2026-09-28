@@ -8,13 +8,13 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const ROOT = path.resolve(__dirname, '..');
-let html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8');
-  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'css', 'app.css'), 'utf8');
+let html = fs.readFileSync(path.join(ROOT, 'public', 'app.html'), 'utf8');
+  const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'public', 'css', 'app.css'), 'utf8');
   html += '\n<style>\n' + cssContent + '\n</style>\n';
-  const JS_DIR_ALL = path.resolve(__dirname, '..', 'js');
+  const JS_DIR_ALL = path.resolve(__dirname, '..', 'public', 'js');
   const jsContentAll = fs.readdirSync(JS_DIR_ALL).filter(x => x.endsWith('.js')).map(x => fs.readFileSync(path.join(JS_DIR_ALL, x), 'utf8')).join('\n');
   html += '\n<script>\n' + jsContentAll + '\n</script>\n';
-const JS_DIR = path.resolve(__dirname, '..', 'js');
+const JS_DIR = path.resolve(__dirname, '..', 'public', 'js');
 const jsFiles = fs.readdirSync(JS_DIR).filter(f => f.endsWith('.js')).sort();
 const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join('\n');
 const bootIdx = js.search(/\nfunction boot\(\)/);
@@ -123,3 +123,4 @@ ok(irCalls.length === 1, 'FLAMETHROWER: solo el objetivo (sin objetivos extra) â
 W.successRollWithBlessing_lab = orig.SR; W.injuryRoll_lab = orig.IR; W.applyTerrainCoverModifier = orig.cover;
 console.log('\n' + pass + ' passed Â· ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
+
