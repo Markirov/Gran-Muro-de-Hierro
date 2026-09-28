@@ -1,0 +1,77 @@
+<style>
+/* CSS para la nueva Home */
+#panel-home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 2rem;
+}
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  max-width: 800px;
+  width: 100%;
+}
+.home-btn {
+  background: var(--rust-dark);
+  border: 1px solid var(--rust);
+  border-radius: 4px;
+  padding: 3rem 1rem;
+  color: var(--gold);
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.home-btn:hover {
+  background: var(--rust);
+  color: var(--parchment);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.home-btn-icon {
+  font-size: 3rem;
+  opacity: 0.8;
+}
+.home-btn-desc {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--parchment-dim);
+  text-transform: none;
+  letter-spacing: normal;
+}
+</style>
+
+<section class="panel panel-fullwidth" id="panel-home" style="display:flex;">
+  <div class="home-grid">
+    <button class="home-btn" data-home-nav="banda">
+      <span class="home-btn-icon">⚔</span>
+      Gestor de Bandas
+      <span class="home-btn-desc">Crear, importar y gestionar tus warbands</span>
+    </button>
+    <button class="home-btn" data-home-nav="campana">
+      <span class="home-btn-icon">📚</span>
+      Campañas
+      <span class="home-btn-desc">Juega crónicas narrativas y progresión</span>
+    </button>
+    <button class="home-btn" data-home-nav="lab">
+      <span class="home-btn-icon">🔬</span>
+      Laboratorio
+      <span class="home-btn-desc">Simula batallas y cruza estadísticas</span>
+    </button>
+    <button class="home-btn" data-home-nav="battle">
+      <span class="home-btn-icon">📋</span>
+      Partida Libre
+      <span class="home-btn-desc">Juega una partida sin afectar a campañas</span>
+    </button>
+  </div>
+</section>
