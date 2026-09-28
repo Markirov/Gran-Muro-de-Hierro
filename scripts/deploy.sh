@@ -8,7 +8,7 @@ bash verify.sh
 
 rm -rf dist
 mkdir -p dist
-cp index.html dist/
+cp index.html app.html dist/
 if [ -d assets/wwi-placeholders ]; then
   mkdir -p dist/assets
   cp -r assets/wwi-placeholders dist/assets/

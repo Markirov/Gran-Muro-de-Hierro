@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const file = process.argv[2] || path.join(__dirname, '..', 'index.html');
+const file = process.argv[2] || path.join(__dirname, '..', 'app.html');
 const html = fs.readFileSync(file, 'utf8');
 const re = /<script>([\s\S]*?)<\/script>/g;
 let m, n = 0;
@@ -12,7 +12,7 @@ while ((m = re.exec(html))) {
   n++;
   const offset = html.slice(0, m.index).split('\n').length - 1;
   try {
-    new vm.Script(m[1], { filename: 'index.html' });
+    new vm.Script(m[1], { filename: 'app.html' });
   } catch (e) {
     const line = (e.stack.match(/index\.html:(\d+)/) || [])[1];
     console.error(`check-syntax: error en <script> #${n}` +
@@ -20,5 +20,5 @@ while ((m = re.exec(html))) {
     process.exit(1);
   }
 }
-if (n === 0) { console.error('check-syntax: no se encontró ningún <script> inline'); process.exit(1); }
+if (n === 0) { console.error('check-syntax: no se encontró ningún <script> inline en app.html'); process.exit(1); }
 console.log(`check-syntax: OK (${n} script inline)`);

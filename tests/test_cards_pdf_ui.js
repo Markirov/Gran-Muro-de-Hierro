@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const html = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
+const html = fs.readFileSync(path.resolve(__dirname, '..', 'app.html'), 'utf8');
 
 let pass = 0, fail = 0;
 function ok(cond, msg) { if (cond) { console.log('  ✓ ' + msg); pass++; } else { console.log('  ✗ ' + msg); fail++; } }

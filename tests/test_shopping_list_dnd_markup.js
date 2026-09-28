@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const HTML_PATH = path.resolve(__dirname, '..', 'index.html');
+const HTML_PATH = path.resolve(__dirname, '..', 'app.html');
 const html = fs.readFileSync(HTML_PATH, 'utf8');
 
 let pass = 0, fail = 0;

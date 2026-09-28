@@ -6,7 +6,7 @@ const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const ROOT = path.resolve(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const html = fs.readFileSync(path.join(ROOT, 'app.html'), 'utf8');
 const js = html.match(/<script>([\s\S]*?)<\/script>\s*<\/body>/)[1];
 const bootIdx = js.search(/\nfunction boot\(\)/);
 const dom = new JSDOM(html.replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });

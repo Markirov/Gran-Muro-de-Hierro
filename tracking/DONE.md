@@ -2,6 +2,8 @@
 
 > Cronológico inverso — lo más reciente arriba. Cada entrada: `(fecha, Rol (Herramienta), motivo)` + qué se hizo y cómo se verificó. Al superar ~1500 líneas, archiva lo antiguo a `archive/DONE-<año>-Q<trimestre>.md`.
 
+- [x] **Split Arquitectónico: Landing separada del Monolito** (2026-09-29, Lead Developer (Antigravity), petición de Marcos): Se ha renombrado el monstruoso `index.html` original de 43,000 líneas a `app.html` para eludir la colisión letal de estilos. Se ha creado un nuevo `index.html` virgen dedicado estrictamente al "Landing Page" (4 botones y background). Los enlaces apuntan a `app.html?mode=X` y el simulador captura el query param para arrancar de forma limpia. Se actualizaron las referencias a `index.html` en los 80+ tests de jsdom, `deploy.sh` y el hook `check-syntax.js`.
+
 - [x] **Despliegue a Firebase con el nuevo rediseño UI** (2026-09-29, Lead Developer (Antigravity), petición de Marcos): Empaquetado en `dist/` y publicado en Firebase Hosting (murodehierrodelsultanato.web.app). Se ejecutó el pipeline manual desde PowerShell por incompatibilidad de Node en el entorno `bash` de Windows, asegurando que `index.html` y las imágenes WWI llegaran intactas.
 
 - [x] **Remodelación de UI de Bandas y Home Global** (2026-09-29, Lead Developer (Antigravity), petición de Marcos): Implementado el plan `PLAN_2026-09-29_gestor_bandas.md`. Se añadió una landing page global (Home) con 4 botones principales (Bandas, Campañas, Lab, Partida). Al entrar en Bandas, se separaron las responsabilidades: galería de "Mis Bandas", vista limpia de "Creación" (Manual / Companion) y "Roster". Todo implementado inyectando en `index.html` los nuevos contenedores DOM y actualizando el `setMode` de JS. Verificado con `scripts/check-syntax.js` y tests.
