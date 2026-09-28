@@ -3983,7 +3983,61 @@ body[data-side="fallen"] .qm-roster-card { border-left-color: var(--fallen-blood
 body[data-side="fallen"] .qm-log-entry .qm-log-amount.refund { color: var(--fallen-blood-bright); }
 
 
+
+/* =======================================
+ * ROBUST UI CSS OVERRIDES
+ * ======================================= */
+/* HOME MODE */
+body.mode-home main > .panel { display: none !important; }
+body.mode-home #panel-home { display: flex !important; }
+body.mode-home .mode-switcher .mode-btn { display: none !important; }
+body.mode-home .header-actions { display: none !important; }
+body.mode-home .campaign-breadcrumb { display: none !important; }
+body.mode-home .banda-subtabs { display: none !important; }
+body.mode-home .faction-sidebar-toggle { display: none !important; }
+
+/* ALL OTHER MODES: hide home */
+body:not(.mode-home) #panel-home { display: none !important; }
+
+/* BANDA MODE: hide lab, battle, etc. */
+body.mode-banda #panel-lab,
+body.mode-banda #panel-battle { display: none !important; }
+
+/* BANDA VIEW: LIST */
+body.mode-banda.banda-view-list #view-bandas-list { display: block !important; }
+body.mode-banda.banda-view-list main > .panel:not(#view-bandas-list) { display: none !important; }
+body.mode-banda.banda-view-list .banda-subtabs { display: none !important; }
+body.mode-banda.banda-view-list .faction-sidebar-toggle { display: none !important; }
+
+/* BANDA VIEW: CREATE */
+body.mode-banda.banda-view-create #view-banda-create { display: block !important; }
+body.mode-banda.banda-view-create main > .panel:not(#view-banda-create) { display: none !important; }
+body.mode-banda.banda-view-create .banda-subtabs { display: none !important; }
+body.mode-banda.banda-view-create .faction-sidebar-toggle { display: none !important; }
+
+/* BANDA VIEW: ROSTER */
+body.mode-banda.banda-view-roster #view-bandas-list,
+body.mode-banda.banda-view-roster #view-banda-create { display: none !important; }
+body.mode-banda.banda-view-roster #panel-catalogue { display: block !important; }
+body.mode-banda.banda-view-roster #panel-bands-list { display: none !important; }
+body.mode-banda.banda-view-roster #panel-faction-catalogue { display: block !important; }
+
+/* Fix Roster layout so it doesn't span full width over the catalogue */
+body.mode-banda.banda-view-roster #panel-roster {
+  grid-column: auto !important; 
+}
+
+/* LAB, BATTLE, CAMPANA modes shouldn't show the new list/create panels */
+body.mode-lab #view-bandas-list, body.mode-lab #view-banda-create,
+body.mode-battle #view-bandas-list, body.mode-battle #view-banda-create,
+body.mode-campana #view-bandas-list, body.mode-campana #view-banda-create {
+  display: none !important;
+}
+/* ======================================= */
+
 /* CSS para la nueva Home */
+body[data-mode="home"] .campaign-breadcrumb { display: none !important; }
+
 #panel-home {
   grid-column: 1 / -1; /* spans full width in the grid */
   display: flex;
@@ -4566,7 +4620,7 @@ body.table-mode-open { overflow: hidden; }
 <main>
 
   <!-- GESTOR DE BANDAS: LISTA FULLSCREEN -->
-  <section class="panel" id="view-bandas-list" style="display:none; grid-column: 1 / -1; padding: 2rem;">
+  <section class="panel" id="view-bandas-list" style="grid-column: 1 / -1; padding: 2rem;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 2rem; max-width:1000px; margin-left:auto; margin-right:auto;">
       <h2>Tus Bandas</h2>
       <button class="btn btn-primary" id="btn-bandas-list-create" style="font-size:1.2rem; padding: 0.8rem 1.5rem;">+ Crear Banda</button>
@@ -4577,7 +4631,7 @@ body.table-mode-open { overflow: hidden; }
   </section>
 
   <!-- GESTOR DE BANDAS: CREACIÓN -->
-  <section class="panel" id="view-banda-create" style="display:none; grid-column: 1 / -1; padding: 2rem;">
+  <section class="panel" id="view-banda-create" style="grid-column: 1 / -1; padding: 2rem;">
     <div style="max-width:800px; margin:0 auto;">
       <button class="btn" id="btn-banda-create-back" style="margin-bottom: 1.5rem;">← Volver a Mis Bandas</button>
       <h2 style="margin-bottom: 2rem;">Nueva Banda</h2>
@@ -4604,7 +4658,7 @@ body.table-mode-open { overflow: hidden; }
 
 
   <!-- HOME LANDING -->
-  <section class="panel" id="panel-home" style="display:none;">
+  <section class="panel" id="panel-home">
     <div class="home-grid">
       <button class="home-btn" data-home-nav="banda">
         <span class="home-btn-icon">⚔</span>
@@ -34681,38 +34735,16 @@ let currentBandaView = 'list'; // 'list', 'create', 'roster'
 function setBandaView(view) {
   currentBandaView = view;
   
-  const listEl = document.getElementById('view-bandas-list');
-  const createEl = document.getElementById('view-banda-create');
-  
-  const catEl = document.getElementById('panel-catalogue');
-  const rosterEl = document.getElementById('panel-roster');
-  const detailEl = document.getElementById('panel-detail');
-  const subtabs = document.getElementById('banda-subtabs');
-  const actBanda = document.getElementById('actions-banda');
-
-  // Hide everything first in Banda mode
-  if (listEl) listEl.style.display = 'none';
-  if (createEl) createEl.style.display = 'none';
-  if (catEl) catEl.style.display = 'none'; // We hide the old left sidebar mostly, except when manually creating
-  if (rosterEl) rosterEl.style.display = 'none';
-  if (detailEl) detailEl.style.display = 'none';
-  if (subtabs) subtabs.style.display = 'none';
-  if (actBanda) actBanda.style.display = 'none';
+  // Set body classes for robust CSS targeting
+  document.body.classList.remove('banda-view-list', 'banda-view-create', 'banda-view-roster');
+  document.body.classList.add('banda-view-' + view);
 
   if (STATE.mode !== 'banda') return;
 
   if (view === 'list') {
-    if (listEl) listEl.style.display = '';
     renderBandaGrid();
-  } else if (view === 'create') {
-    if (createEl) createEl.style.display = '';
   } else if (view === 'roster') {
-    if (rosterEl) rosterEl.style.display = '';
-    if (detailEl) detailEl.style.display = '';
-    if (subtabs) subtabs.style.display = '';
-    if (actBanda) actBanda.style.display = '';
-    // Make roster wider if left sidebar is hidden
-    if (rosterEl) rosterEl.style.gridColumn = '1 / 3'; // Example width adjust
+    // If the faction catalogue was previously closed, we ensure the UI is clean
   }
 }
 
@@ -34782,34 +34814,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const btnCreateManual = document.getElementById('btn-create-manual');
   if (btnCreateManual) btnCreateManual.addEventListener('click', () => {
-    const cat = document.getElementById('panel-catalogue');
-    if (cat) cat.style.display = '';
-    const oldMenu = document.getElementById('panel-faction-catalogue');
-    if (oldMenu) oldMenu.style.display = '';
-    const oldBands = document.getElementById('panel-bands-list');
-    if (oldBands) oldBands.style.display = 'none';
-    
-    // Hide create panel
-    const createEl = document.getElementById('view-banda-create');
-    if (createEl) createEl.style.display = 'none';
+    // We create a blank manual warband and jump to roster
+    STATE.warband = {
+      id: generateId('wb'),
+      name: 'Nueva Banda',
+      factionId: '',
+      cost: 0,
+      modelsCount: 0,
+      models: []
+    };
+    STATE.warbandId = STATE.warband.id;
+    try { localStorage.setItem(STATE_KEY + '_warbandId', STATE.warbandId); } catch(e){}
+    setBandaView('roster');
+    renderAll();
   });
 });
 
 function setMode(mode) {
   STATE.mode = mode;
   try { localStorage.setItem(STATE_KEY + '_mode', mode); } catch (e) {}
-  document.body.setAttribute('data-mode', STATE.mode);
+  
+  document.body.setAttribute('data-mode', mode);
   document.querySelectorAll('.mode-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
-  
-  // Set body attribute for css targeting
-  document.body.setAttribute('data-mode', mode);
-
   ['banda','campana','lab','battle','home'].forEach(m => {
     document.body.classList.toggle('mode-' + m, m === mode);
   });
 
+  // Headers actions
   const aBanda = document.getElementById('actions-banda');
   if (aBanda) aBanda.style.display = mode === 'banda' ? '' : 'none';
   const aCamp = document.getElementById('actions-campana');
@@ -34819,48 +34852,15 @@ function setMode(mode) {
   const aBattle = document.getElementById('actions-battle');
   if (aBattle) aBattle.style.display = mode === 'battle' ? '' : 'none';
 
-  // Panels
-  const homePanel = document.getElementById('panel-home');
-  const labPanel = document.getElementById('panel-lab');
-  const battlePanel = document.getElementById('panel-battle');
-  const catPanel = document.getElementById('panel-catalogue');
-  const rosterPanel = document.getElementById('panel-roster');
-  const detailPanel = document.getElementById('panel-detail');
-  const varPanel = document.getElementById('panel-variantes');
-  const shopPanel = document.getElementById('panel-shopping');
+  // We no longer rely on JS style.display manipulation for the panels.
+  // The CSS 'ROBUST UI CSS OVERRIDES' handles all visibility safely.
   
-  if (mode === 'home') {
-    if (homePanel) homePanel.style.display = '';
-    if (labPanel) labPanel.style.display = 'none';
-    if (battlePanel) battlePanel.style.display = 'none';
-    if (catPanel) catPanel.style.display = 'none';
-    if (rosterPanel) rosterPanel.style.display = 'none';
-    if (detailPanel) detailPanel.style.display = 'none';
-    if (varPanel) varPanel.style.display = 'none';
-    if (shopPanel) shopPanel.style.display = 'none';
-    const subtabs = document.getElementById('banda-subtabs');
-    if (subtabs) subtabs.style.display = 'none';
+  if (mode === 'banda') {
+    setBandaView(STATE.warband ? 'roster' : 'list');
   } else if (mode === 'lab') {
-    if (homePanel) homePanel.style.display = 'none';
-    if (labPanel) labPanel.style.display = '';
-    if (battlePanel) battlePanel.style.display = 'none';
-    if (catPanel) catPanel.style.display = 'none';
-    if (rosterPanel) rosterPanel.style.display = 'none';
-    if (detailPanel) detailPanel.style.display = 'none';
-    renderLab();
+    if (typeof renderLab === 'function') renderLab();
   } else if (mode === 'battle') {
-    if (labPanel) labPanel.style.display = 'none';
-    if (battlePanel) battlePanel.style.display = '';
-    if (catPanel) catPanel.style.display = 'none';
-    if (rosterPanel) rosterPanel.style.display = 'none';
-    if (detailPanel) detailPanel.style.display = 'none';
     if (typeof renderBattle === 'function') renderBattle();
-  } else {
-    if (labPanel) labPanel.style.display = 'none';
-    if (battlePanel) battlePanel.style.display = 'none';
-    if (catPanel) catPanel.style.display = '';
-    if (rosterPanel) rosterPanel.style.display = '';
-    if (detailPanel) detailPanel.style.display = '';
   }
 
   // Mobile tabs
