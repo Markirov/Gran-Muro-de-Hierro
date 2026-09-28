@@ -5,7 +5,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 8693,
+      "htmlSize": 8681,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -114,6 +114,34 @@
         "x-next-revalidate-tag-token"
       ]
     },
+    "/bandas/crear": {
+      "routeType": "page",
+      "response": "complete",
+      "compute": "static",
+      "htmlSize": 13514,
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/bandas/crear",
+      "dataRoute": "/bandas/crear.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/favicon.ico": {
       "initialHeaders": {
         "cache-control": "public, max-age=0, must-revalidate",
@@ -150,8 +178,8 @@
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "d2d9e40354ea92827b1d255ec3d5fdb3",
-    "previewModeSigningKey": "144bd73f35cc2ae709dc7155c6dfe3a082db479e00abd0b4f6872e3eb3674d50",
-    "previewModeEncryptionKey": "e4ba15093b9c6c3bc866ad59bb2f1b03b7a035af02314469eb3c63643768b625"
+    "previewModeId": "497207d125114dff84f7030563a6ec92",
+    "previewModeSigningKey": "a69e929b81324d79ee574ae877ad4f41c71aec27c2f87fa99609e2b99d60939b",
+    "previewModeEncryptionKey": "fcc1447b276de32cd255c5c12eb87a767753a576d97a599ee891a040b963c7ce"
   }
 }

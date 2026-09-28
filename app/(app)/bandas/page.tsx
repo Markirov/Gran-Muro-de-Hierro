@@ -33,10 +33,7 @@ export default function BandasPage() {
   };
 
   const handleCreate = () => {
-    localStorage.removeItem('warband-forge-v1:current');
-    localStorage.setItem('wf.ui.leftPanelView', 'catalogue');
-    localStorage.setItem('wf.mode', 'banda');
-    window.location.href = '/app.html?mode=banda';
+    router.push('/bandas/crear');
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {

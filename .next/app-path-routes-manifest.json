@@ -1,4 +1,5 @@
 {
+  "/(app)/bandas/crear/page": "/bandas/crear",
   "/(app)/bandas/page": "/bandas",
   "/_global-error/page": "/_global-error",
   "/_not-found/page": "/_not-found",
