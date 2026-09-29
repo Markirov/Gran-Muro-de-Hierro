@@ -14,6 +14,7 @@ import {
 } from '../../../lib/cost_calculation';
 import { classifyBattlekitItem } from '../../../lib/battlekit_legality_engine';
 import { KEYWORD_LIBRARY } from '../../../data/04_keyword_library';
+import { FACTIONS } from '../../../data/factions';
 
 interface Props {
   wb: any;
@@ -60,20 +61,20 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
 
   // CATEGORIES
   const cats = [
-    ['ranged', 'Ranged Weapons'],
-    ['melee', 'Melee Weapons'],
-    ['grenades', 'Grenades'],
-    ['shields', 'Shields'],
-    ['armour', 'Armour'],
-    ['equipment', 'Equipment'],
+    ['ranged', '⌖ Armas a Distancia'],
+    ['melee', '⚔ Armas Cuerpo a Cuerpo'],
+    ['grenades', '💣 Granadas'],
+    ['shields', '🛡 Escudos'],
+    ['armour', '⛨ Armadura'],
+    ['equipment', '🎒 Equipo & Objetos'],
   ];
   if (unit.id === 'anchorite-shrine') {
-    cats.push(['anchoriteRanged', 'Anchorite Ranged Weapons']);
-    cats.push(['anchoriteBattlekit', 'Anchorite Battlekit']);
+    cats.push(['anchoriteRanged', '⌖ Armas a Distancia (Anchorite)']);
+    cats.push(['anchoriteBattlekit', '🎒 Equipo (Anchorite)']);
   }
 
   const unitAbilities = displayAbilitiesForCard(model, unit).map((a: any) => a.name);
-  const faction = require('../../../data/factions').FACTIONS.find((f: any) => f.id === wb.factionId);
+  const faction = FACTIONS.find((f: any) => f.id === wb.factionId);
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -125,74 +126,100 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
 
       <div className="p-4 space-y-4">
 
-      {/* KEYWORDS */}
-      {effKeywords.length > 0 && (
-        <div className="bg-[#1a0f0a] border border-[#5c3a21] rounded p-3">
-          <div className="text-xs uppercase text-[#9e9178] font-bold mb-2">Keywords</div>
-          <div className="flex flex-wrap gap-2">
-            {effKeywords.map((k: string) => {
-              const isSpecial = k === 'ELITE' || k === 'LEADER';
-              const isFromUpgrade = !(unit.keywords || []).includes(k);
-              return (
-                <span 
-                  key={k} 
-                  title={KEYWORD_LIBRARY[k] || ''}
-                  className={`px-2 py-0.5 text-xs rounded border ${
-                    isSpecial ? 'bg-[#5c3a21] border-[#b8863c] text-[#e2d4b7]' : 'bg-[#2a1610] border-[#5c3a21] text-[#9e9178]'
-                  } ${isFromUpgrade ? 'italic' : ''}`}
-                >
-                  {k}
-                </span>
-              );
-            })}
+      {/* KEYWORDS & ABILITIES */}
+      <div className="grid grid-cols-1 gap-4">
+        {effKeywords.length > 0 && (
+          <div>
+            <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-2">Keywords</div>
+            <div className="flex flex-wrap gap-2">
+              {effKeywords.map((k: string) => {
+                const isSpecial = k === 'ELITE' || k === 'LEADER';
+                const isFromUpgrade = !(unit.keywords || []).includes(k);
+                return (
+                  <span 
+                    key={k} 
+                    title={KEYWORD_LIBRARY[k] || ''}
+                    className={`px-3 py-1 text-xs uppercase tracking-wider rounded-full border ${
+                      isSpecial 
+                        ? 'bg-gradient-to-r from-[#5c3a21] to-[#3a2110] border-[#b8863c] text-[#e2d4b7] shadow-[0_0_8px_rgba(184,134,60,0.2)]' 
+                        : 'bg-[#0a0503] border-[#3a2110] text-[#9e9178]'
+                    } ${isFromUpgrade ? 'border-dashed' : ''}`}
+                  >
+                    {k} {isFromUpgrade && <span className="text-[#b8863c] ml-1">*</span>}
+                  </span>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ABILITIES */}
-      {unitAbilities.length > 0 && (
-        <div className="bg-[#1a0f0a] border border-[#5c3a21] rounded p-3">
-          <div className="text-xs uppercase text-[#9e9178] font-bold mb-2">Habilidades</div>
-          <ul className="list-disc list-inside text-sm text-[#e2d4b7] space-y-1">
-            {unitAbilities.map((a: string, i: number) => <li key={i}>{a}</li>)}
-          </ul>
-        </div>
-      )}
+        {unitAbilities.length > 0 && (
+          <div className="mt-2">
+            <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-2 border-b border-[#3a2110] pb-1">Reglas Especiales</div>
+            <ul className="text-sm text-[#e2d4b7] space-y-2">
+              {unitAbilities.map((a: string, i: number) => (
+                <li key={i} className="flex items-start gap-2 bg-[#0a0503] p-2 rounded border border-[#3a2110]">
+                  <span className="text-[#b8863c] mt-0.5">✦</span>
+                  <span className="font-serif tracking-wide">{a}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
 
       {/* UPGRADES */}
       {allUpgrades.length > 0 && (
-        <div className="bg-[#1a0f0a] border border-[#5c3a21] rounded p-3">
-          <div className="text-xs uppercase text-[#b8863c] font-bold mb-2">Mejoras (Upgrades)</div>
-          <div className="space-y-2">
+        <div className="bg-[#0a0503] border border-[#3a2110] rounded-xl shadow-lg overflow-hidden mt-6">
+          <div className="bg-gradient-to-r from-[#2a1610] to-[#0a0503] border-b border-[#3a2110] p-3 flex items-center gap-2">
+            <span className="text-[#b8863c] text-lg">★</span>
+            <span className="text-sm uppercase tracking-widest font-bold text-[#e2d4b7]">Mejoras (Upgrades)</span>
+          </div>
+          <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             {allUpgrades.map((up: any) => {
               const isActive = activeUpgrades.includes(up.id);
               const upCls = classifyUpgrade(up, model, unit, wb);
               const upBlocked = !isActive && upCls.state === 'disabled';
               return (
-                <div key={up.id} className={`p-2 border rounded ${isActive ? 'bg-[#5c3a21]/20 border-[#b8863c]' : 'bg-[#2a1610] border-[#5c3a21]'}`}>
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="font-bold text-[#e2d4b7] text-sm">
-                      {up.name} {up._fromVariant && <span className="text-xs text-[#b8863c] ml-1">⚜ variante</span>}
+                <div 
+                  key={up.id} 
+                  onClick={() => !upBlocked && handleToggleUpgrade(up.id)}
+                  className={`relative p-3 border-2 rounded-lg transition-all cursor-pointer group flex flex-col justify-between ${
+                    isActive 
+                      ? 'bg-gradient-to-br from-[#2a1610] to-[#1a0f0a] border-[#b8863c] shadow-[0_0_10px_rgba(184,134,60,0.1)]' 
+                      : upBlocked 
+                        ? 'bg-[#1a0f0a]/50 border-red-900/30 opacity-60 cursor-not-allowed'
+                        : 'bg-[#1a0f0a] border-[#3a2110] hover:border-[#b8863c]/50 hover:bg-[#2a1610]'
+                  }`}
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-1">
+                      <div className={`font-bold text-sm ${isActive ? 'text-[#b8863c]' : 'text-[#e2d4b7]'}`}>
+                        {up.name} {up._fromVariant && <span className="text-[10px] text-[#b8863c] ml-1 uppercase tracking-widest bg-black/40 px-1 rounded border border-[#3a2110]">Variante</span>}
+                      </div>
+                      <div className="text-xs font-bold text-[#9e9178] bg-black/30 px-1.5 py-0.5 rounded shadow-inner">
+                        +{up.cost} {up.currency}
+                      </div>
                     </div>
-                    <div className="text-xs text-[#9e9178]">+{up.cost} {up.currency}</div>
+                    {up.note && <div className="text-[10px] text-[#9e9178] mb-3 leading-tight">{up.note}</div>}
                   </div>
-                  {up.note && <div className="text-xs text-[#9e9178] mb-2">{up.note}</div>}
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => handleToggleUpgrade(up.id)}
-                      disabled={upBlocked}
-                      className={`text-xs px-2 py-1 rounded transition-colors ${
-                        isActive 
-                          ? 'bg-[#b8863c] text-[#1a0f0a] font-bold' 
-                          : upBlocked 
-                            ? 'bg-red-900/20 text-red-500/50 cursor-not-allowed'
-                            : 'bg-[#5c3a21] text-[#e2d4b7] hover:bg-[#b8863c]'
-                      }`}
-                      title={upBlocked ? upCls.reason : ''}
-                    >
-                      {isActive ? '✓ Activo' : 'Activar'}
-                    </button>
-                    {upBlocked && <span className="text-[0.65rem] text-red-500">{upCls.reason}</span>}
+                  
+                  <div className="flex justify-between items-center mt-2 border-t border-[#3a2110]/50 pt-2">
+                    {upBlocked ? (
+                      <span className="text-[10px] text-red-500 uppercase tracking-widest flex items-center gap-1">
+                        <span className="text-sm">⚠</span> {upCls.reason}
+                      </span>
+                    ) : (
+                      <span className={`text-[10px] uppercase tracking-widest font-bold ${isActive ? 'text-[#b8863c]' : 'text-[#7a6a58] group-hover:text-[#9e9178]'}`}>
+                        {isActive ? '✓ Equipado' : '+ Seleccionar'}
+                      </span>
+                    )}
+                    
+                    <div className={`w-3 h-3 rounded-sm border flex items-center justify-center transition-colors ${
+                      isActive ? 'bg-[#b8863c] border-[#b8863c]' : 'border-[#5c3a21] bg-black/30'
+                    }`}>
+                      {isActive && <div className="w-1.5 h-1.5 bg-[#1a0f0a]" />}
+                    </div>
                   </div>
                 </div>
               );
@@ -203,11 +230,11 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
 
       {/* ARMOURY */}
       {unit.noBattlekit ? (
-        <div className="p-3 text-center text-sm text-[#9e9178] border border-[#5c3a21] bg-[#1a0f0a] rounded">
-          Esta unidad no tiene acceso al Battlekit.
+        <div className="p-6 text-center text-[#7a6a58] border border-dashed border-[#5c3a21] bg-[#1a0f0a] rounded-xl font-serif text-lg mx-4 mt-6">
+          Esta unidad no tiene acceso a la Armería.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-6 mt-6">
           {cats.map(([key, label]) => {
             const items = armouryItemsForWarband(wb, key);
             if (!items.length) return null;
@@ -220,43 +247,63 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
             if (!classified.length) return null;
 
             return (
-              <div key={key} className="bg-[#1a0f0a] border border-[#5c3a21] rounded p-3">
-                <div className="text-xs uppercase text-[#b8863c] font-bold border-b border-[#5c3a21] pb-1 mb-2">
-                  {label}
+              <div key={key} className="bg-[#0a0503] border border-[#3a2110] rounded-xl shadow-lg overflow-hidden">
+                <div className="bg-gradient-to-r from-[#2a1610] to-[#0a0503] border-b border-[#3a2110] p-3">
+                  <span className="text-sm uppercase tracking-widest font-bold text-[#e2d4b7]">{label}</span>
                 </div>
-                <div className="space-y-1">
+                
+                <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
                   {classified.map(({ item, cls }: any) => {
                     const isActive = cls.state === 'equipped';
                     const isDisabled = cls.state === 'disabled';
-                    const currencyClass = item.currency === '☼' ? 'text-yellow-500' : 'text-[#9e9178]';
+                    const isGlory = item.currency === '☼';
+                    const currencyClass = isGlory ? 'text-yellow-500' : 'text-[#9e9178]';
                     
                     return (
                       <div 
                         key={item.id} 
                         onClick={() => !isDisabled && handleToggleBattlekit(item.id)}
-                        className={`flex justify-between items-center p-1.5 rounded border text-sm transition-colors ${
+                        className={`relative p-3 border-2 rounded-lg transition-all cursor-pointer group flex flex-col justify-between ${
                           isActive 
-                            ? 'bg-[#5c3a21]/30 border-[#b8863c] cursor-pointer' 
+                            ? 'bg-gradient-to-br from-[#2a1610] to-[#1a0f0a] border-[#b8863c] shadow-[0_0_10px_rgba(184,134,60,0.1)]' 
                             : isDisabled 
-                              ? 'bg-red-900/10 border-red-900/30 opacity-50 cursor-not-allowed'
-                              : 'bg-[#2a1610] border-transparent hover:border-[#5c3a21] cursor-pointer'
+                              ? 'bg-[#1a0f0a]/50 border-red-900/30 opacity-50 cursor-not-allowed'
+                              : 'bg-[#1a0f0a] border-[#3a2110] hover:border-[#b8863c]/50 hover:bg-[#2a1610]'
                         }`}
                       >
-                        <div className="flex flex-col">
-                          <span className={`font-medium ${isActive ? 'text-[#e2d4b7]' : 'text-[#9e9178]'}`}>
-                            {item.name}
-                            {item.restriction && <span className="text-[0.65rem] text-[#b8863c] ml-2">({item.restriction})</span>}
-                          </span>
-                          {isDisabled && <span className="text-[0.65rem] text-red-500">{cls.reason}</span>}
+                        <div>
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="flex flex-col">
+                              <span className={`font-bold text-sm ${isActive ? 'text-[#b8863c]' : 'text-[#e2d4b7]'}`}>
+                                {item.name}
+                              </span>
+                              {item.restriction && (
+                                <span className="text-[9px] uppercase tracking-widest text-[#b8863c] bg-[#b8863c]/10 px-1 py-0.5 rounded w-fit mt-1 border border-[#b8863c]/30">
+                                  {item.restriction}
+                                </span>
+                              )}
+                            </div>
+                            <div className={`text-xs font-bold px-1.5 py-0.5 rounded shadow-inner bg-black/30 ${currencyClass}`}>
+                              {battlekitPurchaseCost(wb, item, model)} {item.currency}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs ${currencyClass}`}>
-                            {battlekitPurchaseCost(wb, item, model)} {item.currency}
-                          </span>
-                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                            isActive ? 'bg-[#b8863c] border-[#b8863c]' : 'border-[#5c3a21]'
+                        
+                        <div className="flex justify-between items-center mt-3 border-t border-[#3a2110]/50 pt-2">
+                          {isDisabled ? (
+                            <span className="text-[10px] text-red-500 uppercase tracking-widest flex items-center gap-1">
+                              <span className="text-sm">⚠</span> {cls.reason}
+                            </span>
+                          ) : (
+                            <span className={`text-[10px] uppercase tracking-widest font-bold ${isActive ? 'text-[#b8863c]' : 'text-[#7a6a58] group-hover:text-[#9e9178]'}`}>
+                              {isActive ? '✓ Equipado' : '+ Seleccionar'}
+                            </span>
+                          )}
+                          
+                          <div className={`w-3 h-3 rounded-sm border flex items-center justify-center transition-colors ${
+                            isActive ? 'bg-[#b8863c] border-[#b8863c]' : 'border-[#5c3a21] bg-black/30'
                           }`}>
-                            {isActive && <div className="w-2 h-2 bg-[#1a0f0a] rounded-full" />}
+                            {isActive && <div className="w-1.5 h-1.5 bg-[#1a0f0a]" />}
                           </div>
                         </div>
                       </div>

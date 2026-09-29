@@ -33,7 +33,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 9080,
+      "htmlSize": 9085,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -62,7 +62,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 7981,
+      "htmlSize": 7986,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -90,7 +90,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 10920,
+      "htmlSize": 10926,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -118,7 +118,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 13514,
+      "htmlSize": 13520,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -146,7 +146,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 10634,
+      "htmlSize": 10876,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -174,7 +174,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 10551,
+      "htmlSize": 10557,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -202,7 +202,7 @@
       "initialHeaders": {
         "cache-control": "public, max-age=0, must-revalidate",
         "content-type": "image/x-icon",
-        "x-next-cache-tags": "_N_T_/layout,_N_T_/favicon.ico/layout,_N_T_/favicon.ico/route,_N_T_/favicon.ico"
+        "x-next-cache-tags": "_N_T_/layout,_N_T_/favicon.ico/layout,_N_T_/favicon.ico/route,_N_T_/favicon.ico/"
       },
       "routeType": "route",
       "response": "complete",
@@ -234,7 +234,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 10947,
+      "htmlSize": 10953,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -262,7 +262,7 @@
       "routeType": "page",
       "response": "complete",
       "compute": "static",
-      "htmlSize": 10926,
+      "htmlSize": 11168,
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -290,8 +290,8 @@
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "c25e35ff65b40d7b544d4068745b95e2",
-    "previewModeSigningKey": "3677f947fd31cca769357d7d08ad37ac6492b2b32337272b3f3a6287bcec2968",
-    "previewModeEncryptionKey": "32fd89e1b68c3419edfbb8c10c3fda51b0a20af24fa5d122d2061e4f8abe32c9"
+    "previewModeId": "90c13272ccf833b92a236fecf27faf84",
+    "previewModeSigningKey": "909bef5a8ed250e2d20e4611b4393fa325008d558897770c6fd9ea392b8b026a",
+    "previewModeEncryptionKey": "47841311a2fe23d24c7ffe4d347c9c27904b1a7ef6e837cf06539604e5ffda85"
   }
 }

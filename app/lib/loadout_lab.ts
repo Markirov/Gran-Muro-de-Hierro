@@ -1,4 +1,6 @@
 // @ts-nocheck
+import { DATA } from '../data/01_trench_crusade_game_data';
+
 /* ======================================================================
    LOADOUT LAB — analyse single-model variants with different equipment
    Construye un battle model desde una unit + lista de items de armoury,
