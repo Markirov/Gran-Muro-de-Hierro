@@ -52,6 +52,7 @@ interface Props {
 export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props) {
   const [selectorOpen, setSelectorOpen] = useState<string | null>(null);
   const [armouryTab, setArmouryTab] = useState<'equipped' | 'shop'>('equipped');
+  const isShop = armouryTab === 'shop';
 
   try {
     if (!model) {
@@ -77,6 +78,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
     const activeUpgrades = model.upgrades || [];
 
     const handleToggleUpgrade = (upId: string) => {
+      if (!isShop) return;
       let ups = [...activeUpgrades];
       if (ups.includes(upId)) ups = ups.filter(id => id !== upId);
       else ups.push(upId);
@@ -140,7 +142,6 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
       return { name, desc: desc || '' };
     });
     const faction = FACTIONS.find((f: any) => f.id === wb.factionId);
-    const isShop = armouryTab === 'shop';
     const tabNames = getArmouryTabNames(wb.factionId);
     const upgradesToDisplay = isShop
       ? allUpgrades

@@ -30,6 +30,7 @@
 ---
 
 ## ✅ Completado
+- [x] **Armería bloqueada y presupuesto sin saldo negativo** (2026-09-30, Lead Developer (Codex), petición de Marcos): se bloquean mutaciones de mejoras fuera de Bazar y cualquier compra que supere los Ducados disponibles; el presupuesto editable respeta el gasto actual y el saldo visible nunca baja de cero. Test dedicado: 10 ✓. Verificado con `npm run build` y `bash verify.sh` → 183 suites · 3754 verificaciones · 0 fallos.
 - [x] **Armería también bloquea añadir o eliminar mejoras** (2026-09-30, Lead Developer (Codex), petición de Marcos): Armería solo muestra las mejoras activas y no permite mutarlas; Bazar mantiene la gestión completa. Test dedicado: 5 ✓. Verificado con `npm run build` y `bash verify.sh` → 182 suites · 3734 verificaciones · 0 fallos.
 - [x] **Remodelación UX del Gestor de Bandas y Home** (2026-09-29): Se diseñó e implementó un `home` de entrada global y una separación real de responsabilidades en la pantalla de "Bandas" (Mis Bandas, Crear, Roster).
 - [x] **PDFs canon fuera de su sitio** (Marcos): `herramientas/pdfs-reglamento/` está vacío (solo `trench-crusade-tarjetas.pdf`); los PDFs del reglamento están en `E:\_DUPLICADOS_PDF_revisar\` con el prefijo `E__Drive_Trench Crusade_herramientas_pdfs-reglamento_` (parece una limpieza de duplicados). Devolverlos a `herramientas/pdfs-reglamento/` para que la regla D.5 apunte a un sitio real. → **Cerrado 2026-09-27:** Marcos confirma que están en `herramientas/pdfs-reglamento/` (Rulebook, Warbands, Changelog 1.0.2, FAQ abril 2026, escenarios y hojas).

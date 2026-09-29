@@ -9,6 +9,12 @@ import { ModelDetails } from './ModelDetails';
 import { modelCost } from '../../../lib/cost_calculation';
 import { TabletopMode } from '../../partida/TabletopMode';
 
+function calculateSpentDucados(warband: any) {
+  return (warband?.models || []).reduce((total: number, model: any) => {
+    return total + (modelCost(model, warband.factionId, warband).ducados || 0);
+  }, 0);
+}
+
 export default function RosterPage() {
   const router = useRouter();
   const [wb, setWb] = useState<any>(null);
@@ -53,6 +59,10 @@ export default function RosterPage() {
       battlekit: [],
     };
     const newWb = { ...wb, models: [...wb.models, newModel] };
+    if (!canAffordWarband(newWb)) {
+      rejectBudgetPurchase();
+      return;
+    }
     saveWb(newWb);
     setSelectedUid(newModel.uid);
   };
@@ -65,8 +75,23 @@ export default function RosterPage() {
 
   const [showMarket, setShowMarket] = useState(false);
   const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [budgetError, setBudgetError] = useState('');
   const [tempBudget, setTempBudget] = useState(0);
   const [tempGlory, setTempGlory] = useState(0);
+
+  const spentDucados = calculateSpentDucados(wb);
+  const canAffordWarband = (newWb: any) => {
+    const nextSpentDucados = calculateSpentDucados(newWb);
+    const nextBudget = Number(newWb?.budgetTotal ?? 0);
+    // A legacy/imported band may already be over budget. It must still be
+    // possible to remove purchases or edit names; only new spending is blocked.
+    return nextSpentDucados <= nextBudget ||
+      (spentDucados > Number(wb?.budgetTotal ?? 0) && nextSpentDucados <= spentDucados);
+  };
+  const rejectBudgetPurchase = () => {
+    setBudgetError('No hay suficientes Ducados para esa compra.');
+  };
+  const minimumBudget = spentDucados;
 
   const openBudgetModal = () => {
     setTempBudget(wb.budgetTotal ?? 0);
@@ -77,7 +102,7 @@ export default function RosterPage() {
   const handleSaveBudget = () => {
     saveWb({
       ...wb,
-      budgetTotal: Math.max(0, tempBudget),
+      budgetTotal: Math.max(minimumBudget, tempBudget),
       glory: Math.max(0, tempGlory)
     });
     setShowBudgetModal(false);
@@ -95,13 +120,12 @@ export default function RosterPage() {
 
   const faction = FACTIONS.find(f => f.id === wb.factionId);
   const variant = faction?.variants?.find(v => v.id === wb.variantId);
+  const remainingDucados = Math.max(0, (wb.budgetTotal || 0) - spentDucados);
 
-  // Calcular presupuesto gastado
-  let spentDucados = 0;
+  // Calcular gloria gastada
   let spentGlory = 0;
   wb.models.forEach((m: any) => {
     const cost = modelCost(m, wb.factionId, wb);
-    spentDucados += cost.ducados || 0;
     spentGlory += cost.glory || 0;
   });
 
@@ -134,7 +158,7 @@ export default function RosterPage() {
                 Presupuesto <span className="text-[9px]">✎</span>
               </span>
               <div className="text-2xl font-serif text-[#b8863c]">
-                {(wb.budgetTotal || 0) - spentDucados}{' '}
+                {remainingDucados}{' '}
                 <span className="text-[#7a6a58] text-sm">
                   / {wb.budgetTotal ?? 0} 👑
                 </span>
@@ -180,6 +204,13 @@ export default function RosterPage() {
         />
       )}
 
+      {budgetError && (
+        <div role="alert" className="mx-3 mb-3 shrink-0 rounded-lg border border-red-800/70 bg-red-950/60 px-4 py-2 text-sm text-red-200 flex items-center justify-between gap-3">
+          <span>⚠️ {budgetError}</span>
+          <button type="button" onClick={() => setBudgetError('')} className="text-red-300 hover:text-white" aria-label="Cerrar aviso">✕</button>
+        </div>
+      )}
+
       {/* WORKSPACE */}
       <div className="flex-1 flex gap-4 min-h-0 relative overflow-hidden">
         
@@ -222,6 +253,10 @@ export default function RosterPage() {
                   ...wb,
                   models: wb.models.map((m: any) => m.uid === newModel.uid ? newModel : m)
                 };
+                if (!canAffordWarband(newWb)) {
+                  rejectBudgetPurchase();
+                  return;
+                }
                 saveWb(newWb);
               }} 
               onRemoveModel={handleRemoveUnit}
@@ -274,10 +309,10 @@ export default function RosterPage() {
                 </label>
                 <input
                   type="number"
-                  min={0}
+                  min={spentDucados}
                   step={5}
                   value={tempBudget}
-                  onChange={(e) => setTempBudget(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  onChange={(e) => setTempBudget(Math.max(spentDucados, parseInt(e.target.value, 10) || 0))}
                   className="w-full bg-[#0a0503] border border-[#5c3a21] focus:border-[#b8863c] rounded-lg px-3 py-2 text-[#b8863c] font-serif text-xl outline-none font-bold shadow-inner"
                 />
               </div>
