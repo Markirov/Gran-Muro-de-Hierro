@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getUnit, effectiveUnitName, displayAbilitiesForCard, findBattlekitItem, effectiveStats, calculateTotalArmour, findArmouryItemByName, effectiveKeywords } from '../../lib/cost_calculation';
 import { KEYWORD_LIBRARY } from '../../data/04_keyword_library';
 import { WEAPON_KEYWORD_LIBRARY } from '../../data/05_weapon_keyword_library';
@@ -13,6 +13,28 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   // Touch handlers for swipe
   const touchStartX = useRef(0);
   const touchEndX = useRef(0);
+
+  const count = models?.length || 0;
+
+  // Un solo scroll: la página de fondo no se mueve mientras el overlay está abierto.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  // ←/→ cambian de miniatura (salvo escribiendo en un campo).
+  useEffect(() => {
+    if (!count) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); setCurrentIndex((c) => (c + 1) % count); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); setCurrentIndex((c) => (c - 1 + count) % count); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [count]);
 
   if (!models || models.length === 0) return null;
 
@@ -211,7 +233,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#0a0503] flex flex-col h-[100dvh] w-full"
+    <div className="fixed inset-0 z-50 bg-[#0a0503] flex flex-col h-[100dvh] w-full overflow-hidden"
          onTouchStart={handleTouchStart}
          onTouchMove={handleTouchMove}
          onTouchEnd={handleTouchEnd}
@@ -236,7 +258,8 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
       </div>
 
       {/* SCROLLABLE CONTENT */}
-      <div className="flex-1 overflow-y-auto w-full max-w-3xl mx-auto p-4 pb-20 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto w-full custom-scrollbar">
+      <div className="w-full max-w-3xl mx-auto p-4 pb-20">
         {/* MODEL IDENTIFICATION */}
         <div className="flex justify-between items-end mb-4 border-b border-[#3a2110]/50 pb-2">
           <div>
@@ -426,6 +449,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
             </ul>
           </div>
         )}
+      </div>
       </div>
 
       {/* FIXED NAVIGATION FOOTER (CAROUSEL DOTS) */}
