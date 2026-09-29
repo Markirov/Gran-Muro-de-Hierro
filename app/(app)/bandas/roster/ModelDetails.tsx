@@ -73,41 +73,57 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
   }
 
   const unitAbilities = displayAbilitiesForCard(model, unit).map((a: any) => a.name);
+  const faction = require('../../../data/factions').FACTIONS.find((f: any) => f.id === wb.factionId);
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full w-full">
       {/* HEADER & NAME */}
-      <div className="bg-[#1a0f0a] border border-[#5c3a21] rounded p-3">
-        <label className="block text-xs uppercase text-[#9e9178] font-bold mb-1">Nombre personalizado</label>
-        <input 
-          type="text" 
-          value={model.customName || ''}
-          onChange={(e) => onUpdateModel({ ...model, customName: e.target.value })}
-          placeholder={unit.name}
-          className="w-full bg-[#2a1610] text-[#e2d4b7] border border-[#5c3a21] p-2 rounded focus:outline-none focus:border-[#b8863c]"
-        />
-      </div>
-
-      {/* STATS */}
-      {unit.stats && (
-        <div className="bg-[#1a0f0a] border border-[#5c3a21] rounded p-3">
-          <div className="text-[#b8863c] font-bold mb-2">
-            {effName} 
-            {effName !== unit.name && <span className="text-[#9e9178] text-xs ml-2">(de {unit.name})</span>}
-            <span className="float-right text-[#9e9178]">{unit.cost} {unit.currency}</span>
+      {/* HEADER FICHA */}
+      <div className="bg-gradient-to-br from-[#2a1610] to-[#1a0f0a] border-b border-[#5c3a21] p-6 shrink-0 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none font-serif text-8xl">
+          {faction?.id === 'iron-sultanate' ? '☾' : '✠'}
+        </div>
+        <div className="relative z-10 flex justify-between items-start">
+          <div className="w-full">
+            <input 
+              type="text" 
+              value={model.customName || ''}
+              onChange={(e) => onUpdateModel({ ...model, customName: e.target.value })}
+              placeholder={unit.name}
+              className="w-full bg-transparent text-[#b8863c] font-serif text-3xl placeholder-[#b8863c]/50 focus:outline-none focus:border-b border-[#b8863c] transition-all"
+            />
+            <div className="text-[#9e9178] text-xs uppercase tracking-widest mt-1">
+              {effName !== unit.name ? `${effName} (${unit.name})` : effName} 
+              <span className="mx-2">•</span> 
+              Base: {unit.cost} {unit.currency}
+            </div>
           </div>
-          <div className="grid grid-cols-5 gap-2 text-center text-sm">
+        </div>
+
+        {/* STATS */}
+        {unit.stats && (
+          <div className="grid grid-cols-5 gap-2 mt-6">
             {['movement', 'ranged', 'melee', 'armour', 'base'].map(k => (
-              <div key={k} className="bg-[#2a1610] border border-[#5c3a21] rounded p-1">
-                <div className="text-[0.65rem] uppercase text-[#9e9178]">{k === 'movement' ? 'Mov' : k}</div>
-                <div className={`font-bold ${isOverridden(k) ? 'text-[#b8863c]' : 'text-[#e2d4b7]'}`}>
+              <div key={k} className="bg-[#0a0503] border border-[#3a2110] rounded-lg p-2 text-center shadow-inner flex flex-col justify-center relative overflow-hidden">
+                <div className="text-[9px] uppercase text-[#7a6a58] tracking-widest z-10">{k === 'movement' ? 'Mov' : k}</div>
+                <div className={`font-serif text-2xl z-10 ${isOverridden(k) ? 'text-[#b8863c] drop-shadow-[0_0_5px_rgba(184,134,60,0.5)]' : 'text-[#e2d4b7]'}`}>
                   {effStats[k]}
+                </div>
+                {/* Background icon per stat */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] text-4xl pointer-events-none">
+                  {k === 'movement' && '➦'}
+                  {k === 'ranged' && '⌖'}
+                  {k === 'melee' && '⚔'}
+                  {k === 'armour' && '⛨'}
+                  {k === 'base' && '♥'}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      <div className="p-4 space-y-4">
 
       {/* KEYWORDS */}
       {effKeywords.length > 0 && (
@@ -252,6 +268,7 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

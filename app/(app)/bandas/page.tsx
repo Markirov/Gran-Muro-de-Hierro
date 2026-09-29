@@ -54,61 +54,72 @@ export default function BandasPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between items-end border-b border-[#5c3a21] pb-2">
+    <div className="max-w-[1200px] mx-auto p-4 md:p-8 space-y-8">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-end border-b-2 border-[#5c3a21] pb-4 gap-4">
         <div>
-          <h1 className="font-serif text-[#b8863c] text-3xl m-0 uppercase tracking-widest">Tus Bandas</h1>
-          <p className="text-[#9e9178] text-sm mt-1">Selecciona una banda para entrar al modo Gestor (Roster, Variantes y PDF)</p>
+          <h1 className="font-serif text-[#b8863c] text-5xl m-0 uppercase tracking-widest drop-shadow-md">Tus Bandas</h1>
+          <p className="text-[#7a6a58] text-sm mt-2 uppercase tracking-widest">Forja tus filas · Equipa tus soldados · Ve a la Guerra</p>
         </div>
         <button 
           onClick={handleCreate}
-          className="bg-[#2a1610] text-[#b8863c] border border-[#5c3a21] px-4 py-2 rounded hover:bg-[#5c3a21] hover:text-[#e2d4b7] transition-colors"
+          className="bg-gradient-to-r from-[#b8863c] to-[#9c6f2a] text-[#1a0f0a] font-bold px-6 py-3 rounded uppercase tracking-widest hover:brightness-110 transition-all shadow-[0_0_15px_rgba(184,134,60,0.3)] hover:shadow-[0_0_25px_rgba(184,134,60,0.5)] transform hover:-translate-y-1"
         >
           + Nueva Banda
         </button>
       </div>
 
       {bands.length === 0 ? (
-        <div className="text-center p-12 border border-dashed border-[#5c3a21] rounded bg-[#2a1610]/50">
-          <p className="text-[#9e9178] italic">No tienes bandas creadas en este dispositivo.</p>
-          <button onClick={handleCreate} className="mt-4 text-[#b8863c] underline hover:text-[#e2d4b7]">Crear tu primera banda</button>
+        <div className="text-center p-16 border-2 border-dashed border-[#5c3a21] rounded-xl bg-[#1a0f0a]/50">
+          <p className="text-[#9e9178] text-xl font-serif mb-4">No tienes bandas listas para la batalla.</p>
+          <button onClick={handleCreate} className="text-[#b8863c] font-bold uppercase tracking-widest hover:text-[#e2d4b7] underline decoration-2 underline-offset-4">Reclutar ahora</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {bands.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(band => (
             <div 
               key={band.id}
               onClick={() => handleOpenBanda(band.id)}
-              className={`p-4 rounded border cursor-pointer transition-colors hover:shadow-lg ${
+              className={`group relative p-6 rounded-xl border-2 cursor-pointer transition-all overflow-hidden shadow-lg transform hover:-translate-y-1 ${
                 band.id === currentId 
-                  ? 'border-[#b8863c] bg-[rgba(95,25,25,0.35)]' 
-                  : 'border-[#5c3a21] bg-[#1a0f0a] hover:bg-[#2a1610] hover:border-[#b8863c]'
+                  ? 'border-[#b8863c] bg-gradient-to-br from-[rgba(95,25,25,0.8)] to-[#1a0f0a] shadow-[0_0_20px_rgba(184,134,60,0.2)]' 
+                  : 'border-[#3a2110] bg-[#1a0f0a] hover:bg-[#2a1610] hover:border-[#b8863c]'
               }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className={`font-bold m-0 ${band.id === currentId ? 'text-[#b8863c]' : 'text-[#e2d4b7]'}`}>
+              {/* Overlay Pattern */}
+              <div className="absolute inset-0 opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/black-paper.png')] pointer-events-none"></div>
+              
+              <div className="relative z-10 flex justify-between items-start mb-4">
+                <h3 className={`font-serif text-2xl m-0 truncate ${band.id === currentId ? 'text-[#e2d4b7] drop-shadow' : 'text-[#b8863c]'}`}>
                   {band.name || '(Sin nombre)'}
                 </h3>
                 <button 
                   onClick={(e) => handleDelete(band.id, e)}
-                  className="text-red-500/50 hover:text-red-500 hover:bg-red-500/10 px-2 py-1 rounded text-sm transition-colors"
+                  className="opacity-0 group-hover:opacity-100 text-red-500 hover:bg-red-500/20 px-2 py-1 rounded text-xs uppercase tracking-widest transition-all"
                   title="Eliminar Banda"
                 >
-                  ✕
+                  Borrar
                 </button>
               </div>
               
-              <div className="text-sm text-[#9e9178]">
-                <span className="uppercase">{band.factionId ? band.factionId.replace(/-/g, ' ') : '—'}</span>
-                <span className="mx-2 opacity-50">•</span>
-                <span>{band.models || 0} miniaturas</span>
+              <div className="relative z-10 space-y-2">
+                <div className="bg-black/40 px-3 py-1.5 rounded inline-block border border-[#3a2110]">
+                  <span className="text-xs text-[#e2d4b7] uppercase tracking-widest font-bold">
+                    {band.factionId ? band.factionId.replace(/-/g, ' ') : '—'}
+                  </span>
+                </div>
               </div>
               
-              {band.updatedAt && (
-                <div className="text-xs opacity-40 mt-3 text-right">
-                  Actualizada: {new Date(band.updatedAt).toLocaleString()}
-                </div>
-              )}
+              <div className="relative z-10 border-t border-[#3a2110] mt-6 pt-4 flex justify-between items-end">
+                <span className="text-[#9e9178] text-sm flex items-center gap-2">
+                  <span className="opacity-50">⚔</span> {band.models || 0} Miniaturas
+                </span>
+                
+                {band.updatedAt && (
+                  <div className="text-[10px] uppercase tracking-widest text-[#7a6a58]">
+                    {new Date(band.updatedAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

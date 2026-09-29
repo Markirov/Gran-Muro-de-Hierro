@@ -15,12 +15,12 @@
   },
   {
     "route": "/bandas/roster",
-    "firstLoadUncompressedJsBytes": 635167,
+    "firstLoadUncompressedJsBytes": 639099,
     "firstLoadChunkPaths": [
       ".next\\static\\chunks\\3fntmmi971322.js",
       ".next\\static\\chunks\\3s7ae0zk7v4_f.js",
       ".next\\static\\chunks\\1t91xbi01u3yz.js",
-      ".next\\static\\chunks\\3buxp06or16ij.js",
+      ".next\\static\\chunks\\0px-3goab87-o.js",
       ".next\\static\\chunks\\310vm2bl3xxpt.js",
       ".next\\static\\chunks\\2mmpezlrfmbu5.js",
       ".next\\static\\chunks\\0bma92pht_c97.js",
@@ -58,12 +58,12 @@
     ]
   },
   {
-    "route": "/campana",
-    "firstLoadUncompressedJsBytes": 467167,
+    "route": "/bandas",
+    "firstLoadUncompressedJsBytes": 467331,
     "firstLoadChunkPaths": [
       ".next\\static\\chunks\\3fntmmi971322.js",
       ".next\\static\\chunks\\3s7ae0zk7v4_f.js",
-      ".next\\static\\chunks\\3uno0my_toka4.js",
+      ".next\\static\\chunks\\1kszpvs5-emcg.js",
       ".next\\static\\chunks\\310vm2bl3xxpt.js",
       ".next\\static\\chunks\\2mmpezlrfmbu5.js",
       ".next\\static\\chunks\\0bma92pht_c97.js",
@@ -72,12 +72,12 @@
     ]
   },
   {
-    "route": "/bandas",
-    "firstLoadUncompressedJsBytes": 466313,
+    "route": "/campana",
+    "firstLoadUncompressedJsBytes": 467167,
     "firstLoadChunkPaths": [
       ".next\\static\\chunks\\3fntmmi971322.js",
       ".next\\static\\chunks\\3s7ae0zk7v4_f.js",
-      ".next\\static\\chunks\\1o81m9pv9j6f2.js",
+      ".next\\static\\chunks\\3uno0my_toka4.js",
       ".next\\static\\chunks\\310vm2bl3xxpt.js",
       ".next\\static\\chunks\\2mmpezlrfmbu5.js",
       ".next\\static\\chunks\\0bma92pht_c97.js",
