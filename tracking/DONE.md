@@ -1,3 +1,4 @@
+(2026-09-29, Lead Developer (Antigravity), Purga total de dependencias cruzadas y resolución de build TypeScript Next.js para los módulos de reglas legacy)
 # TAREAS COMPLETADAS (DONE)
 
 > Cronológico inverso - lo más reciente arriba. Cada entrada: (fecha, Rol (Herramienta), motivo) + qué se hizo y cómo se verificó. Al superar ~1500 líneas, archiva lo antiguo a rchive/DONE-<año>-Q<trimestre>.md.
