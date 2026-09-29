@@ -119,9 +119,9 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
     };
 
     return (
-      <div className="flex flex-col h-full w-full custom-scrollbar">
+      <div className="flex flex-col h-full w-full min-h-0 overflow-hidden">
         {/* HEADER FICHA */}
-        <div className="bg-gradient-to-br from-[#2a1610] to-[#1a0f0a] border-b border-[#5c3a21] p-6 shrink-0 relative overflow-hidden">
+        <div className="bg-gradient-to-br from-[#2a1610] to-[#1a0f0a] border-b border-[#5c3a21] p-5 shrink-0 relative overflow-hidden shadow-md z-10">
           <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none font-serif text-8xl">
             {faction?.id === 'iron-sultanate' ? '☾' : '✠'}
           </div>
@@ -144,7 +144,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
 
           {/* STATS CANÓNICOS */}
           {unit.stats && (
-            <div className="mt-6">
+            <div className="mt-4">
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">Atributos</span>
                 {onRemoveModel && (
@@ -180,7 +180,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
         </div>
 
         {/* CONTENIDO PRINCIPAL */}
-        <div className="p-4 space-y-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6 min-h-0">
 
           {/* KEYWORDS DE LA UNIDAD */}
           {effKeywords.length > 0 && (

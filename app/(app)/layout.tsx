@@ -8,9 +8,11 @@ const NAV_IDLE = 'px-3 py-1 bg-transparent border border-[#5c3a21] text-[#b8863c
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
   const navClass = (base: string) => (pathname.startsWith(base) ? NAV_ACTIVE : NAV_IDLE);
+  const isRosterWorkspace = pathname.startsWith('/bandas/roster');
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#111] text-[#e2d4b7] font-sans">
-      <header className="bg-[#2a1610] border-b border-[#5c3a21] p-4 flex justify-between items-center">
+    <div className={`${isRosterWorkspace ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-[#111] text-[#e2d4b7] font-sans`}>
+      <header className="bg-[#2a1610] border-b border-[#5c3a21] px-4 py-2.5 flex justify-between items-center shrink-0">
         <div className="flex gap-4 items-center">
           <Link href="/" className="font-serif text-[#b8863c] text-xl no-underline hover:text-[#e2d4b7] transition-colors">
             ⚔ WARBAND FORGE
@@ -22,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       </header>
-      <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
+      <main className={`flex-1 w-full ${isRosterWorkspace ? 'overflow-hidden flex flex-col p-2 md:p-3 max-w-[1700px] min-h-0' : 'p-4 md:p-8 max-w-6xl'} mx-auto`}>
         {children}
       </main>
     </div>

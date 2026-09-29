@@ -11,3 +11,29 @@ body {
   background-size: cover;
   background-position: center;
 }
+
+/* Custom Grimdark Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0503;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a2110;
+  border-radius: 4px;
+  border: 1px solid #5c3a21;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b8863c;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3a2110 #0a0503;
+}
+

@@ -106,9 +106,9 @@ export default function RosterPage() {
   });
 
   return (
-    <div className="max-w-[1600px] mx-auto h-[calc(100vh-2rem)] flex flex-col pt-4">
+    <div className="w-full h-full flex flex-col min-h-0 overflow-hidden">
       {/* HEADER TÁCTICO */}
-      <header className="bg-gradient-to-r from-[#1a0f0a] via-[#2a1610] to-[#1a0f0a] border-y border-[#5c3a21] p-4 flex flex-col md:flex-row justify-between items-center shadow-xl mb-4 shrink-0">
+      <header className="bg-gradient-to-r from-[#1a0f0a] via-[#2a1610] to-[#1a0f0a] border-y border-[#5c3a21] p-3 md:p-4 flex flex-col md:flex-row justify-between items-center shadow-xl mb-3 shrink-0">
         <div className="flex flex-col mb-4 md:mb-0 text-center md:text-left">
           <input 
             type="text" 
@@ -181,10 +181,10 @@ export default function RosterPage() {
       )}
 
       {/* WORKSPACE */}
-      <div className="flex-1 flex gap-4 min-h-0 relative">
+      <div className="flex-1 flex gap-4 min-h-0 relative overflow-hidden">
         
         {/* COLUMNA IZQUIERDA: ROSTER */}
-        <div className="w-full md:w-1/3 max-w-[450px] flex flex-col gap-3 h-full">
+        <div className="w-full md:w-1/3 max-w-[450px] flex flex-col h-full min-h-0 shrink-0">
           <div className="bg-[#1a0f0a] border border-[#5c3a21] rounded-t-lg p-3 flex justify-between items-center shrink-0 shadow-md z-10">
             <span className="font-serif text-[#b8863c] text-lg uppercase tracking-wider">Tu Roster ({wb.models.length})</span>
             <button 
@@ -195,7 +195,7 @@ export default function RosterPage() {
             </button>
           </div>
           
-          <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0a0503]/50 rounded-b-lg border-x border-b border-[#5c3a21] p-2 relative">
+          <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0a0503]/50 rounded-b-lg border-x border-b border-[#5c3a21] p-2 relative min-h-0">
             <RosterList 
               wb={wb} 
               onSelectModel={setSelectedUid}
@@ -206,7 +206,7 @@ export default function RosterPage() {
         </div>
 
         {/* COLUMNA DERECHA: DETALLES */}
-        <div className="flex-1 bg-[#1a0f0a] border border-[#5c3a21] rounded-lg shadow-2xl flex flex-col h-full overflow-hidden relative">
+        <div className="flex-1 bg-[#1a0f0a] border border-[#5c3a21] rounded-lg shadow-2xl flex flex-col h-full min-h-0 overflow-hidden relative">
           {!selectedUid ? (
             <div className="flex-1 flex flex-col items-center justify-center text-[#7a6a58] opacity-50 p-8 text-center">
               <span className="text-6xl mb-4">⚕</span>
@@ -214,20 +214,18 @@ export default function RosterPage() {
               <p className="text-sm mt-2 max-w-md">Haz clic en un modelo del roster para ver sus estadísticas, asignarle armamento o ver sus reglas especiales.</p>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              <ModelDetails 
-                wb={wb} 
-                model={wb.models.find((m: any) => m.uid === selectedUid)} 
-                onUpdateModel={(newModel) => {
-                  const newWb = {
-                    ...wb,
-                    models: wb.models.map((m: any) => m.uid === newModel.uid ? newModel : m)
-                  };
-                  saveWb(newWb);
-                }} 
-                onRemoveModel={handleRemoveUnit}
-              />
-            </div>
+            <ModelDetails 
+              wb={wb} 
+              model={wb.models.find((m: any) => m.uid === selectedUid)} 
+              onUpdateModel={(newModel) => {
+                const newWb = {
+                  ...wb,
+                  models: wb.models.map((m: any) => m.uid === newModel.uid ? newModel : m)
+                };
+                saveWb(newWb);
+              }} 
+              onRemoveModel={handleRemoveUnit}
+            />
           )}
         </div>
       </div>
