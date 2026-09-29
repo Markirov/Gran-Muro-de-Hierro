@@ -146,7 +146,7 @@ group('Group 6: buildModelCardData orquesta todo', () => {
 });
 
 group('Group 7: buildModelCardData — hasElementalMastery flag', () => {
-  const jabirean = mkModel('Jabirean Alchemist', [{name:'Alchemist Armour'}], ['ELITE','ALCHEMIST']);
+  const jabirean = mkModel('Jabirean Alchemist', [{name:'Alchemist Armour'}], ['ELITE']);
   jabirean.companionAbilities = [{ name: 'Mastery of the Elements' }];
   const data = buildModelCardData(jabirean, defironWb);
   ok(data.hasElementalMastery === true, 'hasElementalMastery true');

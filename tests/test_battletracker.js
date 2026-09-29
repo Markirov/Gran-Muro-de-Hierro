@@ -68,7 +68,7 @@ const silahdar = {
 const jabirean = {
   name:'Jabirean Alchemist', uid:'m2',
   companionStats:{move:'6"',ranged:'1',melee:'0',armour:'0'},
-  companionEquipment:[{name:'Alchemist Armour'}],companionKeywords:[{name:'ELITE'},{name:'ALCHEMIST'}],
+  companionEquipment:[{name:'Alchemist Armour'}],companionKeywords:[{name:'ELITE'},],
   companionAbilities:[{name:'Mastery of the Elements'}],
   companionCost:120,
 };

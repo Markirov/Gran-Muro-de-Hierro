@@ -116,7 +116,7 @@ for (const f of Object.values(L.DATA.factions)) {
   for (const u of (f.units || [])) (u.keywords || []).forEach(k => used.add(k));
 }
 // Keywords de facción/tipo que no están en los PDF de reglas disponibles (no se inventa texto).
-const NO_PDF = new Set(['ALCHEMIST']);
+const NO_PDF = new Set([]);
 const orphan = [...used].filter(k => !NO_PDF.has(k) && !T(k));
 ok(orphan.length === 0, 'toda keyword usada tiene texto (' + (orphan.join(' | ') || 'ninguna') + ')');
 
