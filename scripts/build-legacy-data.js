@@ -19,16 +19,26 @@ const LIB_MAP = {
   'loadout_lab.ts': '12_loadout_lab_analyse_single_model_variant.js'
 };
 
+const IMPORT_LINE = /^import\s[\s\S]*?from\s*['"][^'"]+['"];?[ \t]*\r?\n/gm;
+
 // app.html carga public/js como scripts clásicos que comparten globales:
 // fuera import/export de ES, que allí son SyntaxError.
 function toLegacyScript(content) {
   const nl = content.includes('\r\n') ? '\r\n' : '\n';
   let out = content
-    .replace(/^import\s[\s\S]*?from\s*['"][^'"]+['"];?[ \t]*\r?\n/gm, '')
+    .replace(IMPORT_LINE, '')
     .replace(/^export (const|function|let) /gm, '$1 ')
     .replace(/^\s*(\r?\n)+/, '');
   if (!/^\/\/ @ts-nocheck/.test(out)) out = '// @ts-nocheck' + nl + out;
   return out;
+}
+
+// Los datos: fuera import (comparten globales) y export, sin tocar la cabecera
+// (una `export function` debe seguir siendo function, no const).
+function toLegacyData(content) {
+  return content
+    .replace(IMPORT_LINE, '')
+    .replace(/^export (const|function|let) /gm, '$1 ');
 }
 
 const DATA_FILES = [
@@ -52,7 +62,7 @@ function main() {
   console.log('Compilando módulos TS de datos a Vanilla JS para la app legacy...');
   for (const f of DATA_FILES) {
     let content = fs.readFileSync(path.join(srcDir, f), 'utf8');
-    content = content.replace(/export (const|function) /g, 'const ');
+    content = toLegacyData(content);
     const outName = f.replace('.ts', '.js');
     fs.writeFileSync(path.join(destDir, outName), content);
     console.log(` -> Generado public/js/${outName}`);
@@ -60,5 +70,5 @@ function main() {
   console.log('Completado.');
 }
 
-module.exports = { toLegacyScript, LIB_FILES };
+module.exports = { toLegacyScript, toLegacyData, LIB_FILES, DATA_FILES };
 if (require.main === module) main();

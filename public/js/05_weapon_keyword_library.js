@@ -1,7 +1,4 @@
 // @ts-nocheck
-import { glossaryText } from './03_keyword_glossary_canon_fuente_nica_de_lo';
-import { KEYWORD_LIBRARY } from './04_keyword_library';
-import { ABILITY_LIBRARY } from './02_ability_library';
 /* ======================================================================
    WEAPON KEYWORD LIBRARY
    Mechanical effects of weapon keywords (effects + rules).

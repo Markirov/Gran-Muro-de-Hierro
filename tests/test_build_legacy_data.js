@@ -32,5 +32,19 @@ for (const f of (build.LIB_FILES || [])) {
 }
 ok((build.LIB_FILES || []).length === 5, 'cubre los 5 módulos de app/lib');
 
+console.log('\nGroup 3: app/data genera scripts clásicos válidos');
+ok(typeof build.toLegacyData === 'function', 'exporta toLegacyData');
+const toData = build.toLegacyData || ((s) => s);
+ok(/^function g\(\) \{\}$/m.test(toData('export function g() {}\n')), 'export function → function (no const)');
+ok(/^const K = 1;$/m.test(toData('export const K = 1;\n')), 'export const → const');
+ok(!/import/.test(toData("import { g } from './03_x';\nconst K = 1;\n")), 'quita los import');
+for (const f of (build.DATA_FILES || [])) {
+  const src = fs.readFileSync(path.join(ROOT, 'app', 'data', f), 'utf8');
+  let valid = true;
+  try { new vm.Script(toData(src), { filename: f }); } catch (e) { valid = false; }
+  ok(valid, f + ' compila como script clásico');
+}
+ok((build.DATA_FILES || []).length === 8, 'cubre los 8 ficheros de app/data');
+
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
