@@ -2,6 +2,7 @@
   "hosting": {
     "public": "out",
     "ignore": ["firebase.json", "**/.*"],
+    "cleanUrls": true,
     "headers": [
       {
         "source": "/index.html",
