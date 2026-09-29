@@ -7,11 +7,13 @@
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
 - Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) y tabs temáticos ("Armería"/"Bazar" para Sultanato, "Arsenal"/"Intendencia" para Antioquía, etc.).
+- Modo Armería estricto de solo lectura: oculta botones de desequipar y selectores de compra; oculta secciones y sub-bloques vacíos para una vista ultra-limpia; si no porta equipo adicional, muestra banner directo al Bazar.
 - Tooltips de reglas e inspección visual en hover para habilidades innatas, keywords del modelo y de armamento.
 - Workspace de Roster fijado a pantalla completa sin scrolls anidados (`h-screen overflow-hidden`), con cabecera de miniaturas y atributos (`MOV`, `RNG`, `MEL`, `ARM`, `BASE`) anclados permanentemente en la parte superior.
 
 ## Decisiones vigentes (y por qué)
 - **Zero remote push:** GitHub está congelado; solo commits locales y despliegue a Firebase Hosting (`firebase deploy --only hosting`).
+- **Modo Armería vs Bazar:** Armería es exclusivamente lectura de lo equipado (sin permitir añadir ni quitar equipo, filtrando cualquier categoría vacía); Bazar es el entorno completo de compra y gestión.
 - **Scroll estricto en Roster:** El layout `/bandas/roster` no debe usar `min-h-screen` ni padding exterior que supere `100vh`. La tarjeta `ModelDetails` maneja el scroll exclusivamente en su cuerpo de armería (`flex-1 overflow-y-auto`).
 - **Paleta Grimdark:** Mantener invariables los colores canónicos (`#0a0503`, `#1a0f0a`, `#2a1610`, `#3a2110`, `#5c3a21`, `#b8863c`, `#e2d4b7`).
 
