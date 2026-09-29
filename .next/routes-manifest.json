@@ -60,10 +60,22 @@
       "namedRegex": "^/bandas/roster(?:/)?$"
     },
     {
+      "page": "/campana",
+      "regex": "^/campana(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/campana(?:/)?$"
+    },
+    {
       "page": "/favicon.ico",
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/lab",
+      "regex": "^/lab(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/lab(?:/)?$"
     },
     {
       "page": "/partida",

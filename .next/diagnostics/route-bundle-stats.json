@@ -16,12 +16,12 @@
   },
   {
     "route": "/partida",
-    "firstLoadUncompressedJsBytes": 489235,
+    "firstLoadUncompressedJsBytes": 491532,
     "firstLoadChunkPaths": [
       ".next\\static\\chunks\\3fntmmi971322.js",
       ".next\\static\\chunks\\3s7ae0zk7v4_f.js",
-      ".next\\static\\chunks\\3i9e__lxj94lh.js",
-      ".next\\static\\chunks\\04cbfqevopmy3.js",
+      ".next\\static\\chunks\\1mculcm2ueu78.js",
+      ".next\\static\\chunks\\0mf7j7zw_oksj.js",
       ".next\\static\\chunks\\310vm2bl3xxpt.js",
       ".next\\static\\chunks\\2mmpezlrfmbu5.js",
       ".next\\static\\chunks\\0bma92pht_c97.js",
@@ -44,6 +44,20 @@
     ]
   },
   {
+    "route": "/campana",
+    "firstLoadUncompressedJsBytes": 467167,
+    "firstLoadChunkPaths": [
+      ".next\\static\\chunks\\3fntmmi971322.js",
+      ".next\\static\\chunks\\3s7ae0zk7v4_f.js",
+      ".next\\static\\chunks\\3uno0my_toka4.js",
+      ".next\\static\\chunks\\310vm2bl3xxpt.js",
+      ".next\\static\\chunks\\2mmpezlrfmbu5.js",
+      ".next\\static\\chunks\\0bma92pht_c97.js",
+      ".next\\static\\chunks\\2_2-1c0c4snqt.js",
+      ".next\\static\\chunks\\turbopack-3n_afh9w5yf8i.js"
+    ]
+  },
+  {
     "route": "/bandas",
     "firstLoadUncompressedJsBytes": 466236,
     "firstLoadChunkPaths": [
@@ -58,11 +72,25 @@
     ]
   },
   {
-    "route": "/",
-    "firstLoadUncompressedJsBytes": 456177,
+    "route": "/lab",
+    "firstLoadUncompressedJsBytes": 464721,
     "firstLoadChunkPaths": [
       ".next\\static\\chunks\\3fntmmi971322.js",
-      ".next\\static\\chunks\\0ncr6qaj-8g9o.js",
+      ".next\\static\\chunks\\3s7ae0zk7v4_f.js",
+      ".next\\static\\chunks\\2kwdyzcg1a6eh.js",
+      ".next\\static\\chunks\\310vm2bl3xxpt.js",
+      ".next\\static\\chunks\\2mmpezlrfmbu5.js",
+      ".next\\static\\chunks\\0bma92pht_c97.js",
+      ".next\\static\\chunks\\2_2-1c0c4snqt.js",
+      ".next\\static\\chunks\\turbopack-3n_afh9w5yf8i.js"
+    ]
+  },
+  {
+    "route": "/",
+    "firstLoadUncompressedJsBytes": 456151,
+    "firstLoadChunkPaths": [
+      ".next\\static\\chunks\\3fntmmi971322.js",
+      ".next\\static\\chunks\\0_iuwlshe6fom.js",
       ".next\\static\\chunks\\310vm2bl3xxpt.js",
       ".next\\static\\chunks\\2mmpezlrfmbu5.js",
       ".next\\static\\chunks\\0bma92pht_c97.js",
