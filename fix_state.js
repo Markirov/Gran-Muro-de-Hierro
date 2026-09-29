@@ -1,0 +1,1 @@
+const fs = require('fs'); let c = fs.readFileSync('app/lib/cost_calculation.ts', 'utf8'); c = c.split('wb || STATE.currentWarband').join('wb || (typeof STATE !== \'undefined\' ? STATE.currentWarband : null)'); fs.writeFileSync('app/lib/cost_calculation.ts', c);

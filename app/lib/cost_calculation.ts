@@ -214,7 +214,7 @@ export function allAvailableUpgrades(unit, wb) {
  * as a list of activated upgrade ids. Variants can also add upgrades.
  */
 export function activeUpgrades(model, unit, wb) {
-  const all = allAvailableUpgrades(unit, wb || STATE.currentWarband);
+  const all = allAvailableUpgrades(unit, wb || (typeof STATE !== 'undefined' ? STATE.currentWarband : null));
   if (!all.length) return [];
   const active = model.upgrades || [];
   return all.filter(u => active.includes(u.id));
@@ -418,7 +418,7 @@ export function effectiveStats(model, unit, wb) {
   let base = { ...(unit.stats || {}) };
   // Apply variant unit override stats (e.g. Anchorite Shrine in St. Methodius
   // gets Ranged +0 DICE)
-  const w = wb || STATE.currentWarband;
+  const w = wb || (typeof STATE !== 'undefined' ? STATE.currentWarband : null);
   const ov = w ? variantUnitOverride(w, unit.id) : null;
   if (ov && ov.stats) {
     base = Object.assign(base, ov.stats);
