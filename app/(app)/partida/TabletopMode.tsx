@@ -8,7 +8,8 @@ import { ABILITY_LIBRARY } from '../../data/02_ability_library';
 export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   const models = wb.models;
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showExtraMarkers, setShowExtraMarkers] = useState(false);
+  const [showInfection, setShowInfection] = useState(false);
+  const [showBlessing, setShowBlessing] = useState(false);
   
   // Touch handlers for swipe
   const touchStartX = useRef(0);
@@ -165,11 +166,14 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   }
 
   // --- SEPARATE WEAPONS VS EQUIPMENT ---
-  const weapons = equipment.filter((e:any) => /weapon/i.test(e.type || '') || /grenade/i.test(e.type || ''));
-  const otherEquip = equipment.filter((e:any) => !/weapon/i.test(e.type || '') && !/grenade/i.test(e.type || ''));
+  const isWeapon = (e:any) => /handed|weapon|pistol|grenade/i.test(e.type || '') || (!!e.range && e.range !== '-' && !/armour|shield|headgear/i.test(e.type || ''));
+  const weapons = equipment.filter((e:any) => isWeapon(e));
+  const otherEquip = equipment.filter((e:any) => !isWeapon(e));
 
-  // Has STRONG?
-  const hasStrong = modelKeywords.includes('STRONG') || abilities.some((a:any) => a.name === 'STRONG' || a.name === 'NEGATE HEAVY');
+  // STRONG (Rulebook 1.0.2): NEGATE HEAVY + arma CaC de 2 manos como si fuera de 1 mano
+  const hasStrong = modelKeywords.includes('STRONG') || modelKeywords.includes('NEGATE HEAVY') || abilities.some((a:any) => a.name === 'STRONG' || a.name === 'NEGATE HEAVY');
+  // Nota si la keyword de un arma no aplica a este modelo ('' si aplica)
+  const keywordInactive = (kw: string) => (kw === 'HEAVY' && hasStrong ? 'STRONG: no aplica' : '');
 
   // Unified abilities list: keywords + abilities
   
@@ -312,23 +316,23 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
         <div className="mb-8">
           {renderRadioRow('Blood Markers', st.blood || 0, setBlood, 'bg-red-800')}
           
-          {showExtraMarkers ? (
-            <div className="animate-fadeIn">
-              {renderRadioRow('Infection Markers', st.infection || 0, setInfection, 'bg-green-800')}
-              {renderRadioRow('Blessing Markers', st.blessing || 0, setBlessing, 'bg-yellow-600')}
-              <button 
-                onClick={() => setShowExtraMarkers(false)}
-                className="text-[10px] uppercase text-[#7a6a58] hover:text-[#b8863c] w-full text-center py-2 border-t border-[#3a2110] mt-2"
-              >
-                ▲ Ocultar Infección/Bendición
-              </button>
-            </div>
-          ) : (
+          {/* Infección y Bendición: desplegables independientes; abiertos si tienen marcadores */}
+          {(showInfection || (st.infection || 0) > 0) && renderRadioRow('Infection Markers', st.infection || 0, setInfection, 'bg-green-800')}
+          {!(st.infection > 0) && (
             <button 
-              onClick={() => setShowExtraMarkers(true)}
+              onClick={() => setShowInfection(!showInfection)}
+              className="text-[10px] uppercase text-[#7a6a58] hover:text-[#b8863c] w-full text-center py-2 border-t border-[#3a2110]"
+            >
+              {showInfection ? '▲ Ocultar Infección' : '▼ Mostrar Infección'}
+            </button>
+          )}
+          {(showBlessing || (st.blessing || 0) > 0) && renderRadioRow('Blessing Markers', st.blessing || 0, setBlessing, 'bg-yellow-600')}
+          {!(st.blessing > 0) && (
+            <button 
+              onClick={() => setShowBlessing(!showBlessing)}
               className="text-[10px] uppercase text-[#7a6a58] hover:text-[#b8863c] w-full text-center py-2 border-y border-[#3a2110]"
             >
-              ▼ Mostrar Infección/Bendición
+              {showBlessing ? '▲ Ocultar Bendición' : '▼ Mostrar Bendición'}
             </button>
           )}
         </div>
@@ -343,25 +347,29 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                            : w.type?.toLowerCase().includes('1-handed') ? '1H'
                            : w.type?.toLowerCase().includes('pistol') ? 'Pistol'
                            : w.type?.toLowerCase().includes('grenade') ? 'Granada' : '';
+                const range = w.range && w.range !== '-' ? w.range : '';
+                const strongOneHand = hasStrong && hand === '2H' && /melee/i.test(w.range || '');
                 return (
                   <div key={i} className="border border-[#3a2110] rounded bg-[#0a0503] p-3 shadow-sm">
                     <div className="flex items-baseline gap-2 mb-2">
                       <span className="font-serif font-bold text-[#e2d4b7] text-lg uppercase">{w.name}</span>
                       <span className="text-[#b8863c] text-[10px] md:text-xs">
-                         {[hand, w.range && w.range !== '-' ? w.range : ''].filter(Boolean).join(' · ')}
+                         {strongOneHand ? (
+                           <><span className="line-through opacity-50" title="STRONG: arma CaC de 2 manos como de 1 mano">2H</span> 1H</>
+                         ) : hand}
+                         {hand && range ? ' · ' : ''}{range}
                       </span>
                     </div>
                     <ul className="text-xs md:text-sm text-[#9e9178] leading-relaxed space-y-2">
                       {/* Standard Keywords */}
                       {w.weaponKeywords && w.weaponKeywords.map((kw: string, kwi: number) => {
-                        let isAttenuated = false;
-                        if (kw === 'HEAVY' && hasStrong) isAttenuated = true;
-                        
+                        const inactive = keywordInactive(kw);
                         const desc = resolveWeaponKeyword(kw);
                         return (
-                          <li key={kwi} className={`pl-4 relative ${isAttenuated ? 'opacity-40 line-through' : ''}`}>
+                          <li key={kwi} className={`pl-4 relative ${inactive ? 'opacity-40' : ''}`}>
                             <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
                             <span className="font-serif text-[#b8863c] uppercase mr-1">{kw}</span> 
+                            {inactive && <span className="italic mr-1">({inactive})</span>}
                             {desc ? `— ${desc}` : ''}
                           </li>
                         );
@@ -410,11 +418,13 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                     </div>
                     <ul className="text-xs md:text-sm text-[#9e9178] leading-relaxed space-y-2">
                       {eq.weaponKeywords && eq.weaponKeywords.map((kw: string, kwi: number) => {
+                        const inactive = keywordInactive(kw);
                         const desc = resolveWeaponKeyword(kw);
                         return (
-                          <li key={kwi} className="pl-4 relative">
+                          <li key={kwi} className={`pl-4 relative ${inactive ? 'opacity-40' : ''}`}>
                             <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
                             <span className="font-serif text-[#b8863c] uppercase mr-1">{kw}</span> 
+                            {inactive && <span className="italic mr-1">({inactive})</span>}
                             {desc ? `— ${desc}` : ''}
                           </li>
                         );
