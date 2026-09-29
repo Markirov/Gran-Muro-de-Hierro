@@ -749,7 +749,7 @@ export const ABILITY_LIBRARY = {
   },
   'STRONG': {
     type: 'keyword',
-    summary: '+1 INJURY DICE en los ataques cuerpo a cuerpo de este modelo.',
+    summary: 'Tiene la keyword NEGATE HEAVY. Además puede equipar y usar un arma cuerpo a cuerpo de 2 manos como si fuera de 1 mano.',
   },
   'FEAR': {
     type: 'keyword',

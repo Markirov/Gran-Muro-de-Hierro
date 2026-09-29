@@ -7,7 +7,7 @@ export const KEYWORD_LIBRARY = {
   'ELITE':         'Unidad de élite con acceso a equipo y reglas restringidas a este tier.',
   'LEADER':        'Modelo líder de la banda. Suele dar bonificadores a aliados cercanos.',
   'TOUGH':         'Resistente: añade -1 INJURY DICE a las tiradas de lesión contra este modelo.',
-  'STRONG':        'Fuerte: bonificadores en cuerpo a cuerpo y permite usar ciertas armas pesadas.',
+  'STRONG':        'Tiene la keyword NEGATE HEAVY. Además puede equipar y usar un arma cuerpo a cuerpo de 2 manos como si fuera de 1 mano.',
   'FEAR':          'Provoca miedo en el enemigo: penaliza tiradas de Moral cercanas.',
   'NEGATE FEAR':   'Inmune a los efectos de FEAR.',
   'NEGATE GAS':    'No le afecta el Efecto de la keyword GAS.',

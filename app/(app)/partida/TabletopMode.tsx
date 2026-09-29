@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { getUnit, effectiveUnitName, displayAbilitiesForCard, findBattlekitItem, effectiveStats, calculateTotalArmour, findArmouryItemByName, effectiveKeywords } from '../../lib/cost_calculation';
+import { glossaryText } from '../../data/03_keyword_glossary_canon_fuente_nica_de_lo';
 import { KEYWORD_LIBRARY } from '../../data/04_keyword_library';
 import { WEAPON_KEYWORD_LIBRARY } from '../../data/05_weapon_keyword_library';
 import { ABILITY_LIBRARY } from '../../data/02_ability_library';
@@ -179,11 +180,8 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   
   const unifiedAbilities: any[] = [];
   modelKeywords.forEach((kw: string) => {
-     if (KEYWORD_LIBRARY[kw]) {
-       unifiedAbilities.push({ name: kw, desc: KEYWORD_LIBRARY[kw] });
-     } else {
-       unifiedAbilities.push({ name: kw, desc: '' });
-     }
+     const desc = glossaryText(kw) || KEYWORD_LIBRARY[kw] || '';
+     unifiedAbilities.push({ name: kw, desc });
   });
   abilities.forEach((ab: any) => {
      let desc = ab.desc;
