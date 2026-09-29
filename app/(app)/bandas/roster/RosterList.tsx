@@ -1,4 +1,4 @@
-import { modelCost } from '../../../lib/cost_calculation';
+import { modelCost, getUnit, effectiveUnitName } from '../../../lib/cost_calculation';
 
 export function RosterList({ wb, onRemoveUnit, onSelectModel, selectedUid }: { wb: any, onRemoveUnit: (uid: string) => void, onSelectModel: (uid: string) => void, selectedUid: string | null }) {
   if (!wb) return null;
@@ -18,6 +18,9 @@ export function RosterList({ wb, onRemoveUnit, onSelectModel, selectedUid }: { w
         const costStr = `${cost.ducados ? cost.ducados + ' 👑' : ''}${cost.ducados && cost.glory ? ' ' : ''}${cost.glory ? cost.glory + ' ☼' : ''}`;
         const isSelected = selectedUid === model.uid;
         
+        const unit = getUnit(wb.factionId, model.unitId);
+        const effName = effectiveUnitName(model, unit);
+
         // Contar tipos de armas equipadas
         const meleeWeapons = model.battlekit?.filter((id: string) => id.includes('melee') || id.includes('sword') || id.includes('club') || id.includes('axe') || id.includes('spear')) || [];
         const rangedWeapons = model.battlekit?.filter((id: string) => id.includes('ranged') || id.includes('rifle') || id.includes('pistol') || id.includes('gun')) || [];
@@ -39,7 +42,7 @@ export function RosterList({ wb, onRemoveUnit, onSelectModel, selectedUid }: { w
               <div className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <span className={`font-serif text-lg tracking-wide ${isSelected ? 'text-[#b8863c]' : 'text-[#e2d4b7]'}`}>
-                    {model.name || '(Sin nombre)'}
+                    {model.name || effName || '(Desconocido)'}
                   </span>
                   <span className="text-[10px] text-[#7a6a58] uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded border border-[#3a2110]">
                     {model.unitId.replace(/-/g, ' ')}

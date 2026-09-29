@@ -91,7 +91,7 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
               type="text" 
               value={model.name || ''}
               onChange={(e) => onUpdateModel({ ...model, name: e.target.value })}
-              placeholder={unit.name}
+              placeholder={effName}
               className="w-full bg-transparent text-[#b8863c] font-serif text-3xl placeholder-[#b8863c]/50 focus:outline-none focus:border-b border-[#b8863c] transition-all"
             />
             <div className="text-[#9e9178] text-xs uppercase tracking-widest mt-1">
