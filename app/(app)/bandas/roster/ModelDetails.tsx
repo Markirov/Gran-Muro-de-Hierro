@@ -23,6 +23,7 @@ interface Props {
 }
 
 export function ModelDetails({ wb, model, onUpdateModel }: Props) {
+  try {
   if (!model) {
     return (
       <div className="p-4 bg-[#1a0f0a] border border-[#5c3a21] rounded text-[#9e9178] text-sm text-center">
@@ -318,4 +319,8 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
       </div>
     </div>
   );
+  } catch (err: any) {
+    console.error('CRASH IN MODELDETAILS:', err);
+    return <div className="text-red-500 font-bold p-8">CRASH: {err.message}</div>;
+  }
 }

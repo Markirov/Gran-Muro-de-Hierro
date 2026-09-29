@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { DATA } from '../data/01_trench_crusade_game_data';
 
 /* ======================================================================

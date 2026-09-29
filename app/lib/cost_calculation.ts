@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { DATA } from '../data/01_trench_crusade_game_data';
 import { unitCountInWarband } from './limit_validation';
+import { getArmouryCategory, getWeaponLimits, countModelMeleeWeapons, countModelRangedWeapons, checkWeaponSlots } from './battlekit_legality_engine';
 
 /* ======================================================================
    COST CALCULATION

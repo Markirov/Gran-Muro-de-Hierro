@@ -15,13 +15,13 @@
   },
   {
     "route": "/bandas/roster",
-    "firstLoadUncompressedJsBytes": 641531,
+    "firstLoadUncompressedJsBytes": 641463,
     "firstLoadChunkPaths": [
       ".next\\static\\chunks\\3fntmmi971322.js",
       ".next\\static\\chunks\\3s7ae0zk7v4_f.js",
       ".next\\static\\chunks\\1t91xbi01u3yz.js",
       ".next\\static\\chunks\\1n20-1er7y5iv.js",
-      ".next\\static\\chunks\\42xsubkm-l2f5.js",
+      ".next\\static\\chunks\\18n2cg7k3uyht.js",
       ".next\\static\\chunks\\310vm2bl3xxpt.js",
       ".next\\static\\chunks\\2mmpezlrfmbu5.js",
       ".next\\static\\chunks\\0bma92pht_c97.js",

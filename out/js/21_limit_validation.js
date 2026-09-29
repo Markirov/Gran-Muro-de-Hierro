@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { DATA } from '../data/01_trench_crusade_game_data';
-import { unitForbiddenByVariant, getActiveVariant, variantUnitOverride } from './cost_calculation';
+import { unitForbiddenByVariant, getActiveVariant, variantUnitOverride, getUnit, modelCost } from './cost_calculation';
 
 /* ======================================================================
    LIMIT VALIDATION

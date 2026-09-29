@@ -1,0 +1,138 @@
+app/lib/battlekit_deltas.ts(309,15): error TS2304: Cannot find name 'SCENARIOS_CATALOG'.
+app/lib/battlekit_deltas.ts(366,15): error TS2304: Cannot find name 'SCENARIOS_CATALOG'.
+app/lib/battlekit_deltas.ts(395,22): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/battlekit_deltas.ts(556,22): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/battlekit_deltas.ts(753,14): error TS2304: Cannot find name 'ENEMY_FACTORIES'.
+app/lib/battlekit_deltas.ts(755,53): error TS2304: Cannot find name 'ENEMY_FACTORIES'.
+app/lib/battlekit_deltas.ts(757,26): error TS2349: This expression is not callable.
+  Type '{}' has no call signatures.
+app/lib/battlekit_deltas.ts(873,36): error TS2365: Operator '>' cannot be applied to types 'unknown' and 'number'.
+app/lib/battlekit_deltas.ts(1095,22): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/battlekit_deltas.ts(1332,31): error TS2339: Property 'count' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1333,26): error TS2339: Property 'kills' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1334,29): error TS2339: Property 'dmgDealt' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1335,25): error TS2339: Property 'outRate' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1337,28): error TS2339: Property 'cost' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1337,59): error TS2339: Property 'cost' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1339,17): error TS2339: Property 'name' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1339,31): error TS2339: Property 'cost' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1341,21): error TS2339: Property 'keywords' does not exist on type 'unknown'.
+app/lib/battlekit_deltas.ts(1989,22): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/battlekit_deltas.ts(2136,25): error TS2304: Cannot find name 'scaleEnemyBand'.
+app/lib/battlekit_deltas.ts(2138,21): error TS2304: Cannot find name 'runBattleSeries_lab'.
+app/lib/battlekit_deltas.ts(2139,15): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/battlekit_deltas.ts(2142,27): error TS2304: Cannot find name 'LAB_ENEMY_OPTIONS'.
+app/lib/battlekit_deltas.ts(2143,11): error TS2304: Cannot find name 'LAB_ENEMY_OPTIONS'.
+app/lib/battlekit_deltas.ts(2177,78): error TS2339: Property 'open' does not exist on type '{}'.
+app/lib/battlekit_deltas.ts(2178,24): error TS2339: Property 'mixed' does not exist on type '{}'.
+app/lib/battlekit_deltas.ts(2178,70): error TS2339: Property 'urban' does not exist on type '{}'.
+app/lib/battlekit_deltas.ts(2186,98): error TS2339: Property 'open' does not exist on type '{}'.
+app/lib/battlekit_deltas.ts(2187,31): error TS2339: Property 'mixed' does not exist on type '{}'.
+app/lib/battlekit_deltas.ts(2187,78): error TS2339: Property 'urban' does not exist on type '{}'.
+app/lib/battlekit_deltas.ts(2262,22): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/battlekit_legality_engine.ts(119,14): error TS2339: Property 'find' does not exist on type 'unknown'.
+app/lib/battlekit_legality_engine.ts(154,16): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(163,16): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(175,16): error TS2304: Cannot find name 'getUnit'.
+app/lib/battlekit_legality_engine.ts(192,16): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(216,16): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(248,16): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(266,16): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(296,27): error TS2304: Cannot find name 'variantUnitOverride'.
+app/lib/battlekit_legality_engine.ts(492,103): error TS2304: Cannot find name 'getUnit'.
+app/lib/battlekit_legality_engine.ts(546,23): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(572,17): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(593,20): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(610,22): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(655,26): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(691,10): error TS2304: Cannot find name 'modelNegatesKeyword'.
+app/lib/battlekit_legality_engine.ts(709,21): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(737,21): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(764,19): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(794,19): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(830,23): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/battlekit_legality_engine.ts(894,16): error TS2304: Cannot find name 'findBattlekitItem'.
+app/lib/cost_calculation.ts(108,23): error TS2339: Property 'find' does not exist on type 'unknown'.
+app/lib/cost_calculation.ts(117,25): error TS2339: Property 'find' does not exist on type 'unknown'.
+app/lib/cost_calculation.ts(136,24): error TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method that returns an iterator.
+app/lib/cost_calculation.ts(171,7): error TS2304: Cannot find name 'getArmouryCategory'.
+app/lib/cost_calculation.ts(216,48): error TS2304: Cannot find name 'STATE'.
+app/lib/cost_calculation.ts(230,27): error TS2304: Cannot find name 'STATE'.
+app/lib/cost_calculation.ts(230,51): error TS2304: Cannot find name 'STATE'.
+app/lib/cost_calculation.ts(291,27): error TS2304: Cannot find name 'STATE'.
+app/lib/cost_calculation.ts(291,51): error TS2304: Cannot find name 'STATE'.
+app/lib/cost_calculation.ts(344,15): error TS2554: Expected 3 arguments, but got 2.
+app/lib/cost_calculation.ts(420,19): error TS2304: Cannot find name 'STATE'.
+app/lib/cost_calculation.ts(475,20): error TS2554: Expected 3 arguments, but got 2.
+app/lib/cost_calculation.ts(591,18): error TS2554: Expected 3 arguments, but got 2.
+app/lib/cost_calculation.ts(617,20): error TS2554: Expected 3 arguments, but got 2.
+app/lib/cost_calculation.ts(690,20): error TS2304: Cannot find name 'getWeaponLimits'.
+app/lib/cost_calculation.ts(691,19): error TS2304: Cannot find name 'countModelMeleeWeapons'.
+app/lib/cost_calculation.ts(692,20): error TS2304: Cannot find name 'countModelRangedWeapons'.
+app/lib/cost_calculation.ts(696,24): error TS2304: Cannot find name 'checkWeaponSlots'.
+app/lib/cost_calculation.ts(703,25): error TS2304: Cannot find name 'checkWeaponSlots'.
+app/lib/cost_calculation.ts(719,19): error TS2304: Cannot find name 'getArmouryCategory'.
+app/lib/cost_calculation.ts(755,43): error TS2304: Cannot find name 'getArmouryCategory'.
+app/lib/limit_validation.ts(39,17): error TS2304: Cannot find name 'getUnit'.
+app/lib/limit_validation.ts(65,29): error TS2304: Cannot find name 'modelCost'.
+app/lib/limit_validation.ts(136,19): error TS2304: Cannot find name 'getUnit'.
+app/lib/loadout_lab.ts(72,22): error TS2304: Cannot find name 'parseStatToInt'.
+app/lib/loadout_lab.ts(73,22): error TS2304: Cannot find name 'parseStatToInt'.
+app/lib/loadout_lab.ts(74,22): error TS2304: Cannot find name 'parseStatToInt'.
+app/lib/loadout_lab.ts(276,33): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/loadout_lab.ts(799,24): error TS2304: Cannot find name 'getUnit'.
+app/lib/loadout_lab.ts(800,7): error TS2304: Cannot find name 'getUnit'.
+app/lib/loadout_lab.ts(836,16): error TS2304: Cannot find name 'companionModelToBattleModel'.
+app/lib/loadout_lab.ts(879,22): error TS2339: Property 'scenario' does not exist on type '{ terrain: any; maxRounds: number; }'.
+app/lib/loadout_lab.ts(944,21): error TS2339: Property 'scenarioId' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(945,24): error TS2339: Property 'scenarioLabel' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(946,20): error TS2339: Property 'archetype' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(947,21): error TS2339: Property 'winRates' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(947,70): error TS2339: Property 'winRates' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(948,24): error TS2339: Property 'modelKills' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(948,75): error TS2339: Property 'modelKills' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(949,26): error TS2339: Property 'modelOoARates' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(949,80): error TS2339: Property 'modelOoARates' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(1104,14): error TS2304: Cannot find name 'CAMPAIGN_TABLES'.
+app/lib/loadout_lab.ts(1105,7): error TS2304: Cannot find name 'CAMPAIGN_TABLES'.
+app/lib/loadout_lab.ts(1106,15): error TS2304: Cannot find name 'CAMPAIGN_TABLES'.
+app/lib/loadout_lab.ts(1107,21): error TS2304: Cannot find name 'CAMPAIGN_TABLES'.
+app/lib/loadout_lab.ts(1361,10): error TS2304: Cannot find name 'distance'.
+app/lib/loadout_lab.ts(1390,18): error TS2304: Cannot find name 'applyLustPierce'.
+app/lib/loadout_lab.ts(1399,12): error TS2304: Cannot find name 'applySlothMinorAsDown'.
+app/lib/loadout_lab.ts(1429,7): error TS2304: Cannot find name 'applyPrideOnBlood'.
+app/lib/loadout_lab.ts(1470,5): error TS2304: Cannot find name 'consumeHungerOnKill'.
+app/lib/loadout_lab.ts(1492,8): error TS2304: Cannot find name 'isWithinWeaponRange'.
+app/lib/loadout_lab.ts(1498,13): error TS2304: Cannot find name 'applyGluttonyMalus'.
+app/lib/loadout_lab.ts(1499,13): error TS2304: Cannot find name 'applyFortifyMalus'.
+app/lib/loadout_lab.ts(1505,20): error TS2304: Cannot find name 'applyTerrainCoverModifier'.
+app/lib/loadout_lab.ts(1568,9): error TS2554: Expected 7 arguments, but got 6.
+app/lib/loadout_lab.ts(1572,5): error TS2554: Expected 7 arguments, but got 6.
+app/lib/loadout_lab.ts(1585,8): error TS2304: Cannot find name 'modelHasNegateMined'.
+app/lib/loadout_lab.ts(1591,23): error TS2304: Cannot find name 'modelHasDefuseMine'.
+app/lib/loadout_lab.ts(1602,9): error TS2554: Expected 7 arguments, but got 6.
+app/lib/loadout_lab.ts(1612,14): error TS2304: Cannot find name 'modelFearDiceMod'.
+app/lib/loadout_lab.ts(1620,16): error TS2304: Cannot find name 'applyTerrainCoverModifier'.
+app/lib/loadout_lab.ts(1651,7): error TS2304: Cannot find name 'applySkipActivation'.
+app/lib/loadout_lab.ts(1671,7): error TS2304: Cannot find name 'consumeEyeOfBeelzebub'.
+app/lib/loadout_lab.ts(1698,21): error TS2304: Cannot find name '_spellToEffect'.
+app/lib/loadout_lab.ts(1710,21): error TS2304: Cannot find name '_spellToEffect'.
+app/lib/loadout_lab.ts(1715,27): error TS2304: Cannot find name 'castSpell'.
+app/lib/loadout_lab.ts(1954,24): error TS2554: Expected 2 arguments, but got 1.
+app/lib/loadout_lab.ts(2066,7): error TS2304: Cannot find name 'deployBands'.
+app/lib/loadout_lab.ts(2067,17): error TS2552: Cannot find name 'applyConcentratedAttackReal'. Did you mean 'concentratedAttack'?
+app/lib/loadout_lab.ts(2069,17): error TS2304: Cannot find name 'applyConcentratedAttackClustered'.
+app/lib/loadout_lab.ts(2071,17): error TS2304: Cannot find name 'applyConcentratedAttackPositional'.
+app/lib/loadout_lab.ts(2073,17): error TS2304: Cannot find name 'applyConcentratedAttackToBand'.
+app/lib/loadout_lab.ts(2101,18): error TS2304: Cannot find name 'terrainPhases'.
+app/lib/loadout_lab.ts(2148,31): error TS2304: Cannot find name 'modelHasInfiltrator'.
+app/lib/loadout_lab.ts(2337,26): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/loadout_lab.ts(2338,26): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/loadout_lab.ts(2374,26): error TS2304: Cannot find name 'makeBandFactory_lab'.
+app/lib/loadout_lab.ts(2375,25): error TS2304: Cannot find name 'LAB_ENEMY_OPTIONS'.
+app/lib/loadout_lab.ts(2376,9): error TS2304: Cannot find name 'LAB_ENEMY_OPTIONS'.
+app/lib/loadout_lab.ts(2384,29): error TS2304: Cannot find name 'buildBattleBandFromWarband'.
+app/lib/loadout_lab.ts(2876,13): error TS2339: Property 'isElite' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(2881,12): error TS2339: Property 'deedsCompleted' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(2881,33): error TS2339: Property 'deedsCompleted' does not exist on type 'unknown'.
+app/lib/loadout_lab.ts(2928,5): error TS2365: Operator '+=' cannot be applied to types 'number' and 'unknown'.

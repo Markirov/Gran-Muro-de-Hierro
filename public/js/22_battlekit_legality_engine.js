@@ -1,6 +1,5 @@
-// @ts-nocheck
 import { DATA } from '../data/01_trench_crusade_game_data';
-import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades } from './cost_calculation';
+import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades, findBattlekitItem, getUnit, variantUnitOverride, modelNegatesKeyword } from './cost_calculation';
 
 /* ======================================================================
    BATTLEKIT LEGALITY ENGINE

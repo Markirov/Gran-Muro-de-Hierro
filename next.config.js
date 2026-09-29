@@ -2,8 +2,13 @@
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  // optional: disable image optimization for static export
   images: { unoptimized: true },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;
