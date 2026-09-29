@@ -47,3 +47,9 @@ Bandas/cazadores-del-muro.pdf
 # Build de Firebase Hosting (scripts/deploy.sh)
 dist/
 .firebase/
+
+# Next.js (build y export estático; se regeneran con npm run build)
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*

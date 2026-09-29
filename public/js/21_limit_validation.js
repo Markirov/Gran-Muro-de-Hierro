@@ -23,7 +23,7 @@ function mercNotHireable(wb, unit) {
 // Canon (Starting a Warband): máximo 6 modelos ELITE en la banda.
 function eliteCapReached(wb, unit) {
   return !!unit && unit.tier === 'elite' &&
-         countEliteInWarband(wb) >= CAMPAIGN_TABLES.promotionRules.maxElites;
+         countEliteInWarband(wb) >= 6;
 }
 
 // Units limited by how many of another unit the warband has
@@ -140,3 +140,7 @@ function canAddUnitWithWarning(wb, unit) {
   return { canAdd: true };
 }
 
+
+function countEliteInWarband(wb) {
+  return wb.models.filter(m => m.isElite).length;
+}
