@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FACTIONS } from '../../data/factions';
 
 type BandIndexEntry = {
   id: string;
@@ -14,6 +15,23 @@ export default function BandasPage() {
   const router = useRouter();
   const [bands, setBands] = useState<BandIndexEntry[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  const getBandFactionOrVariant = (band: any) => {
+    try {
+      const raw = localStorage.getItem(`warband-forge-v1:${band.id}`);
+      if (raw) {
+        const full = JSON.parse(raw);
+        const fac = FACTIONS.find(f => f.id === full.factionId);
+        if (full.variantId && fac?.variants) {
+          const v = fac.variants.find(varItem => varItem.id === full.variantId);
+          if (v) return v.name;
+        }
+        if (fac) return fac.name;
+      }
+    } catch (e) {}
+    const fac = FACTIONS.find(f => f.id === band.factionId);
+    return fac?.name || band.factionId?.replace(/-/g, ' ') || '—';
+  };
 
   useEffect(() => {
     // Cargar bandas desde localStorage (índice de Vanilla JS)
@@ -104,21 +122,18 @@ export default function BandasPage() {
               <div className="relative z-10 space-y-2">
                 <div className="bg-black/40 px-3 py-1.5 rounded inline-block border border-[#3a2110]">
                   <span className="text-xs text-[#e2d4b7] uppercase tracking-widest font-bold">
-                    {band.factionId ? band.factionId.replace(/-/g, ' ') : '—'}
+                    {getBandFactionOrVariant(band)}
                   </span>
                 </div>
               </div>
               
-              <div className="relative z-10 border-t border-[#3a2110] mt-6 pt-4 flex justify-between items-end">
+              <div className="relative z-10 border-t border-[#3a2110] mt-6 pt-4 flex justify-between items-center">
                 <span className="text-[#9e9178] text-sm flex items-center gap-2">
                   <span className="opacity-50">⚔</span> {band.models || 0} Miniaturas
                 </span>
-                
-                {band.updatedAt && (
-                  <div className="text-[10px] uppercase tracking-widest text-[#7a6a58]">
-                    {new Date(band.updatedAt).toLocaleDateString()}
-                  </div>
-                )}
+                <span className="text-xs text-[#b8863c] font-bold uppercase tracking-wider group-hover:underline">
+                  Abrir Roster →
+                </span>
               </div>
             </div>
           ))}

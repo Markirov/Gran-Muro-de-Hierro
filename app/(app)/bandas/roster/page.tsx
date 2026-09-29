@@ -64,6 +64,28 @@ export default function RosterPage() {
   };
 
   const [showMarket, setShowMarket] = useState(false);
+  const [showBudgetModal, setShowBudgetModal] = useState(false);
+  const [tempBudget, setTempBudget] = useState(0);
+  const [tempGlory, setTempGlory] = useState(0);
+
+  const openBudgetModal = () => {
+    setTempBudget(wb.budgetTotal ?? 0);
+    setTempGlory(wb.glory ?? 0);
+    setShowBudgetModal(true);
+  };
+
+  const handleSaveBudget = () => {
+    saveWb({
+      ...wb,
+      budgetTotal: Math.max(0, tempBudget),
+      glory: Math.max(0, tempGlory)
+    });
+    setShowBudgetModal(false);
+  };
+
+  const handleReorderModels = (newModels: any[]) => {
+    saveWb({ ...wb, models: newModels });
+  };
 
   if (error) {
     return <div className="text-red-500 p-8">{error}</div>;
@@ -101,38 +123,33 @@ export default function RosterPage() {
         </div>
         
         <div className="flex items-center gap-4 md:gap-8">
-          <div className="flex gap-6 bg-[#0a0503] px-6 py-2 rounded-lg border border-[#3a2110] shadow-inner">
+          <button 
+            type="button"
+            onClick={openBudgetModal}
+            className="flex gap-6 bg-[#0a0503] hover:bg-[#1a0f0a] px-6 py-2 rounded-lg border border-[#3a2110] hover:border-[#b8863c] transition-all shadow-inner group cursor-pointer text-left"
+            title="Pulsar para ajustar Ducados y Gloria de la banda"
+          >
             <div className="flex flex-col items-center">
-              <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest mb-1">Presupuesto</span>
+              <span className="text-[10px] uppercase text-[#7a6a58] group-hover:text-[#b8863c] tracking-widest mb-1 flex items-center gap-1 font-bold">
+                Presupuesto <span className="text-[9px]">✎</span>
+              </span>
               <div className="text-2xl font-serif text-[#b8863c]">
                 {(wb.budgetTotal || 0) - spentDucados}{' '}
                 <span className="text-[#7a6a58] text-sm">
-                  /{' '}
-                  <input
-                    type="number"
-                    min={0}
-                    step={5}
-                    value={wb.budgetTotal ?? 0}
-                    onChange={(e) => saveWb({ ...wb, budgetTotal: Math.max(0, parseInt(e.target.value, 10) || 0) })}
-                    title="Presupuesto total de la banda"
-                    className="w-16 bg-transparent text-[#7a6a58] text-sm text-right border-b border-dashed border-[#5c3a21] focus:outline-none focus:border-[#b8863c] focus:text-[#e2d4b7]"
-                  />{' '}
-                  👑
+                  / {wb.budgetTotal ?? 0} 👑
                 </span>
               </div>
             </div>
-            {wb.glory > 0 && (
-              <>
-                <div className="w-px bg-[#3a2110] my-2"></div>
-                <div className="flex flex-col items-center">
-                  <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest mb-1">Gloria</span>
-                  <div className="text-2xl font-serif text-[#e2d4b7]">
-                    {wb.glory - spentGlory} <span className="text-[#7a6a58] text-sm">/ {wb.glory} ☼</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+            <div className="w-px bg-[#3a2110] my-2"></div>
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] uppercase text-[#7a6a58] group-hover:text-[#e2d4b7] tracking-widest mb-1 flex items-center gap-1 font-bold">
+                Gloria <span className="text-[9px]">✎</span>
+              </span>
+              <div className="text-2xl font-serif text-[#e2d4b7]">
+                {(wb.glory || 0) - spentGlory} <span className="text-[#7a6a58] text-sm">/ {wb.glory ?? 0} ☼</span>
+              </div>
+            </div>
+          </button>
 
           <div className="flex flex-col gap-2">
             <button 
@@ -181,9 +198,9 @@ export default function RosterPage() {
           <div className="flex-1 overflow-y-auto custom-scrollbar bg-[#0a0503]/50 rounded-b-lg border-x border-b border-[#5c3a21] p-2 relative">
             <RosterList 
               wb={wb} 
-              onRemoveUnit={handleRemoveUnit} 
               onSelectModel={setSelectedUid}
               selectedUid={selectedUid}
+              onReorderModels={handleReorderModels}
             />
           </div>
         </div>
@@ -208,6 +225,7 @@ export default function RosterPage() {
                   };
                   saveWb(newWb);
                 }} 
+                onRemoveModel={handleRemoveUnit}
               />
             </div>
           )}
@@ -224,6 +242,81 @@ export default function RosterPage() {
             </div>
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
               <UnitMarket wb={wb} onAddUnit={(u) => { handleAddUnit(u); setShowMarket(false); }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AJUSTE DE PRESUPUESTO Y GLORIA */}
+      {showBudgetModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowBudgetModal(false)}>
+          <div className="w-full max-w-md bg-[#1a0f0a] border-2 border-[#b8863c] rounded-xl shadow-2xl overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-b from-[#2a1610] to-[#1a0f0a] p-4 flex justify-between items-center border-b border-[#5c3a21]">
+              <h2 className="font-serif text-xl text-[#b8863c] uppercase tracking-widest m-0 flex items-center gap-2">
+                💰 Fondos de la Banda
+              </h2>
+              <button onClick={() => setShowBudgetModal(false)} className="text-[#9e9178] hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* AVISO EN ROJO */}
+              <div className="bg-red-950/40 border border-red-800/60 rounded-lg p-3 flex gap-2.5 items-start">
+                <span className="text-red-500 text-lg leading-none shrink-0 mt-0.5">⚠️</span>
+                <p className="text-xs text-red-200/90 leading-relaxed font-sans">
+                  <strong className="text-red-400 uppercase tracking-wide block mb-1">Aviso de Reglas:</strong>
+                  Modificar manualmente los Ducados o la Gloria altera el límite de reclutamiento de la banda. En futuras progresiones de campaña, estos fondos se actualizarán automáticamente con las recompensas y gastos obtenidos.
+                </p>
+              </div>
+
+              {/* DUCADOS */}
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-widest text-[#e2d4b7] font-bold flex justify-between">
+                  <span>Presupuesto Total (Ducados 👑)</span>
+                  <span className="text-[#9e9178] font-mono text-[11px]">Gastados: {spentDucados} 👑</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={5}
+                  value={tempBudget}
+                  onChange={(e) => setTempBudget(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  className="w-full bg-[#0a0503] border border-[#5c3a21] focus:border-[#b8863c] rounded-lg px-3 py-2 text-[#b8863c] font-serif text-xl outline-none font-bold shadow-inner"
+                />
+              </div>
+
+              {/* GLORIA */}
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-widest text-[#e2d4b7] font-bold flex justify-between">
+                  <span>Gloria Base (☼)</span>
+                  <span className="text-[#9e9178] font-mono text-[11px]">Gastada: {spentGlory} ☼</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={tempGlory}
+                  onChange={(e) => setTempGlory(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                  className="w-full bg-[#0a0503] border border-[#5c3a21] focus:border-[#b8863c] rounded-lg px-3 py-2 text-[#e2d4b7] font-serif text-xl outline-none font-bold shadow-inner"
+                />
+              </div>
+
+              {/* BOTONES ACCION */}
+              <div className="flex gap-3 pt-3 border-t border-[#3a2110]">
+                <button
+                  type="button"
+                  onClick={() => setShowBudgetModal(false)}
+                  className="flex-1 py-2 rounded border border-[#5c3a21] text-[#9e9178] hover:text-[#e2d4b7] uppercase tracking-widest text-xs font-bold transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveBudget}
+                  className="flex-1 py-2 rounded bg-gradient-to-r from-[#b8863c] to-[#9c6f2a] text-[#1a0f0a] uppercase tracking-widest text-xs font-bold hover:brightness-110 transition-all shadow-md"
+                >
+                  Guardar Fondos
+                </button>
+              </div>
             </div>
           </div>
         </div>

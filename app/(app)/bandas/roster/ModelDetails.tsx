@@ -24,9 +24,10 @@ interface Props {
   wb: any;
   model: any;
   onUpdateModel: (newModel: any) => void;
+  onRemoveModel?: (uid: string) => void;
 }
 
-export function ModelDetails({ wb, model, onUpdateModel }: Props) {
+export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props) {
   const [selectorOpen, setSelectorOpen] = useState<string | null>(null);
 
   try {
@@ -143,7 +144,20 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
 
           {/* STATS CANÓNICOS */}
           {unit.stats && (
-            <div className="grid grid-cols-5 gap-2 mt-6">
+            <div className="mt-6">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">Atributos</span>
+                {onRemoveModel && (
+                  <button
+                    onClick={() => onRemoveModel(model.uid)}
+                    className="text-[11px] font-bold text-red-400 hover:text-red-200 bg-red-950/40 hover:bg-red-900/80 border border-red-900/60 hover:border-red-500 px-3 py-1 rounded transition-all uppercase tracking-wider flex items-center gap-1 shadow-sm"
+                    title="Eliminar miniatura de la banda"
+                  >
+                    🗑️ Despedir Miniatura
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-5 gap-2">
               {['movement', 'ranged', 'melee', 'armour', 'base'].map(k => (
                 <div key={k} className="bg-[#0a0503] border border-[#3a2110] rounded-lg p-2 text-center shadow-inner flex flex-col justify-center relative overflow-hidden">
                   <div className="text-[9px] uppercase text-[#7a6a58] tracking-widest z-10">{k === 'movement' ? 'Mov' : k}</div>
@@ -160,6 +174,7 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
                   </div>
                 </div>
               ))}
+            </div>
             </div>
           )}
         </div>
