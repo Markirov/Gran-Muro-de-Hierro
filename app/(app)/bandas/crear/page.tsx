@@ -36,28 +36,14 @@ export default function CrearBandaPage() {
     };
 
     // Guardar los datos completos de la banda
-    localStorage.setItem(`warband-forge-v1:${newId}`, JSON.stringify(newBand));
-    
-    // Actualizar el índice
-    try {
-      const idxRaw = localStorage.getItem('warband-forge-index');
-      const idx = idxRaw ? JSON.parse(idxRaw) : [];
-      idx.push({
-        id: newId,
-        name: newBand.name,
-        factionId: newBand.factionId,
-        models: 0,
-        updatedAt: newBand.updatedAt
+    import('../../../lib/storage').then(({ saveWarbandLocallyAndCloud }) => {
+      saveWarbandLocallyAndCloud(newId, newBand).then(() => {
+        // Establecer como banda activa y redirigir
+        localStorage.setItem('warband-forge-v1:current', newId);
+        // Ir a la nueva vista React del Roster
+        router.push(`/bandas/roster`);
       });
-      localStorage.setItem('warband-forge-index', JSON.stringify(idx));
-    } catch (e) {
-      console.error(e);
-    }
-    
-    // Establecer como banda activa y redirigir
-    localStorage.setItem('warband-forge-v1:current', newId);
-    // Ir a la nueva vista React del Roster
-    router.push(`/bandas/roster`);
+    });
   };
 
   return (

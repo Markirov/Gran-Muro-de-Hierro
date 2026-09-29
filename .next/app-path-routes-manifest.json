@@ -1,0 +1,12 @@
+{
+  "/(app)/bandas/crear/page": "/bandas/crear",
+  "/(app)/bandas/page": "/bandas",
+  "/(app)/bandas/roster/page": "/bandas/roster",
+  "/(app)/campana/page": "/campana",
+  "/(app)/lab/page": "/lab",
+  "/(app)/partida/page": "/partida",
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}

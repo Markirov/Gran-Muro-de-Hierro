@@ -38,14 +38,14 @@ export default function BandasPage() {
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm('¿Eliminar esta banda definitivamente?')) return;
-    
-    // Borrar de índice
+    // Borrar de índice local
     const newBands = bands.filter(b => b.id !== id);
     setBands(newBands);
-    localStorage.setItem('warband-forge-index', JSON.stringify(newBands));
     
     // Borrar datos completos
-    localStorage.removeItem(`warband-forge-v1:${id}`);
+    import('../../lib/storage').then(({ deleteWarbandLocallyAndCloud }) => {
+      deleteWarbandLocallyAndCloud(id);
+    });
     
     if (currentId === id) {
       localStorage.removeItem('warband-forge-v1:current');

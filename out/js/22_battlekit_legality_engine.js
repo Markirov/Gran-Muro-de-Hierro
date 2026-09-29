@@ -757,6 +757,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
   const upWeaponLimits = (activeUpgrades(model, unit, wb).find(u => u.weaponLimits) || {}).weaponLimits || null;
   if (category === 'shields') {
     const shieldHasCombo = r.tags.has('Shield Combo') && !(upWeaponLimits && upWeaponLimits.noShieldCombo);
+    const isStrong = (unit ? effectiveKeywords(model, unit, wb) : []).includes('STRONG');
     for (const kid of (model.battlekit || [])) {
       const eit = findBattlekitItem(wb.factionId, kid, wb);
       if (!eit || eit.type !== '2-Handed') continue;
@@ -785,6 +786,8 @@ function classifyBattlekitItem(item, model, unit, wb) {
   // the new weapon must have Shield Combo.
   if (item.type === '2-Handed') {
     const has2hCombo = r.tags.has('Shield Combo') && !(upWeaponLimits && upWeaponLimits.noShieldCombo);
+    const isStrong = (unit ? effectiveKeywords(model, unit, wb) : []).includes('STRONG');
+    const isStrongOverride = isStrong && category === 'melee' && !itemHasWeaponKeyword(item, 'CUMBERSOME');
     for (const kid of (model.battlekit || [])) {
       const eit = findBattlekitItem(wb.factionId, kid, wb);
       if (!eit) continue;

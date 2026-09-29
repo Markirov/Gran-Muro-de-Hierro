@@ -34,7 +34,9 @@ export default function RosterPage() {
 
   const saveWb = (newWb: any) => {
     setWb(newWb);
-    localStorage.setItem(`warband-forge-v1:${newWb.id}`, JSON.stringify(newWb));
+    import('../../../lib/storage').then(({ saveWarbandLocallyAndCloud }) => {
+      saveWarbandLocallyAndCloud(newWb.id, newWb);
+    });
   };
 
   const handleAddUnit = (u: any) => {
