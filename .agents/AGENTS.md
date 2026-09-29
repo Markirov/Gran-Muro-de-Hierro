@@ -1,6 +1,6 @@
 # AGENTS.md — Harness de trabajo (fuente única de protocolo núcleo)
 
-> **Harness v2.7.0** — núcleo sincronizado desde `agentic-framework/`. **Este archivo es 100% núcleo:** no lo edites a mano, se reemplaza entero en `harness update`. Una mejora al núcleo se propone con `harness propose`. Todo lo propio de este proyecto (roles, cabecera Proyecto/Stack, reglas de dominio) vive en **`.agents/PROJECT.md`** — ese archivo nunca lo toca `update`, es tuyo.
+> **Harness v2.8.0** — núcleo sincronizado desde `agentic-framework/`. **Este archivo es 100% núcleo:** no lo edites a mano, se reemplaza entero en `harness update`. Una mejora al núcleo se propone con `harness propose`. Todo lo propio de este proyecto (roles, cabecera Proyecto/Stack, reglas de dominio) vive en **`.agents/PROJECT.md`** — ese archivo nunca lo toca `update`, es tuyo.
 >
 > **Punto de entrada ÚNICO para cualquier agente (IA o humano) que toque este repositorio.** Léelo entero antes de hacer nada, y después `.agents/PROJECT.md` (quién trabaja aquí) y tu regla dedicada.
 > `CLAUDE.md` / `GEMINI.md` / `AGENTS.md` de la raíz son solo punteros a este archivo.
@@ -59,6 +59,11 @@ Un rol que necesita algo de otro lo deja escrito en `PENDING.md` (o en el artefa
 - **Formato:** cuando una regla dedicada crece, sus secciones grandes se extraen a `.agents/rules/<rol>/<tema>.md` — agrupado por tema (ej. todo lo de acceso a datos junto), no por sección numerada suelta. La regla del rol queda como **router**: cada sección atomizada se sustituye ahí por un puntero de una línea a su archivo. El agente decide cuándo abrirlo — **no hay mecanismo automático de inyección** (tipo `.cursorrules`/project rules); si un proyecto necesita eso, es investigación/capacidad propia suya, no algo que el núcleo garantice hoy.
 - **Qué se atomiza:** decisión del Lead Developer, caso por caso, no automática. Roles con identidad narrativa/creativa que casi siempre necesitan su contexto completo de una sola vez (rara vez se benefician de atomizar). Roles con mucho contenido procedimental o de referencia (checklists, mapas de archivos, reglas técnicas por área) son los candidatos naturales cuando su regla dedicada crece demasiado para releerse entera cada vez.
 - **Patrón router+plantillas:** si un rol produce varios tipos de documento (informes, specs, fichas), su regla guarda solo un **criterio corto de elección de tipo** y las plantillas completas (header, extensión, estructura) van a `.agents/rules/<rol>/plantillas_*.md`, registradas en el mapa. El criterio vive solo en el router — nunca duplicado en las plantillas, para que no diverjan.
+- **`PROJECT.md` solo lo transversal:** lo leen todos los roles en cada sesión, así que cada KB ahí se paga en cada sesión.
+  - **Se queda en `PROJECT.md`:** lo que usan todos los roles (tabla de roles, Límites, seguridad git) y un **índice** de una línea por tema, con qué rol lo lee y en qué archivo está.
+  - **Sale de `PROJECT.md`:** lo que usa un rol o unos pocos (canon de dominio, datado, estructura de carpetas, mantenimiento del tracking) va a `.agents/rules/proyecto/<tema>.md`, registrado en el mapa.
+  - **Punteros:** cada regla de rol lleva un puntero "lee X si vas a hacer Y" a los temas que le tocan.
+  - **Cuándo aplicarlo:** cuando `PROJECT.md` supere unos 8 KB.
 - **Mapa único:** `.agents/rules/MAPA_REGLAS.md` mantiene la tabla código→título→archivo de TODAS las reglas con código, atomizadas o no. Se cita el código corto de siempre; el mapa resuelve a qué archivo apunta hoy. Su mantenimiento (sin huecos: código sin fila, o fila apuntando a archivo inexistente) es chequeo fijo del QA Auditor.
 
 ### 1.9 · Concurrencia y colisiones
