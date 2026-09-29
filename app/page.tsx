@@ -31,7 +31,7 @@ export default function Home() {
           <h2 className="text-3xl m-0">Lab</h2>
           <span className="font-sans text-base text-[#9e9178] normal-case tracking-normal">Simula batallas y cruza estadísticas</span>
         </a>
-        <a href="app.html?mode=battle" className="bg-[#2a1610] border border-[#5c3a21] rounded p-12 text-center no-underline text-[#b8863c] font-serif uppercase transition-all hover:bg-[#5c3a21] hover:text-[#e2d4b7] hover:-translate-y-1 hover:shadow-xl hover:border-[#b8863c] flex flex-col items-center gap-4">
+        <a href="/partida" className="bg-[#2a1610] border border-[#5c3a21] rounded p-12 text-center no-underline text-[#b8863c] font-serif uppercase transition-all hover:bg-[#5c3a21] hover:text-[#e2d4b7] hover:-translate-y-1 hover:shadow-xl hover:border-[#b8863c] flex flex-col items-center gap-4">
           <span className="text-6xl opacity-90">📋</span>
           <h2 className="text-3xl m-0">Partida</h2>
           <span className="font-sans text-base text-[#9e9178] normal-case tracking-normal">Juega una partida sin afectar a campañas</span>

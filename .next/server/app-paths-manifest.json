@@ -2,6 +2,7 @@
   "/(app)/bandas/crear/page": "app/(app)/bandas/crear/page.js",
   "/(app)/bandas/page": "app/(app)/bandas/page.js",
   "/(app)/bandas/roster/page": "app/(app)/bandas/roster/page.js",
+  "/(app)/partida/page": "app/(app)/partida/page.js",
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",

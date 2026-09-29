@@ -64,6 +64,12 @@
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/partida",
+      "regex": "^/partida(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/partida(?:/)?$"
     }
   ],
   "dataRoutes": [],
