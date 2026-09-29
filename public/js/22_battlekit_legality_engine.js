@@ -1,6 +1,4 @@
-import { DATA } from '../data/01_trench_crusade_game_data';
-import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades, findBattlekitItem, getUnit, variantUnitOverride, modelNegatesKeyword } from './cost_calculation';
-
+// @ts-nocheck
 /* ======================================================================
    BATTLEKIT LEGALITY ENGINE
    Determines which armoury items a model can legally equip.

@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 # Correr tests primero
-
+bash verify.sh
 
 echo "Construyendo Next.js..."
 npm run build

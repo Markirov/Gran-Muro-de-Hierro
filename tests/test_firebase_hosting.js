@@ -1,6 +1,7 @@
 /* Firebase Hosting (decisión de Marcos, 2026-09-28: la app se sirve desde
  * Firebase y se despliega a mano desde el PC; GitHub Pages se desactiva).
- * Solo se publica la app (index.html y sus imágenes), nunca el repo entero.
+ * Solo se publica la app (exportación estática de Next en out/, que incluye
+ * public/app.html y sus módulos), nunca el repo entero.
  */
 const fs = require('fs');
 const path = require('path');
@@ -16,7 +17,7 @@ try { rc = JSON.parse(read('.firebaserc')); } catch (e) {}
 try { fj = JSON.parse(read('firebase.json')); } catch (e) {}
 ok(rc.projects && rc.projects.default === 'murodehierrodelsultanato', '.firebaserc apunta a murodehierrodelsultanato');
 const h = fj.hosting || {};
-ok(h.public === 'dist', 'hosting publica solo la carpeta dist');
+ok(h.public === 'out', 'hosting publica solo la exportación estática de Next (out)');
 ok(/^dist\/?$/m.test(read('.gitignore')), 'dist no se versiona');
 const hdr = JSON.stringify(h.headers || []);
 ok(/index\.html/.test(hdr) && /no-cache/.test(hdr), 'index.html sin caché (cada despliegue se ve al momento)');
@@ -24,7 +25,7 @@ ok(/index\.html/.test(hdr) && /no-cache/.test(hdr), 'index.html sin caché (cada
 console.log('\nGroup 2: despliegue');
 const dep = read('scripts/deploy.sh');
 ok(/verify\.sh/.test(dep), 'el despliegue pasa antes verify.sh');
-ok(/cp[^\n]*index\.html[^\n]*dist/.test(dep) && /wwi-placeholders/.test(dep), 'copia index.html y las imágenes a dist');
+ok(/npm run build/.test(dep), 'construye Next.js (genera out/) antes de desplegar');
 ok(/firebase deploy --only hosting,firestore:rules/.test(dep), 'despliega hosting y reglas de Firestore');
 
 console.log('\nGroup 3: reglas de Firestore');

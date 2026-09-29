@@ -1,5 +1,4 @@
-import { DATA } from '../data/01_trench_crusade_game_data';
-
+// @ts-nocheck
 /* ======================================================================
    BATTLEKIT DELTAS — armoury upgrade recommender
    Heuristic-based (deterministic, no simulation needed).

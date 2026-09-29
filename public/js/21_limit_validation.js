@@ -1,6 +1,4 @@
-import { DATA } from '../data/01_trench_crusade_game_data';
-import { unitForbiddenByVariant, getActiveVariant, variantUnitOverride, getUnit, modelCost } from './cost_calculation';
-
+// @ts-nocheck
 /* ======================================================================
    LIMIT VALIDATION
    ====================================================================== */
@@ -25,7 +23,7 @@ function mercNotHireable(wb, unit) {
 // Canon (Starting a Warband): máximo 6 modelos ELITE en la banda.
 function eliteCapReached(wb, unit) {
   return !!unit && unit.tier === 'elite' &&
-         countEliteInWarband(wb) >= 6;
+         countEliteInWarband(wb) >= CAMPAIGN_TABLES.promotionRules.maxElites;
 }
 
 // Units limited by how many of another unit the warband has
@@ -142,7 +140,3 @@ function canAddUnitWithWarning(wb, unit) {
   return { canAdd: true };
 }
 
-
-function countEliteInWarband(wb) {
-  return wb.models.filter(m => m.isElite).length;
-}
