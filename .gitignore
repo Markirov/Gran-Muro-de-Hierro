@@ -53,3 +53,4 @@ dist/
 out/
 *.tsbuildinfo
 npm-debug.log*
+.agents/.update-backup-*

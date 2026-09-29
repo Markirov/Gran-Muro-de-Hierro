@@ -27,6 +27,7 @@ function toLegacyScript(content) {
   const nl = content.includes('\r\n') ? '\r\n' : '\n';
   let out = content
     .replace(IMPORT_LINE, '')
+    .replace(/^export\s*\{[\s\S]*?\};?[ \t]*\r?\n?/gm, '')
     .replace(/^export (const|function|let) /gm, '$1 ')
     .replace(/^\s*(\r?\n)+/, '');
   if (!/^\/\/ @ts-nocheck/.test(out)) out = '// @ts-nocheck' + nl + out;
@@ -38,6 +39,7 @@ function toLegacyScript(content) {
 function toLegacyData(content) {
   return content
     .replace(IMPORT_LINE, '')
+    .replace(/^export\s*\{[\s\S]*?\};?[ \t]*\r?\n?/gm, '')
     .replace(/^export (const|function|let) /gm, '$1 ');
 }
 

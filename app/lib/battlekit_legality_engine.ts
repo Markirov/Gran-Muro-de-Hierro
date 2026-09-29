@@ -332,8 +332,8 @@ export function getWeaponLimits(model, unit, wb) {
       meleeMax: 1,
       rangedMax: 1,
       totalMax: null,
-      // STRONG doesn't change the shield-imposed limit (a hand is busy)
-      strongBonus: false,
+      // STRONG (Rulebook 1.0.2 errata): lets 1x2H melee count as 1H, so it fits in meleeMax: 1 alongside a shield
+      strongBonus: isStrong,
       hasShield: true,
     };
   }
@@ -764,20 +764,24 @@ export function classifyBattlekitItem(item, model, unit, wb) {
       const eit = findBattlekitItem(wb.factionId, kid, wb);
       if (!eit || eit.type !== '2-Handed') continue;
       const er = parseRestriction(eit.restriction);
-      if (!shieldHasCombo || !er.tags.has('Shield Combo')) {
+      const eitCat = getArmouryCategory(wb.factionId, kid);
+      const eitStrongOverride = isStrong && eitCat === 'melee' && !itemHasWeaponKeyword(eit, 'CUMBERSOME');
+      if (!eitStrongOverride && (!shieldHasCombo || !er.tags.has('Shield Combo'))) {
         return { state: 'disabled', reason: 'Escudo + 2H requiere Shield Combo en ambos' };
       }
     }
     // Canon: with a shield, a model can carry max 1×1H melee + 1×1H ranged.
     // If adding a shield while the model already has 2 weapons of either
     // type, block — the user must drop a weapon first.
+    // STRONG: 2H melee weapon without CUMBERSOME counts as 1H.
     const melee = countModelMeleeWeapons(wb, model);
     const ranged = countModelRangedWeapons(wb, model);
     const shieldMelee = upWeaponLimits ? upWeaponLimits.shieldMeleeMax : 1;
     const shieldRanged = upWeaponLimits ? upWeaponLimits.rangedMax : 1;
-    if (melee.count1H > shieldMelee) {
+    const meleeHands = melee.count1H + (isStrong ? melee.count2H : melee.count2H * 2);
+    if (meleeHands > shieldMelee) {
       return { state: 'disabled',
-        reason: 'Con escudo: máx ' + shieldMelee + ' arma(s) 1H melee (quita una primero)' };
+        reason: 'Con escudo: máx ' + shieldMelee + ' arma(s) melee (quita una primero)' };
     }
     if (ranged.count1H > shieldRanged) {
       return { state: 'disabled',
@@ -785,7 +789,7 @@ export function classifyBattlekitItem(item, model, unit, wb) {
     }
   }
   // If adding a 2-Handed weapon: existing shield must allow combo and
-  // the new weapon must have Shield Combo.
+  // the new weapon must have Shield Combo (unless STRONG melee non-cumbersome).
   if (item.type === '2-Handed') {
     const has2hCombo = r.tags.has('Shield Combo') && !(upWeaponLimits && upWeaponLimits.noShieldCombo);
     const isStrong = (unit ? effectiveKeywords(model, unit, wb) : []).includes('STRONG');
@@ -795,7 +799,7 @@ export function classifyBattlekitItem(item, model, unit, wb) {
       if (!eit) continue;
       if (getArmouryCategory(wb.factionId, kid) === 'shields') {
         const er = parseRestriction(eit.restriction);
-        if (!has2hCombo || !er.tags.has('Shield Combo')) {
+        if (!isStrongOverride && (!has2hCombo || !er.tags.has('Shield Combo'))) {
           return { state: 'disabled', reason: 'Escudo + 2H requiere Shield Combo en ambos' };
         }
       }
@@ -901,5 +905,129 @@ export function modelLoadoutSummary(wb, model, unit) {
   }
   return summary;
 }
+
+/**
+ * Capacity container helper for Melee weapons.
+ */
+export function getModelMeleeCapacity(model, unit, wb) {
+  const limits = getWeaponLimits(model, unit, wb);
+  const melee = countModelMeleeWeapons(wb, model);
+  const kws = unit ? effectiveKeywords(model, unit, wb) : [];
+  const isStrong = kws.includes('STRONG');
+  
+  const items = (model.battlekit || [])
+    .map((kid, idx) => {
+      const it = findBattlekitItem(wb.factionId, kid, wb);
+      return it ? { ...it, _idx: idx } : null;
+    })
+    .filter(it => it && getArmouryCategory(wb.factionId, it.id) === 'melee');
+  
+  let handsUsed = 0;
+  items.forEach(it => {
+    if (it.type === '2-Handed') {
+      const isCumbersome = itemHasWeaponKeyword(it, 'CUMBERSOME');
+      handsUsed += (isStrong && !isCumbersome) ? 1 : 2;
+    } else {
+      handsUsed += 1;
+    }
+  });
+
+  const maxHands = limits.meleeMax;
+  const test1H = checkWeaponSlots(melee.count1H + 1, melee.count2H, limits.meleeMax, limits.strongBonus);
+  const test2H = checkWeaponSlots(melee.count1H, melee.count2H + 1, limits.meleeMax, limits.strongBonus);
+  
+  return {
+    items,
+    used: handsUsed,
+    max: maxHands,
+    canAdd1H: test1H.allowed && (!limits.hasShield || limits.strongBonus),
+    canAdd2H: test2H.allowed,
+    isFull: handsUsed >= maxHands,
+    isStrong,
+    hasShield: limits.hasShield
+  };
+}
+
+/**
+ * Capacity container helper for Ranged weapons.
+ */
+export function getModelRangedCapacity(model, unit, wb) {
+  const limits = getWeaponLimits(model, unit, wb);
+  const ranged = countModelRangedWeapons(wb, model);
+  
+  const items = (model.battlekit || [])
+    .map((kid, idx) => {
+      const it = findBattlekitItem(wb.factionId, kid, wb);
+      return it ? { ...it, _idx: idx } : null;
+    })
+    .filter(it => {
+      if (!it) return false;
+      const cat = getArmouryCategory(wb.factionId, it.id);
+      return cat === 'ranged' || cat === 'anchoriteRanged';
+    });
+  
+  let handsUsed = 0;
+  items.forEach(it => {
+    handsUsed += (it.type === '2-Handed') ? 2 : 1;
+  });
+
+  const maxHands = limits.rangedMax;
+  const test1H = checkWeaponSlots(ranged.count1H + 1, ranged.count2H, limits.rangedMax, false);
+  const test2H = checkWeaponSlots(ranged.count1H, ranged.count2H + 1, limits.rangedMax, false);
+
+  return {
+    items,
+    used: handsUsed,
+    max: maxHands,
+    canAdd1H: test1H.allowed,
+    canAdd2H: test2H.allowed,
+    isFull: handsUsed >= maxHands,
+    hasShield: limits.hasShield
+  };
+}
+
+/**
+ * Armour and Shield helper.
+ */
+export function getModelArmourAndShield(model, unit, wb) {
+  let armourItem = null;
+  let shieldItem = null;
+  
+  (model.battlekit || []).forEach((kid, idx) => {
+    const it = findBattlekitItem(wb.factionId, kid, wb);
+    if (!it) return;
+    const cat = getArmouryCategory(wb.factionId, kid);
+    if (cat === 'armour') armourItem = { ...it, _idx: idx };
+    if (cat === 'shields') shieldItem = { ...it, _idx: idx };
+  });
+  
+  return {
+    armour: armourItem,
+    shield: shieldItem,
+    permanentEquipment: unit?.permanentEquipment || []
+  };
+}
+
+/**
+ * Gear and Grenades helper.
+ */
+export function getModelGearAndGrenades(model, unit, wb) {
+  const grenades = [];
+  const gear = [];
+  
+  (model.battlekit || []).forEach((kid, idx) => {
+    const it = findBattlekitItem(wb.factionId, kid, wb);
+    if (!it) return;
+    const cat = getArmouryCategory(wb.factionId, kid);
+    if (cat === 'grenades') grenades.push({ ...it, _idx: idx });
+    else if (cat === 'equipment' || cat === 'anchoriteBattlekit') gear.push({ ...it, _idx: idx });
+  });
+  
+  return {
+    grenades,
+    gear
+  };
+}
+
 
 
