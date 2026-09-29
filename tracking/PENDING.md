@@ -3,7 +3,7 @@
 > Arriba solo lo pendiente, por prioridad. Al cerrar una tarea, su entrada se traslada íntegra a `## ✅ Completado` al final (no se deja `[x]` mezclado entre los `[ ]`).
 
 ## 🔴 Alta Prioridad
-- [ ] **Guardar bandas y campañas bajo usuario en Firebase (Cloud Firestore/Storage)** (Petición de Marcos): La autenticación con Google ya funciona, pero las bandas y campañas actuales solo viven en el localStorage. Hay que sincronizarlas con el backend de Firebase asociado al UID del usuario.
+- [x] **Guardar bandas y campañas bajo usuario en Firebase (Cloud Firestore/Storage)** (Petición de Marcos): La autenticación con Google ya funciona, pero las bandas y campañas actuales solo viven en el localStorage. Hay que sincronizarlas con el backend de Firebase asociado al UID del usuario.
 - [En progreso - Lead Developer (Antigravity)] **Migración a React (Next.js) - Fase 3 (Roster y Detalles).** (Locks: `tracking/goals/GOAL_migracion_fase_3.md`)
 - [ ] **Variantes: lo que queda sin modelar** (no bloquea crear bandas): composición de Fireteams (New Antioch 2, Prussia 3, Killing Squad de Fida'i, Fireteam de los perros de Red Brigade: hoy solo nota); Envious Eyes (Envy) no abre la armería de otras facciones; Blood Magic (Hell Knight) y Blessing of the Serpent Moon (Sorcerer) no aparecen como hechizos gratuitos; Artillery Witch Battery (0-2 si la banda vale 1.000 👑) y Cradle Thralls fuera del Maximum Field Strength no se controlan.
 - [ ] **Iron Wall: Grand Cannon como gun battery** (sin modelar): Forge solo permite el cañón en un Brazen Bull; el segundo (o sin Brazen Bull) como batería estacionaria de la armería de la banda no se puede añadir.
