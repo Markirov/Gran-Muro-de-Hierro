@@ -2,13 +2,14 @@
 
 > Resumen vivo, máximo ~50 líneas. Se reescribe (no se añade) cuando cambia algo (§1.1). La historia completa está en `DONE.md`; el backlog en `PENDING.md`.
 
-**Última actualización:** 2026-09-30, Lead Developer (Antigravity)
+**Última actualización:** 2026-09-30, Lead Developer (Codex)
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
 - Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) y tabs temáticos ("Armería"/"Bazar" para Sultanato, "Arsenal"/"Intendencia" para Antioquía, etc.).
 - Modo Armería estricto de solo lectura: oculta botones de desequipar y selectores de compra; oculta secciones y sub-bloques vacíos para una vista ultra-limpia; si no porta equipo adicional, muestra banner directo al Bazar.
 - Tooltips de reglas e inspección visual en hover para habilidades innatas, keywords del modelo y de armamento.
+- Armería es solo lectura también para mejoras: muestra únicamente las activas y reserva añadir/quitar mejoras al Bazar.
 - Workspace de Roster fijado a pantalla completa sin scrolls anidados (`h-screen overflow-hidden`), con cabecera de miniaturas y atributos (`MOV`, `RNG`, `MEL`, `ARM`, `BASE`) anclados permanentemente en la parte superior.
 
 ## Decisiones vigentes (y por qué)

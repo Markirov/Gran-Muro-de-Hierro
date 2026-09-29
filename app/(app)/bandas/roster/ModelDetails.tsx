@@ -142,6 +142,9 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
     const faction = FACTIONS.find((f: any) => f.id === wb.factionId);
     const isShop = armouryTab === 'shop';
     const tabNames = getArmouryTabNames(wb.factionId);
+    const upgradesToDisplay = isShop
+      ? allUpgrades
+      : allUpgrades.filter(up => activeUpgrades.includes(up.id));
 
     // Dynamic Capacity Calculation
     const meleeCap = getModelMeleeCapacity(model, unit, wb);
@@ -928,22 +931,22 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
           {/* ======================================================== */}
           {/* MEJORAS (UPGRADES) */}
           {/* ======================================================== */}
-          {allUpgrades.length > 0 && (
+          {(isShop ? allUpgrades.length > 0 : upgradesToDisplay.length > 0) && (
             <div className="bg-[#0a0503] border border-[#3a2110] rounded-xl shadow-lg overflow-hidden mt-6">
               <div className="bg-gradient-to-r from-[#2a1610] to-[#0a0503] border-b border-[#3a2110] p-3 flex items-center gap-2">
                 <span className="text-[#b8863c] text-lg">★</span>
                 <span className="text-xs uppercase tracking-widest font-bold text-[#e2d4b7]">Mejoras (Upgrades)</span>
               </div>
               <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                {allUpgrades.map((up: any) => {
+                {upgradesToDisplay.map((up: any) => {
                   const isActive = activeUpgrades.includes(up.id);
                   const upCls = classifyUpgrade(up, model, unit, wb);
                   const upBlocked = !isActive && upCls.state === 'disabled';
                   return (
                     <div 
                       key={up.id} 
-                      onClick={() => !upBlocked && handleToggleUpgrade(up.id)}
-                      className={`relative p-3 border-2 rounded-lg transition-all cursor-pointer group flex flex-col justify-between ${
+                      onClick={() => isShop && !upBlocked && handleToggleUpgrade(up.id)}
+                      className={`relative p-3 border-2 rounded-lg transition-all ${isShop ? 'cursor-pointer' : 'cursor-default'} group flex flex-col justify-between ${
                         isActive 
                           ? 'bg-gradient-to-br from-[#2a1610] to-[#1a0f0a] border-[#b8863c] shadow-[0_0_10px_rgba(184,134,60,0.1)]' 
                           : upBlocked 
