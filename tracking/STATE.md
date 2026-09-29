@@ -6,7 +6,8 @@
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
-- Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) alineados con canon 1.0.2 y regla STRONG.
+- Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) y tabs temáticos ("Armería"/"Bazar" para Sultanato, "Arsenal"/"Intendencia" para Antioquía, etc.).
+- Tooltips de reglas e inspección visual en hover para habilidades innatas, keywords del modelo y de armamento.
 - Workspace de Roster fijado a pantalla completa sin scrolls anidados (`h-screen overflow-hidden`), con cabecera de miniaturas y atributos (`MOV`, `RNG`, `MEL`, `ARM`, `BASE`) anclados permanentemente en la parte superior.
 
 ## Decisiones vigentes (y por qué)

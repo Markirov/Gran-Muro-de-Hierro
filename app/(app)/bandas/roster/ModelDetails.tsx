@@ -18,7 +18,29 @@ import {
 } from '../../../lib/cost_calculation';
 import { classifyBattlekitItem } from '../../../lib/battlekit_legality_engine';
 import { KEYWORD_LIBRARY } from '../../../data/04_keyword_library';
+import { ABILITY_LIBRARY } from '../../../data/02_ability_library';
+import { glossaryText } from '../../../data/03_keyword_glossary_canon_fuente_nica_de_lo';
+import { WEAPON_KEYWORD_LIBRARY } from '../../../data/05_weapon_keyword_library';
 import { FACTIONS } from '../../../data/factions';
+
+function getArmouryTabNames(factionId: string) {
+  switch (factionId) {
+    case 'iron-sultanate':
+      return { equipped: 'Armería', shop: 'Bazar', iconEquipped: '🛡️', iconShop: '🪙' };
+    case 'new-antioch':
+      return { equipped: 'Arsenal', shop: 'Intendencia', iconEquipped: '🎖️', iconShop: '📦' };
+    case 'trench-pilgrims':
+      return { equipped: 'Relicario', shop: 'Ofrendas', iconEquipped: '☦️', iconShop: '🕯️' };
+    case 'heretic-legions':
+      return { equipped: 'Arsenal Profano', shop: 'Pacto Negro', iconEquipped: '⚔️', iconShop: '🩸' };
+    case 'black-grail':
+      return { equipped: 'Osario', shop: 'Festín del Grial', iconEquipped: '☣️', iconShop: '🫀' };
+    case 'court-serpent':
+      return { equipped: 'Cámara del Tormento', shop: 'Bazar de Almas', iconEquipped: '🐍', iconShop: '💎' };
+    default:
+      return { equipped: 'Armería', shop: 'Bazar', iconEquipped: '🛡️', iconShop: '🪙' };
+  }
+}
 
 interface Props {
   wb: any;
@@ -29,6 +51,7 @@ interface Props {
 
 export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props) {
   const [selectorOpen, setSelectorOpen] = useState<string | null>(null);
+  const [armouryTab, setArmouryTab] = useState<'equipped' | 'shop'>('equipped');
 
   try {
     if (!model) {
@@ -76,8 +99,49 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
       }
     };
 
-    const unitAbilities = displayAbilitiesForCard(model, unit).map((a: any) => a.name);
+    const getKeywordDesc = (k: string): string => {
+      const gloss = glossaryText(k);
+      if (gloss) return gloss;
+      if ((KEYWORD_LIBRARY as any)[k]) return (KEYWORD_LIBRARY as any)[k];
+      if ((ABILITY_LIBRARY as any)[k]?.summary) return (ABILITY_LIBRARY as any)[k].summary;
+      return '';
+    };
+
+    const getAbilityDesc = (name: string): string => {
+      if (!name) return '';
+      if ((ABILITY_LIBRARY as any)[name]?.summary) return (ABILITY_LIBRARY as any)[name].summary;
+      if ((ABILITY_LIBRARY as any)[name + ' ACTION']?.summary) return (ABILITY_LIBRARY as any)[name + ' ACTION'].summary;
+      const gloss = glossaryText(name);
+      if (gloss) return gloss;
+      if ((KEYWORD_LIBRARY as any)[name]) return (KEYWORD_LIBRARY as any)[name];
+      const cleanName = name.replace(/\s+ACTION$/i, '');
+      const matchKey = Object.keys(ABILITY_LIBRARY).find(k => 
+        k.toLowerCase() === name.toLowerCase() || 
+        k.toLowerCase() === cleanName.toLowerCase() || 
+        k.toLowerCase().startsWith(cleanName.toLowerCase())
+      );
+      if (matchKey && (ABILITY_LIBRARY as any)[matchKey]?.summary) return (ABILITY_LIBRARY as any)[matchKey].summary;
+      return '';
+    };
+
+    const getWeaponKeywordDesc = (kw: string): string => {
+      const gloss = glossaryText(kw);
+      if (gloss) return gloss;
+      if ((WEAPON_KEYWORD_LIBRARY as any)[kw]?.summary) return (WEAPON_KEYWORD_LIBRARY as any)[kw].summary;
+      if (kw.startsWith('AMMUNITION (')) {
+        return 'La pieza se usa en la siguiente partida del modelo. Al desplegarlo, eliges 1 arma a distancia que gana la keyword indicada hasta el final de la partida.';
+      }
+      return '';
+    };
+
+    const unitAbilities = (displayAbilitiesForCard(model, unit) || []).map((a: any) => {
+      const name = typeof a === 'string' ? a : a.name;
+      let desc = (typeof a === 'object' && a.desc) ? a.desc : getAbilityDesc(name);
+      return { name, desc: desc || '' };
+    });
     const faction = FACTIONS.find((f: any) => f.id === wb.factionId);
+    const isShop = armouryTab === 'shop';
+    const tabNames = getArmouryTabNames(wb.factionId);
 
     // Dynamic Capacity Calculation
     const meleeCap = getModelMeleeCapacity(model, unit, wb);
@@ -190,14 +254,15 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                 {effKeywords.map((k: string) => {
                   const isSpecial = k === 'ELITE' || k === 'LEADER' || k === 'STRONG';
                   const isFromUpgrade = !(unit.keywords || []).includes(k);
+                  const desc = getKeywordDesc(k);
                   return (
                     <span 
                       key={k} 
-                      title={KEYWORD_LIBRARY[k] || ''}
-                      className={`px-3 py-1 text-xs uppercase tracking-wider rounded-full border transition-all ${
+                      title={desc || undefined}
+                      className={`px-3 py-1 text-xs uppercase tracking-wider rounded-full border transition-all cursor-help ${
                         isSpecial 
                           ? 'bg-gradient-to-r from-[#5c3a21] to-[#3a2110] border-[#b8863c] text-[#e2d4b7] shadow-[0_0_8px_rgba(184,134,60,0.2)]' 
-                          : 'bg-[#0a0503] border-[#3a2110] text-[#9e9178]'
+                          : 'bg-[#0a0503] border-[#3a2110] text-[#9e9178] hover:border-[#5c3a21]'
                       } ${isFromUpgrade ? 'border-dashed' : ''}`}
                     >
                       {k} {isFromUpgrade && <span className="text-[#b8863c] ml-1">*</span>}
@@ -218,9 +283,43 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
             </div>
           ) : (
             <div className="space-y-5">
-              <div className="flex justify-between items-center border-b border-[#3a2110] pb-2">
-                <span className="font-serif text-[#e2d4b7] text-lg uppercase tracking-wider">Armería & Slots de Capacidad</span>
-                <span className="text-xs text-[#b8863c] font-mono">Reglas Canon 1.0.2</span>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-[#3a2110] pb-2">
+                <div className="flex items-center gap-3">
+                  <span className="font-serif text-[#e2d4b7] text-lg uppercase tracking-wider">
+                    {armouryTab === 'equipped' ? tabNames.equipped : tabNames.shop} & Slots de Capacidad
+                  </span>
+                  <span className="text-xs text-[#b8863c] font-mono">Reglas Canon 1.0.2</span>
+                </div>
+
+                {/* BOTONES TABS: ARMERÍA (EQUIPADO) / BAZAR (COMPRAR) */}
+                <div className="flex items-center bg-[#0a0503] p-1 rounded-lg border border-[#3a2110] shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => { setArmouryTab('equipped'); setSelectorOpen(null); }}
+                    className={`px-3 py-1 rounded text-xs uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      armouryTab === 'equipped'
+                        ? 'bg-[#5c3a21] text-[#e2d4b7] shadow-md border border-[#b8863c]'
+                        : 'text-[#9e9178] hover:text-[#e2d4b7] hover:bg-[#1a0f0a]'
+                    }`}
+                    title={`Ver solo el equipamiento actualmente asignado (${tabNames.equipped})`}
+                  >
+                    <span>{tabNames.iconEquipped}</span>
+                    <span>{tabNames.equipped}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setArmouryTab('shop')}
+                    className={`px-3 py-1 rounded text-xs uppercase tracking-wider font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                      armouryTab === 'shop'
+                        ? 'bg-[#b8863c] text-[#1a0f0a] shadow-md font-black'
+                        : 'text-[#9e9178] hover:text-[#b8863c] hover:bg-[#1a0f0a]'
+                    }`}
+                    title={`Comprar y gestionar equipamiento (${tabNames.shop})`}
+                  >
+                    <span>{tabNames.iconShop}</span>
+                    <span>{tabNames.shop}</span>
+                  </button>
+                </div>
               </div>
 
               {/* GRID 2 COLUMNAS: MELEE & RANGED */}
@@ -269,9 +368,18 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                 </span>
                               </div>
                               <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
-                                {(it.weaponKeywords || []).map((kw: string, kwi: number) => (
-                                  <span key={kwi} className="text-[#b8863c]/80">• {kw}</span>
-                                ))}
+                                {(it.weaponKeywords || []).map((kw: string, kwi: number) => {
+                                  const kwDesc = getWeaponKeywordDesc(kw);
+                                  return (
+                                    <span 
+                                      key={kwi} 
+                                      title={kwDesc || undefined}
+                                      className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help"
+                                    >
+                                      • {kw}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -289,59 +397,61 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                       )}
                     </div>
 
-                    {/* Selector / Botón Añadir */}
-                    {selectorOpen === 'melee' ? (
-                      <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in">
-                        <div className="flex justify-between items-center border-b border-[#3a2110] pb-1.5 text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">
-                          <span>Elegir Arma Melee</span>
-                          <button onClick={() => setSelectorOpen(null)} className="text-red-400 hover:text-white">✕ Cancelar</button>
-                        </div>
-                        <div className="space-y-1.5">
-                          {getSelectorOptions('melee').map(({ item, cls }: any) => {
-                            const isEquipped = cls.state === 'equipped';
-                            const isDisabled = cls.state === 'disabled';
-                            return (
-                              <button
-                                key={item.id}
-                                disabled={isEquipped || isDisabled}
-                                onClick={() => handleEquipItem(item.id)}
-                                className={`w-full text-left p-2 rounded flex justify-between items-center transition-all text-xs ${
-                                  isEquipped 
-                                    ? 'bg-[#1a0f0a] border border-[#b8863c]/40 text-[#b8863c] opacity-60' 
-                                    : isDisabled 
-                                      ? 'bg-[#1a0f0a]/30 border border-red-900/30 text-[#7a6a58] opacity-50 cursor-not-allowed'
-                                      : 'bg-[#1a0f0a] hover:bg-[#2a1610] border border-[#3a2110] hover:border-[#b8863c] text-[#e2d4b7]'
-                                }`}
-                              >
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-bold">{item.name}</span>
-                                    <span className="text-[9px] text-[#7a6a58] uppercase font-mono">({item.type})</span>
-                                  </div>
-                                  {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
-                                  {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
-                                </div>
-                                <span className="font-mono text-xs text-[#b8863c] shrink-0">{item.cost} {item.currency}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        {meleeCap.isFull ? (
-                          <div className="text-[10px] text-center text-[#7a6a58] italic uppercase tracking-widest py-1 border border-[#3a2110] rounded">
-                            Capacidad Melee Completa ({meleeCap.max} manos)
+                    {/* Selector / Botón Añadir (Solo en modo Bazar) */}
+                    {isShop && (
+                      selectorOpen === 'melee' ? (
+                        <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in">
+                          <div className="flex justify-between items-center border-b border-[#3a2110] pb-1.5 text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">
+                            <span>Elegir Arma Melee</span>
+                            <button onClick={() => setSelectorOpen(null)} className="text-red-400 hover:text-white">✕ Cancelar</button>
                           </div>
-                        ) : (
-                          <button
-                            onClick={() => setSelectorOpen('melee')}
-                            className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex justify-center items-center gap-1.5"
-                          >
-                            + {meleeCap.used === 1 ? 'Equipar Arma Secundaria' : 'Equipar Arma Melee'}
-                          </button>
-                        )}
-                      </div>
+                          <div className="space-y-1.5">
+                            {getSelectorOptions('melee').map(({ item, cls }: any) => {
+                              const isEquipped = cls.state === 'equipped';
+                              const isDisabled = cls.state === 'disabled';
+                              return (
+                                <button
+                                  key={item.id}
+                                  disabled={isEquipped || isDisabled}
+                                  onClick={() => handleEquipItem(item.id)}
+                                  className={`w-full text-left p-2 rounded flex justify-between items-center transition-all text-xs ${
+                                    isEquipped 
+                                      ? 'bg-[#1a0f0a] border border-[#b8863c]/40 text-[#b8863c] opacity-60' 
+                                      : isDisabled 
+                                        ? 'bg-[#1a0f0a]/30 border border-red-900/30 text-[#7a6a58] opacity-50 cursor-not-allowed'
+                                        : 'bg-[#1a0f0a] hover:bg-[#2a1610] border border-[#3a2110] hover:border-[#b8863c] text-[#e2d4b7]'
+                                  }`}
+                                >
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold">{item.name}</span>
+                                      <span className="text-[9px] text-[#7a6a58] uppercase font-mono">({item.type})</span>
+                                    </div>
+                                    {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
+                                    {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
+                                  </div>
+                                  <span className="font-mono text-xs text-[#b8863c] shrink-0">{item.cost} {item.currency}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {meleeCap.isFull ? (
+                            <div className="text-[10px] text-center text-[#7a6a58] italic uppercase tracking-widest py-1 border border-[#3a2110] rounded">
+                              Capacidad Melee Completa ({meleeCap.max} manos)
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setSelectorOpen('melee')}
+                              className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex justify-center items-center gap-1.5"
+                            >
+                              + {meleeCap.used === 1 ? 'Equipar Arma Secundaria' : 'Equipar Arma Melee'}
+                            </button>
+                          )}
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
@@ -381,9 +491,18 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                 </span>
                               </div>
                               <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
-                                {(it.weaponKeywords || []).map((kw: string, kwi: number) => (
-                                  <span key={kwi} className="text-[#b8863c]/80">• {kw}</span>
-                                ))}
+                                {(it.weaponKeywords || []).map((kw: string, kwi: number) => {
+                                  const kwDesc = getWeaponKeywordDesc(kw);
+                                  return (
+                                    <span 
+                                      key={kwi} 
+                                      title={kwDesc || undefined}
+                                      className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help"
+                                    >
+                                      • {kw}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -401,59 +520,61 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                       )}
                     </div>
 
-                    {/* Selector Ranged */}
-                    {selectorOpen === 'ranged' ? (
-                      <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in">
-                        <div className="flex justify-between items-center border-b border-[#3a2110] pb-1.5 text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">
-                          <span>Elegir Arma a Distancia</span>
-                          <button onClick={() => setSelectorOpen(null)} className="text-red-400 hover:text-white">✕ Cancelar</button>
-                        </div>
-                        <div className="space-y-1.5">
-                          {getSelectorOptions('ranged').map(({ item, cls }: any) => {
-                            const isEquipped = cls.state === 'equipped';
-                            const isDisabled = cls.state === 'disabled';
-                            return (
-                              <button
-                                key={item.id}
-                                disabled={isEquipped || isDisabled}
-                                onClick={() => handleEquipItem(item.id)}
-                                className={`w-full text-left p-2 rounded flex justify-between items-center transition-all text-xs ${
-                                  isEquipped 
-                                    ? 'bg-[#1a0f0a] border border-[#b8863c]/40 text-[#b8863c] opacity-60' 
-                                    : isDisabled 
-                                      ? 'bg-[#1a0f0a]/30 border border-red-900/30 text-[#7a6a58] opacity-50 cursor-not-allowed'
-                                      : 'bg-[#1a0f0a] hover:bg-[#2a1610] border border-[#3a2110] hover:border-[#b8863c] text-[#e2d4b7]'
-                                }`}
-                              >
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-bold">{item.name}</span>
-                                    <span className="text-[9px] text-[#7a6a58] uppercase font-mono">({item.range ? `${item.range}"` : item.type})</span>
-                                  </div>
-                                  {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
-                                  {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
-                                </div>
-                                <span className="font-mono text-xs text-[#b8863c] shrink-0">{item.cost} {item.currency}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        {rangedCap.isFull ? (
-                          <div className="text-[10px] text-center text-[#7a6a58] italic uppercase tracking-widest py-1 border border-[#3a2110] rounded">
-                            Capacidad Ranged Completa ({rangedCap.max} manos)
+                    {/* Selector Ranged (Solo en modo Bazar) */}
+                    {isShop && (
+                      selectorOpen === 'ranged' ? (
+                        <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-3 space-y-2 max-h-60 overflow-y-auto custom-scrollbar animate-in fade-in">
+                          <div className="flex justify-between items-center border-b border-[#3a2110] pb-1.5 text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">
+                            <span>Elegir Arma a Distancia</span>
+                            <button onClick={() => setSelectorOpen(null)} className="text-red-400 hover:text-white">✕ Cancelar</button>
                           </div>
-                        ) : (
-                          <button
-                            onClick={() => setSelectorOpen('ranged')}
-                            className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex justify-center items-center gap-1.5"
-                          >
-                            + {rangedCap.used === 1 ? 'Equipar Arma Secundaria' : 'Equipar Arma a Distancia'}
-                          </button>
-                        )}
-                      </div>
+                          <div className="space-y-1.5">
+                            {getSelectorOptions('ranged').map(({ item, cls }: any) => {
+                              const isEquipped = cls.state === 'equipped';
+                              const isDisabled = cls.state === 'disabled';
+                              return (
+                                <button
+                                  key={item.id}
+                                  disabled={isEquipped || isDisabled}
+                                  onClick={() => handleEquipItem(item.id)}
+                                  className={`w-full text-left p-2 rounded flex justify-between items-center transition-all text-xs ${
+                                    isEquipped 
+                                      ? 'bg-[#1a0f0a] border border-[#b8863c]/40 text-[#b8863c] opacity-60' 
+                                      : isDisabled 
+                                        ? 'bg-[#1a0f0a]/30 border border-red-900/30 text-[#7a6a58] opacity-50 cursor-not-allowed'
+                                        : 'bg-[#1a0f0a] hover:bg-[#2a1610] border border-[#3a2110] hover:border-[#b8863c] text-[#e2d4b7]'
+                                  }`}
+                                >
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold">{item.name}</span>
+                                      <span className="text-[9px] text-[#7a6a58] uppercase font-mono">({item.range ? `${item.range}"` : item.type})</span>
+                                    </div>
+                                    {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
+                                    {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
+                                  </div>
+                                  <span className="font-mono text-xs text-[#b8863c] shrink-0">{item.cost} {item.currency}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {rangedCap.isFull ? (
+                            <div className="text-[10px] text-center text-[#7a6a58] italic uppercase tracking-widest py-1 border border-[#3a2110] rounded">
+                              Capacidad Ranged Completa ({rangedCap.max} manos)
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setSelectorOpen('ranged')}
+                              className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex justify-center items-center gap-1.5"
+                            >
+                              + {rangedCap.used === 1 ? 'Equipar Arma Secundaria' : 'Equipar Arma a Distancia'}
+                            </button>
+                          )}
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
@@ -485,12 +606,33 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                     {/* Sub-slot: Armadura */}
                     <div>
                       <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-1.5">Armadura Corporal</div>
+                      {armourShield.permanentEquipment && armourShield.permanentEquipment.length > 0 && (
+                        <div className="space-y-1.5 mb-2">
+                          {armourShield.permanentEquipment.map((pe: string, peIdx: number) => (
+                            <div key={peIdx} className="bg-[#140b07] border border-[#3a2110] rounded-lg p-2 flex justify-between items-center text-xs">
+                              <div>
+                                <span className="font-bold text-[#b8863c]">{pe}</span>
+                                <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-[#2a1610] text-[#e2d4b7] font-mono ml-2">Innato</span>
+                              </div>
+                              <span className="text-[10px] font-mono text-[#7a6a58]">Base</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {armourShield.armour ? (
                         <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center">
                           <div>
                             <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.armour.name}</div>
-                            <div className="text-[10px] text-[#b8863c]">
-                              {(armourShield.armour.weaponKeywords || []).join(' · ') || 'Protección corporal'}
+                            <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
+                              {(armourShield.armour.weaponKeywords || []).map((kw: string, kwi: number) => {
+                                const kwDesc = getWeaponKeywordDesc(kw);
+                                return (
+                                  <span key={kwi} title={kwDesc || undefined} className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help">
+                                    • {kw}
+                                  </span>
+                                );
+                              })}
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -505,33 +647,39 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                           </div>
                         </div>
                       ) : (
-                        selectorOpen === 'armour' ? (
-                          <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
-                            <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
-                              <span>Elegir Armadura</span>
-                              <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
+                        isShop ? (
+                          selectorOpen === 'armour' ? (
+                            <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                              <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
+                                <span>Elegir Armadura</span>
+                                <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
+                              </div>
+                              {getSelectorOptions('armour').map(({ item, cls }: any) => (
+                                <button
+                                  key={item.id}
+                                  disabled={cls.state !== 'available'}
+                                  onClick={() => handleEquipItem(item.id)}
+                                  className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
+                                    cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
+                                  }`}
+                                >
+                                  <span>{item.name}</span>
+                                  <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
+                                </button>
+                              ))}
                             </div>
-                            {getSelectorOptions('armour').map(({ item, cls }: any) => (
-                              <button
-                                key={item.id}
-                                disabled={cls.state !== 'available'}
-                                onClick={() => handleEquipItem(item.id)}
-                                className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
-                                  cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
-                                }`}
-                              >
-                                <span>{item.name}</span>
-                                <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
-                              </button>
-                            ))}
-                          </div>
+                          ) : (
+                            <button
+                              onClick={() => setSelectorOpen('armour')}
+                              className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                            >
+                              + Equipar Armadura
+                            </button>
+                          )
                         ) : (
-                          <button
-                            onClick={() => setSelectorOpen('armour')}
-                            className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
-                          >
-                            + Equipar Armadura
-                          </button>
+                          <div className="text-center py-2.5 border border-dashed border-[#3a2110]/60 rounded text-[#7a6a58] text-xs italic">
+                            Sin armadura corporal adicional
+                          </div>
                         )
                       )}
                     </div>
@@ -543,8 +691,15 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                         <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center">
                           <div>
                             <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.shield.name}</div>
-                            <div className="text-[10px] text-[#b8863c]">
-                              {(armourShield.shield.weaponKeywords || []).join(' · ') || 'Escudo defensivo'}
+                            <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
+                              {(armourShield.shield.weaponKeywords || []).map((kw: string, kwi: number) => {
+                                const kwDesc = getWeaponKeywordDesc(kw);
+                                return (
+                                  <span key={kwi} title={kwDesc || undefined} className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help">
+                                    • {kw}
+                                  </span>
+                                );
+                              })}
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
@@ -559,36 +714,42 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                           </div>
                         </div>
                       ) : (
-                        selectorOpen === 'shields' ? (
-                          <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
-                            <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
-                              <span>Elegir Escudo</span>
-                              <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
+                        isShop ? (
+                          selectorOpen === 'shields' ? (
+                            <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                              <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
+                                <span>Elegir Escudo</span>
+                                <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
+                              </div>
+                              {getSelectorOptions('shields').map(({ item, cls }: any) => (
+                                <button
+                                  key={item.id}
+                                  disabled={cls.state !== 'available'}
+                                  onClick={() => handleEquipItem(item.id)}
+                                  className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
+                                    cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
+                                  }`}
+                                >
+                                  <div className="flex flex-col">
+                                    <span>{item.name}</span>
+                                    {cls.state === 'disabled' && <span className="text-[9px] text-red-400">{cls.reason}</span>}
+                                  </div>
+                                  <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
+                                </button>
+                              ))}
                             </div>
-                            {getSelectorOptions('shields').map(({ item, cls }: any) => (
-                              <button
-                                key={item.id}
-                                disabled={cls.state !== 'available'}
-                                onClick={() => handleEquipItem(item.id)}
-                                className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
-                                  cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
-                                }`}
-                              >
-                                <div className="flex flex-col">
-                                  <span>{item.name}</span>
-                                  {cls.state === 'disabled' && <span className="text-[9px] text-red-400">{cls.reason}</span>}
-                                </div>
-                                <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
-                              </button>
-                            ))}
-                          </div>
+                          ) : (
+                            <button
+                              onClick={() => setSelectorOpen('shields')}
+                              className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                            >
+                              + Equipar Escudo
+                            </button>
+                          )
                         ) : (
-                          <button
-                            onClick={() => setSelectorOpen('shields')}
-                            className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
-                          >
-                            + Equipar Escudo
-                          </button>
+                          <div className="text-center py-2.5 border border-dashed border-[#3a2110]/60 rounded text-[#7a6a58] text-xs italic">
+                            Sin escudo adicional
+                          </div>
                         )
                       )}
                     </div>
@@ -613,7 +774,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
                         <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">Granadas (Máx. 1 Tipo)</span>
-                        {gearGrenades.grenades.length === 0 && selectorOpen !== 'grenades' && (
+                        {isShop && gearGrenades.grenades.length === 0 && selectorOpen !== 'grenades' && (
                           <button onClick={() => setSelectorOpen('grenades')} className="text-[10px] text-[#b8863c] hover:underline uppercase">
                             + Añadir
                           </button>
@@ -634,7 +795,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                             </div>
                           ))}
                         </div>
-                      ) : selectorOpen === 'grenades' ? (
+                      ) : isShop && selectorOpen === 'grenades' ? (
                         <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                           <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
                             <span>Elegir Tipo de Granada</span>
@@ -665,7 +826,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                     <div className="pt-2 border-t border-[#3a2110]/50">
                       <div className="flex justify-between items-center mb-1.5">
                         <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">Objetos & Consumibles</span>
-                        {selectorOpen !== 'equipment' && (
+                        {isShop && selectorOpen !== 'equipment' && (
                           <button onClick={() => setSelectorOpen('equipment')} className="text-[10px] text-[#b8863c] hover:underline uppercase">
                             + Añadir Objeto
                           </button>
@@ -687,14 +848,14 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                           ))}
                         </div>
                       ) : (
-                        selectorOpen !== 'equipment' && (
+                        (!isShop || selectorOpen !== 'equipment') && (
                           <div className="text-center py-2.5 border border-dashed border-[#3a2110] rounded text-[#7a6a58] text-xs italic">
                             Sin equipo adicional
                           </div>
                         )
                       )}
 
-                      {selectorOpen === 'equipment' && (
+                      {isShop && selectorOpen === 'equipment' && (
                         <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar mt-2">
                           <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
                             <span>Elegir Objeto de Equipo</span>
@@ -791,12 +952,35 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
           {/* REGLAS ESPECIALES */}
           {unitAbilities.length > 0 && (
             <div className="mt-4">
-              <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-2 border-b border-[#3a2110] pb-1">Reglas Especiales de la Unidad</div>
+              <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-2 border-b border-[#3a2110] pb-1 flex justify-between items-center">
+                <span>Reglas Especiales de la Unidad</span>
+                <span className="text-[9px] text-[#9e9178] italic">Pasa el ratón para ver descripción</span>
+              </div>
               <ul className="text-xs text-[#e2d4b7] space-y-1.5">
-                {unitAbilities.map((a: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 bg-[#0a0503] p-2 rounded border border-[#3a2110]">
-                    <span className="text-[#b8863c] mt-0.5">✦</span>
-                    <span className="font-serif tracking-wide">{a}</span>
+                {unitAbilities.map((a: any, i: number) => (
+                  <li 
+                    key={i} 
+                    title={a.desc || a.name}
+                    className="flex flex-col bg-[#0a0503] p-2.5 rounded border border-[#3a2110] hover:border-[#b8863c] transition-all cursor-help group shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[#b8863c] mt-0.5">✦</span>
+                        <span className="font-serif tracking-wide text-xs text-[#e2d4b7] font-bold group-hover:text-[#b8863c] transition-colors">
+                          {a.name}
+                        </span>
+                      </div>
+                      {a.desc && (
+                        <span className="text-[10px] text-[#7a6a58] group-hover:text-[#b8863c] font-mono transition-colors">
+                          ℹ️ Info
+                        </span>
+                      )}
+                    </div>
+                    {a.desc && (
+                      <p className="text-[11px] text-[#9e9178] group-hover:text-[#c4b79b] mt-1.5 pl-4 leading-relaxed font-sans border-l border-[#3a2110] group-hover:border-[#b8863c]/50 transition-colors">
+                        {a.desc}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
