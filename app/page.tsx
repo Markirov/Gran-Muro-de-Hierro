@@ -119,13 +119,7 @@ export default function Home() {
           <span className="text-[#9e9178] text-base uppercase tracking-widest block mt-2">Trench Crusade</span>
         </div>
 
-        <button 
-          className="bg-transparent border border-[#5c3a21] text-[#b8863c] text-2xl cursor-pointer p-2 rounded transition-colors hover:bg-[#5c3a21] hover:text-[#e2d4b7]"
-          onClick={() => window.location.href = 'app.html?mode=banda&settings=1'}
-          title="Configuración"
-        >
-          ⚙
-        </button>
+
       </header>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 w-full max-w-4xl p-16 box-border">

@@ -15,12 +15,6 @@ export default function LabPage() {
             Simulador estadístico de batallas con conciencia espacial.
           </div>
         </div>
-        <button 
-          onClick={() => window.location.href = 'app.html?mode=lab'}
-          className="bg-[#5c3a21] text-[#e2d4b7] border border-[#5c3a21] px-4 py-2 rounded font-bold hover:bg-[#b8863c] transition-colors"
-        >
-          Ir al Simulador Clásico (Legacy)
-        </button>
       </header>
 
       <div className="bg-[#1a0f0a] border border-[#5c3a21] p-8 rounded text-center">
@@ -29,7 +23,7 @@ export default function LabPage() {
         <p className="text-[#9e9178] max-w-xl mx-auto">
           El simulador de batallas y la lógica de análisis espacial están siendo reescritos nativamente en React para esta nueva versión. 
           <br /><br />
-          Para realizar cruces estadísticos o probar el winrate de tus Loadouts (A/B testing), usa el botón superior para acceder a la herramienta heredada.
+          Próximamente disponible.
         </p>
       </div>
     </div>

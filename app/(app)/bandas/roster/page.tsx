@@ -122,8 +122,7 @@ export default function RosterPage() {
             <button 
               onClick={() => {
                 localStorage.setItem('warband-forge-v1:current', wb.id);
-                localStorage.setItem('wf.mode', 'partida');
-                window.location.href = `/partida`;
+                router.push('/partida');
               }}
               className="bg-red-900/80 border border-red-500/50 text-[#e2d4b7] px-4 py-2 text-sm rounded font-bold hover:bg-red-700 transition-all shadow-lg hover:shadow-red-900/50 uppercase tracking-widest"
             >
