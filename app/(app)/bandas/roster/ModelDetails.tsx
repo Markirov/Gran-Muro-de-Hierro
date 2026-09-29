@@ -89,8 +89,8 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
           <div className="w-full">
             <input 
               type="text" 
-              value={model.customName || ''}
-              onChange={(e) => onUpdateModel({ ...model, customName: e.target.value })}
+              value={model.name || ''}
+              onChange={(e) => onUpdateModel({ ...model, name: e.target.value })}
               placeholder={unit.name}
               className="w-full bg-transparent text-[#b8863c] font-serif text-3xl placeholder-[#b8863c]/50 focus:outline-none focus:border-b border-[#b8863c] transition-all"
             />

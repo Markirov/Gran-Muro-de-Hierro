@@ -85,9 +85,13 @@ export default function RosterPage() {
       {/* HEADER TÁCTICO */}
       <header className="bg-gradient-to-r from-[#1a0f0a] via-[#2a1610] to-[#1a0f0a] border-y border-[#5c3a21] p-4 flex flex-col md:flex-row justify-between items-center shadow-xl mb-4 shrink-0">
         <div className="flex flex-col mb-4 md:mb-0 text-center md:text-left">
-          <h1 className="text-[#b8863c] font-serif text-3xl m-0 uppercase tracking-widest drop-shadow-md">
-            {wb.name || '(Sin nombre)'}
-          </h1>
+          <input 
+            type="text" 
+            value={wb.name || ''}
+            onChange={(e) => saveWb({ ...wb, name: e.target.value })}
+            placeholder="(Sin nombre)"
+            className="w-full bg-transparent text-[#b8863c] font-serif text-3xl m-0 uppercase tracking-widest drop-shadow-md placeholder-[#b8863c]/50 focus:outline-none focus:border-b border-[#5c3a21] transition-all text-center md:text-left"
+          />
           <div className="text-[#9e9178] mt-1 text-sm tracking-widest uppercase">
             {faction?.name} {variant ? ` — ${variant.name}` : ''}
           </div>
