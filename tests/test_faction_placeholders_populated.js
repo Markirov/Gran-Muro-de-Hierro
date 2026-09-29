@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const HTML_PATH = path.resolve(__dirname, '..', 'public', 'app.html');
-const ASSETS_DIR = path.resolve(__dirname, '..', 'assets', 'wwi-placeholders');
+const ASSETS_DIR = path.resolve(__dirname, '..', 'public', 'assets', 'wwi-placeholders');
 let html = fs.readFileSync(HTML_PATH, 'utf8');
   const cssContent = fs.readFileSync(path.resolve(__dirname, '..', 'public', 'css', 'app.css'), 'utf8');
   html += '\n<style>\n' + cssContent + '\n</style>\n';
@@ -68,7 +68,7 @@ group('Group 2: cada path referenciado existe en assets/wwi-placeholders/', () =
   ok(allPaths.size > 0, 'al menos 1 path acumulado en total');
   let missing = 0;
   for (const p of allPaths) {
-    const expected = path.resolve(__dirname, '..', p);
+    const expected = path.resolve(__dirname, '..', 'public', p);
     if (!fs.existsSync(expected)) {
       console.log('    Falta archivo: ' + p);
       missing++;

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    FACTION SPECIAL RULES LIBRARY
    Special rules of each faction / variant (Fireteams, Hellbound, etc.)

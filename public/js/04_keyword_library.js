@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    KEYWORD LIBRARY
    One-line reminders of common keywords / keyword-like tags.

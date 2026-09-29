@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    TRENCH CRUSADE — GAME DATA
    Structured data extracted from Warbands of Trench Crusade v1.0.2.

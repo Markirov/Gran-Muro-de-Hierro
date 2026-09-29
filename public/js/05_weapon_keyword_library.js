@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    WEAPON KEYWORD LIBRARY
    Mechanical effects of weapon keywords (effects + rules).

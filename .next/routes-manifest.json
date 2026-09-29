@@ -54,6 +54,12 @@
       "namedRegex": "^/bandas/crear(?:/)?$"
     },
     {
+      "page": "/bandas/roster",
+      "regex": "^/bandas/roster(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/bandas/roster(?:/)?$"
+    },
+    {
       "page": "/favicon.ico",
       "regex": "^/favicon\\.ico(?:/)?$",
       "routeKeys": {},

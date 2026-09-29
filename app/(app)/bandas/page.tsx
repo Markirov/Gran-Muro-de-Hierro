@@ -28,8 +28,7 @@ export default function BandasPage() {
 
   const handleOpenBanda = (id: string) => {
     localStorage.setItem('warband-forge-v1:current', id);
-    localStorage.setItem('wf.mode', 'banda');
-    window.location.href = '/app.html?mode=banda';
+    router.push(`/bandas/roster`);
   };
 
   const handleCreate = () => {

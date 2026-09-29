@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    GENERAL TERMS LIBRARY
    Game terms referenced from rules: Bloodbath Roll, Risky, Charge Bonus...

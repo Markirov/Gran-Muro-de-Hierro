@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    BATTLEKIT LEGALITY ENGINE
    Determines which armoury items a model can legally equip.

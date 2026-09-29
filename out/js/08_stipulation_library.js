@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    STIPULATION LIBRARY
    Equipment stipulations that appear in the `restriction` field of items.

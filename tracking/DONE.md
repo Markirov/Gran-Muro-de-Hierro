@@ -1,6 +1,9 @@
 # TAREAS COMPLETADAS (DONE)
 
-> Cronológico inverso — lo más reciente arriba. Cada entrada: `(fecha, Rol (Herramienta), motivo)` + qué se hizo y cómo se verificó. Al superar ~1500 líneas, archiva lo antiguo a `archive/DONE-<año>-Q<trimestre>.md`.
+> Cronológico inverso - lo más reciente arriba. Cada entrada: (fecha, Rol (Herramienta), motivo) + qué se hizo y cómo se verificó. Al superar ~1500 líneas, archiva lo antiguo a rchive/DONE-<año>-Q<trimestre>.md.
+
+- [x] **Completada Fase 3.2 (Hoja de Datos y Armería en React)** (2026-09-29, Lead Developer (Antigravity), Fase 3.2): Se implementó el componente ModelDetails.tsx que renderiza el panel de detalles de una unidad en React. Se portaron al bridge TypeScript (loadout_lab.ts, attlekit_deltas.ts, attlekit_legality_engine.ts) los subsistemas de cálculo de stats en vivo, recomendación de armas y validación de armería, permitiendo equipar y calcular la legalidad de los ítems en React. La banda se guarda al vuelo en localStorage.
+- [x] **Completada Fase 3.1 y Unit Market (React)** (2026-09-29, Lead Developer (Antigravity), Fase 3.1): Se construyó el andamiaje del Roster en React y se conectó al Catálogo (Tienda). Para que React y los 80 tests del monolito pudieran coexistir, se modularizaron 8 librerías de datos a TS y se inyectaron usando un bridge custom (uild-legacy-data.js). Los tests corren 100% OK.
 
 - [x] **Split Arquitectónico: Landing separada del Monolito** (2026-09-29, Lead Developer (Antigravity), petición de Marcos): Se ha renombrado el monstruoso `index.html` original de 43,000 líneas a `app.html` para eludir la colisión letal de estilos. Se ha creado un nuevo `index.html` virgen dedicado estrictamente al "Landing Page" (4 botones y background). Los enlaces apuntan a `app.html?mode=X` y el simulador captura el query param para arrancar de forma limpia. Se actualizaron las referencias a `index.html` en los 80+ tests de jsdom, `deploy.sh` y el hook `check-syntax.js`.
 

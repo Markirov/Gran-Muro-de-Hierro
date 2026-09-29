@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    ABILITY LIBRARY
    Short paraphrased reminders of each unit ability — written in our own

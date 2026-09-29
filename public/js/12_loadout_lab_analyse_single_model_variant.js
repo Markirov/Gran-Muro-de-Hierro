@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    LOADOUT LAB — analyse single-model variants with different equipment
    Construye un battle model desde una unit + lista de items de armoury,

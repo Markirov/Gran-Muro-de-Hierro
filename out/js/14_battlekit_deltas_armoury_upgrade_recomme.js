@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    BATTLEKIT DELTAS — armoury upgrade recommender
    Heuristic-based (deterministic, no simulation needed).

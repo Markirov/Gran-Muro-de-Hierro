@@ -56,8 +56,8 @@ export default function CrearBandaPage() {
     
     // Establecer como banda activa y redirigir
     localStorage.setItem('warband-forge-v1:current', newId);
-    localStorage.setItem('wf.mode', 'banda');
-    window.location.href = '/app.html?mode=banda';
+    // Ir a la nueva vista React del Roster
+    router.push(`/bandas/roster`);
   };
 
   return (

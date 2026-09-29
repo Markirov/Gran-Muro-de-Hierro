@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* ======================================================================
    KEYWORD GLOSSARY (canon) — fuente única de los textos de keywords.
    Base: Keyword Glossary del Digital Rulebook 1.0.2 (pp.52-57, publicado
