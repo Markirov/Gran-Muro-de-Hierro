@@ -16,8 +16,10 @@ export function UnitMarket({ wb, onAddUnit }: { wb: any, onAddUnit: (u: any) => 
 
   const renderUnitList = (units: any[], isMerc: boolean = false) => {
     return units.map((u: any) => {
-      const can = canAddUnit(wb, u);
       const isForbidden = unitForbiddenByVariant(wb, u.id);
+      if (isForbidden) return null; // Petición de usuario: ocultar completamente las restringidas por variante
+
+      const can = canAddUnit(wb, u);
       const isOverLimit = !can && !isForbidden;
 
       let btnClass = "bg-[#2a1610] text-[#b8863c] border border-[#5c3a21] hover:bg-[#5c3a21] hover:text-[#e2d4b7]";
@@ -34,7 +36,6 @@ export function UnitMarket({ wb, onAddUnit }: { wb: any, onAddUnit: (u: any) => 
             <div className="text-xs text-[#9e9178] mt-1">
               {u.cost} {u.currency}
               {u.limit ? ` · Límite: ${u.limit}` : ''}
-              {isForbidden && <span className="text-red-500 ml-2">Prohibido por Variante</span>}
               {isOverLimit && <span className="text-red-500 ml-2">Límite alcanzado / Faltan reqs</span>}
             </div>
           </div>
