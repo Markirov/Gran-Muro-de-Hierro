@@ -1,7 +1,6 @@
 'use client';
 import { useState, useRef } from 'react';
-import { getUnit, effectiveUnitName, displayAbilitiesForCard, findBattlekitItem, effectiveStats, getActiveVariant, calculateTotalArmour, findArmouryItemByName, effectiveKeywords } from '../../lib/cost_calculation';
-import { DATA } from '../../data/01_trench_crusade_game_data';
+import { getUnit, effectiveUnitName, displayAbilitiesForCard, findBattlekitItem, effectiveStats, calculateTotalArmour, findArmouryItemByName, effectiveKeywords } from '../../lib/cost_calculation';
 import { KEYWORD_LIBRARY } from '../../data/04_keyword_library';
 import { WEAPON_KEYWORD_LIBRARY } from '../../data/05_weapon_keyword_library';
 import { ABILITY_LIBRARY } from '../../data/02_ability_library';
@@ -150,16 +149,9 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   // Has STRONG?
   const hasStrong = modelKeywords.includes('STRONG') || abilities.some((a:any) => a.name === 'STRONG' || a.name === 'NEGATE HEAVY');
 
-  // Unified abilities list: faction + keywords + abilities
-  const factionName = DATA.factions.find((f:any)=>f.id===wb.factionId)?.name || 'Unknown';
+  // Unified abilities list: keywords + abilities
   
-  const unifiedAbilities = [];
-  if (wb.factionId) {
-    unifiedAbilities.push({
-       name: 'FACTION',
-       desc: `El modelo pertenece a la facción ${factionName}.`
-    });
-  }
+  const unifiedAbilities: any[] = [];
   modelKeywords.forEach((kw: string) => {
      if (KEYWORD_LIBRARY[kw]) {
        unifiedAbilities.push({ name: kw, desc: KEYWORD_LIBRARY[kw] });
@@ -173,7 +165,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
      unifiedAbilities.push({ name: ab.name, desc: desc || '' });
   });
   // Deduplicate unified abilities by name
-  const dedupedAbilities = [];
+  const dedupedAbilities: any[] = [];
   const seenAb = new Set();
   unifiedAbilities.forEach((ab: any) => {
     const kn = String(ab.name).toUpperCase();
@@ -373,7 +365,8 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
             <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest mb-2 font-bold px-1">Equipo</div>
             <div className="space-y-3">
               {otherEquip.map((eq: any, i: number) => {
-                const isOneShot = eq.rules && eq.rules.some((r: any) => String(r.name).toLowerCase().includes('single use') || String(r.name).toLowerCase().includes('one use'));
+                const isOneShot = (eq.weaponKeywords && eq.weaponKeywords.some((kw: string) => /consumable/i.test(kw))) ||
+                  (eq.rules && eq.rules.some((r: any) => String(r.name).toLowerCase().includes('single use') || String(r.name).toLowerCase().includes('one use')));
                 const isSpent = spent.includes(eq.name);
                 
                 return (
