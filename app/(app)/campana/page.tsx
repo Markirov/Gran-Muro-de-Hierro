@@ -44,20 +44,22 @@ export default function CampanaPage() {
         draw: { ducados: 30, glory: 0 }
       }
     };
-    localStorage.setItem('warband-forge-v1:c_' + c.id, JSON.stringify(c));
     const idx = [...campaigns, { id: c.id, name: c.name, warbands: 0, battles: 0, updatedAt: c.updatedAt }];
-    localStorage.setItem('warband-forge-v1:campaign-index', JSON.stringify(idx));
     setCampaigns(idx);
     setActiveCampaign(c);
+    import('../../lib/storage').then(({ saveCampaignLocallyAndCloud }) => {
+      saveCampaignLocallyAndCloud(c.id, c);
+    });
   };
 
   const deleteCampaign = (id: string) => {
     if (!confirm('¿Seguro que quieres borrar esta campaña?')) return;
-    localStorage.removeItem('warband-forge-v1:c_' + id);
     const newIdx = campaigns.filter(c => c.id !== id);
-    localStorage.setItem('warband-forge-v1:campaign-index', JSON.stringify(newIdx));
     setCampaigns(newIdx);
     if (activeCampaign?.id === id) setActiveCampaign(null);
+    import('../../lib/storage').then(({ deleteCampaignLocallyAndCloud }) => {
+      deleteCampaignLocallyAndCloud(id);
+    });
   };
 
   const openCampaign = (id: string) => {

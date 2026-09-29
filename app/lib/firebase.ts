@@ -70,3 +70,20 @@ export async function fetchUserCloudState(uid: string) {
     return null;
   }
 }
+
+
+// Guarda una campana
+export async function saveCampaignToCloud(uid, campaignId, campaignData) {
+  try {
+    const userDocRef = doc(db, 'users', uid);
+    const snap = await getDoc(userDocRef);
+    let data = snap.exists() ? snap.data() : { campaigns: {} };
+    if (!data.campaigns) data.campaigns = {};
+    data.campaigns[campaignId] = { ...campaignData, cloudUpdatedAt: new Date().toISOString() };
+    await setDoc(userDocRef, data, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Error', error);
+    return false;
+  }
+}

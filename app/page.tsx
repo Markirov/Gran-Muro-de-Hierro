@@ -49,6 +49,32 @@ export default function Home() {
           console.error("Index merge failed", e);
         }
       }
+
+      if (state && state.campaigns) {
+        Object.keys(state.campaigns).forEach(id => {
+          localStorage.setItem(`warband-forge-v1:c_${id}`, JSON.stringify(state.campaigns[id]));
+        });
+        
+        try {
+          const rawCIdx = localStorage.getItem('warband-forge-v1:campaign-index');
+          let localCIdx: any[] = rawCIdx ? JSON.parse(rawCIdx) : [];
+          
+          Object.keys(state.campaigns).forEach(id => {
+            const cmp = state.campaigns[id];
+            const existing = localCIdx.find(i => i.id === cmp.id);
+            if (existing) {
+              if (new Date(cmp.updatedAt).getTime() > new Date(existing.updatedAt).getTime()) {
+                Object.assign(existing, { name: cmp.name, warbands: cmp.warbandIds?.length || 0, battles: cmp.battles?.length || 0, updatedAt: cmp.updatedAt });
+              }
+            } else {
+              localCIdx.push({ id: cmp.id, name: cmp.name, warbands: cmp.warbandIds?.length || 0, battles: cmp.battles?.length || 0, updatedAt: cmp.updatedAt });
+            }
+          });
+          localStorage.setItem('warband-forge-v1:campaign-index', JSON.stringify(localCIdx));
+        } catch (e) {
+          console.error("Campaign index merge failed", e);
+        }
+      }
     } catch (error) {
       console.error(error);
     }
