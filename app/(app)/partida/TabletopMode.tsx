@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { getUnit, effectiveUnitName, displayAbilitiesForCard, findBattlekitItem, effectiveStats } from '../../lib/cost_calculation';
+import { getUnit, effectiveUnitName, displayAbilitiesForCard, findBattlekitItem, effectiveStats, getActiveVariant } from '../../lib/cost_calculation';
+import { DATA } from '../../data/01_trench_crusade_game_data';
 
 export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   const models = wb.models;
@@ -75,10 +76,65 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   };
 
   const abilities = displayAbilitiesForCard(model, unit) || [];
-  const equipment = (model.battlekit || []).map((id: string) => findBattlekitItem(wb.factionId, id, wb)).filter(Boolean);
+  
+  // Find item by name across faction armoury (for permanentEquipment)
+  const findItemByName = (name: string) => {
+    const faction = DATA.factions.find((f: any) => f.id === wb.factionId);
+    if (!faction || !faction.armoury) return null;
+    
+    // Check normal armoury categories
+    for (const cat of Object.values(faction.armoury)) {
+      if (!Array.isArray(cat)) continue;
+      const found = cat.find((i: any) => i.name.toLowerCase() === name.toLowerCase());
+      if (found) return found;
+    }
+    
+    // Check variant overrides if applicable
+    const variant = getActiveVariant(wb);
+    if (variant && variant.armouryOverrides) {
+      for (const cat of Object.values(variant.armouryOverrides)) {
+         if (!Array.isArray(cat)) continue;
+         const found = cat.find((i: any) => i.name.toLowerCase() === name.toLowerCase());
+         if (found) return found;
+      }
+    }
+    
+    return null;
+  };
+
+  const battlekitEquip = (model.battlekit || []).map((id: string) => findBattlekitItem(wb.factionId, id, wb)).filter(Boolean);
+  
+  const permEquip = (unit?.permanentEquipment || []).map((p: string) => {
+    const cleanName = p.split(' (')[0]; // Handle "Reinforced Armour (85👑) ó Machine Armour (95👑)" etc.
+    const it = findItemByName(cleanName) || findItemByName(p);
+    return it || { name: p };
+  });
+
+  // Combine, deduping by name just in case
+  const allEquip = [...permEquip, ...battlekitEquip];
+  const uniqueEquipMap = new Map();
+  allEquip.forEach(eq => {
+    if (eq.name && !uniqueEquipMap.has(eq.name)) {
+      uniqueEquipMap.set(eq.name, eq);
+    }
+  });
+  const equipment = Array.from(uniqueEquipMap.values());
   const spent = st.spent || [];
   
   const stats = effectiveStats(model, unit, wb);
+  
+  // Calculate total armor dynamically
+  let totalArmour = parseInt(stats.armour) || 0;
+  equipment.forEach((eq: any) => {
+    if (eq.weaponKeywords) {
+      eq.weaponKeywords.forEach((kw: string) => {
+        const match = String(kw).match(/-(\d+)\s+INJURY MODIFIER/i);
+        if (match) {
+          totalArmour += parseInt(match[1], 10);
+        }
+      });
+    }
+  });
   
   // Calculate Movement (halved if DOWN)
   let displayMov = stats.movement;
@@ -182,7 +238,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                   {k === 'movement' && status === 'down' && <div className="absolute inset-0 bg-orange-900/20"></div>}
                   <span className="text-[9px] md:text-[10px] uppercase text-[#7a6a58] tracking-widest relative z-10">{k === 'movement' ? 'Mov' : k === 'ranged' ? 'Rng' : k === 'melee' ? 'Mel' : 'Arm'}</span>
                   <span className={`font-serif font-bold text-lg md:text-xl mt-1 relative z-10 ${k === 'movement' && status === 'down' ? 'text-orange-400' : 'text-[#b8863c]'}`}>
-                    {k === 'movement' ? displayMov : stats[k] || '-'}
+                    {k === 'movement' ? displayMov : k === 'armour' ? totalArmour : stats[k] || '-'}
                   </span>
                 </div>
               ))}
