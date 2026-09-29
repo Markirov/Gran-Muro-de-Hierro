@@ -7,12 +7,15 @@ import { UnitMarket } from './UnitMarket';
 import { RosterList } from './RosterList';
 import { ModelDetails } from './ModelDetails';
 import { modelCost } from '../../../lib/cost_calculation';
+import { TabletopMode } from '../../partida/TabletopMode';
 
 export default function RosterPage() {
   const router = useRouter();
   const [wb, setWb] = useState<any>(null);
   const [error, setError] = useState<string>('');
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [showTabletop, setShowTabletop] = useState(false);
+  const [tabletopSession, setTabletopSession] = useState<any>({ modelStates: {} });
 
   useEffect(() => {
     try {
@@ -120,6 +123,12 @@ export default function RosterPage() {
 
           <div className="flex flex-col gap-2">
             <button 
+              onClick={() => setShowTabletop(true)}
+              className="bg-[#b8863c] border border-[#b8863c] text-[#1a0f0a] px-4 py-2 text-sm rounded font-bold hover:bg-[#e2d4b7] transition-all shadow-lg uppercase tracking-widest"
+            >
+              📱 Modo Mesa (Libre)
+            </button>
+            <button 
               onClick={() => {
                 localStorage.setItem('warband-forge-v1:current', wb.id);
                 router.push('/partida');
@@ -131,6 +140,15 @@ export default function RosterPage() {
           </div>
         </div>
       </header>
+      
+      {showTabletop && (
+        <TabletopMode 
+          session={tabletopSession}
+          wb={wb}
+          onUpdate={setTabletopSession}
+          onClose={() => setShowTabletop(false)}
+        />
+      )}
 
       {/* WORKSPACE */}
       <div className="flex-1 flex gap-4 min-h-0 relative">
