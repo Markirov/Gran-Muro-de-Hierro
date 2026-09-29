@@ -1,5 +1,7 @@
 'use client';
+import { useState } from 'react';
 import { SCENARIOS_CATALOG } from '../../lib/loadout_lab';
+import { TabletopMode } from './TabletopMode';
 
 interface Props {
   session: any;
@@ -9,6 +11,7 @@ interface Props {
 
 export function PartidaTracker({ session, wb, onUpdate }: Props) {
   const sc = SCENARIOS_CATALOG[session.scenarioId];
+  const [showTabletop, setShowTabletop] = useState(false);
   
   const updateModel = (uid: string, changes: any) => {
     onUpdate({
@@ -97,9 +100,14 @@ export function PartidaTracker({ session, wb, onUpdate }: Props) {
           </div>
           
           {!session.finished && (
-            <button onClick={endBattle} className="bg-red-900/30 text-red-500 border border-red-900/50 px-4 py-1.5 rounded text-sm hover:bg-red-900/50">
-              Terminar Partida
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => setShowTabletop(true)} className="bg-[#b8863c] text-[#1a0f0a] border border-[#b8863c] px-4 py-1.5 rounded text-sm font-bold hover:bg-[#e2d4b7] transition-colors">
+                📱 Modo Mesa
+              </button>
+              <button onClick={endBattle} className="bg-red-900/30 text-red-500 border border-red-900/50 px-4 py-1.5 rounded text-sm hover:bg-red-900/50">
+                Terminar Partida
+              </button>
+            </div>
           )}
           {session.finished && (
             <div className="bg-[#5c3a21] text-[#e2d4b7] px-4 py-1.5 rounded text-sm font-bold">
@@ -237,6 +245,15 @@ export function PartidaTracker({ session, wb, onUpdate }: Props) {
           </tbody>
         </table>
       </div>
+      
+      {showTabletop && (
+        <TabletopMode 
+          session={session} 
+          wb={wb} 
+          onUpdate={onUpdate} 
+          onClose={() => setShowTabletop(false)} 
+        />
+      )}
     </div>
   );
 }
