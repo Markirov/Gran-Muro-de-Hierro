@@ -19,4 +19,4 @@ Cubres las dos caras de "lo que no es código": el conocimiento de dominio (docu
 Si el proyecto crece y el volumen de trabajo de datos/dominio empieza a chocar en el tiempo con el de producto/UX (locks simultáneos frecuentes en `PENDING.md`, un rol bloqueando al otro), es la señal para volver a dos roles — copia `core/rules/data_specialist.md` y `core/rules/product_owner.md`, reparte el contenido de este archivo entre ambos, actualiza la tabla de roles en `PROJECT.md` y `MAPA_REGLAS.md`.
 
 ## Registro
-Cierras tus tareas con los 3 pasos de `AGENTS.md` §1.1.
+Cierras tus tareas con los 4 pasos de `AGENTS.md` §1.1.

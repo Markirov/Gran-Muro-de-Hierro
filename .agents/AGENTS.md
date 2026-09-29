@@ -1,6 +1,6 @@
 # AGENTS.md — Harness de trabajo (fuente única de protocolo núcleo)
 
-> **Harness v2.5.0** — núcleo sincronizado desde `agentic-framework/`. **Este archivo es 100% núcleo:** no lo edites a mano, se reemplaza entero en `harness update`. Una mejora al núcleo se propone con `harness propose`. Todo lo propio de este proyecto (roles, cabecera Proyecto/Stack, reglas de dominio) vive en **`.agents/PROJECT.md`** — ese archivo nunca lo toca `update`, es tuyo.
+> **Harness v2.6.0** — núcleo sincronizado desde `agentic-framework/`. **Este archivo es 100% núcleo:** no lo edites a mano, se reemplaza entero en `harness update`. Una mejora al núcleo se propone con `harness propose`. Todo lo propio de este proyecto (roles, cabecera Proyecto/Stack, reglas de dominio) vive en **`.agents/PROJECT.md`** — ese archivo nunca lo toca `update`, es tuyo.
 >
 > **Punto de entrada ÚNICO para cualquier agente (IA o humano) que toque este repositorio.** Léelo entero antes de hacer nada, y después `.agents/PROJECT.md` (quién trabaja aquí) y tu regla dedicada.
 > `CLAUDE.md` / `GEMINI.md` / `AGENTS.md` de la raíz son solo punteros a este archivo.
@@ -12,21 +12,22 @@
 > **Skill de referencia:** `.agents/skills/session-onboarding/SKILL.md`.
 
 1. **Bootstrap:** `bash init.sh` — chequeo de git, dependencias, hook de verificación, backlog, y aviso si hay versión nueva del harness.
-2. **Asimilación del estado vivo (4 fuentes en `tracking/`):** `DONE.md` (últimas 3-5 entradas), `PENDING.md` (prioridades + locks), `IDEAS.md` (ideas en pausa), `AUDIT.md` (deuda técnica/seguridad activa).
+2. **Asimilación del estado vivo (5 fuentes en el directorio de tracking — el que indica `.agents/HARNESS_TRACKING_DIR`, por defecto `tracking/`; en este documento se escribe `tracking/` por brevedad):** `STATE.md` (entero, primero — snapshot comprimido), `DONE.md` (**solo la última entrada**; lee más solo si `STATE.md` no existe o si las cabeceras de DONE posteriores a su "Última actualización" apuntan a decisiones o cambios de estado que STATE no recoge), `PENDING.md` (prioridades + locks), `IDEAS.md` (ideas en pausa), `AUDIT.md` (deuda técnica/seguridad activa).
 3. **Selección de tarea + lock en PENDING.md:** `[En progreso - <Rol> (<Herramienta>)]`; si editas archivos clave, `(Locks: <archivo>)`. No toques un archivo bloqueado por otra sesión. Al terminar, quita el lock.
 4. **GOAL (tareas largas):** si existe `tracking/goals/GOAL_<slug>.md` (§1.5) es tu memoria de trabajo; si creas uno, anótalo como lock.
-5. **Lo propio del proyecto:** lee `.agents/PROJECT.md` (roles, reglas de dominio) y después tu regla dedicada.
-6. **Reporte ejecutivo (3 puntos):** contexto inmediato (última tarea en DONE), backlog prioritario de tu rol, locks activos.
+5. **Lo propio del proyecto:** lee `.agents/PROJECT.md` (roles, reglas de dominio, `## Límites`) y después tu regla dedicada. `## Límites` tiene la misma fuerza que §1: ⚠️ = pregunta antes de actuar; 🚫 = no lo hagas sin desbloqueo explícito del usuario. Si PROJECT.md no tiene `## Límites`, propón al usuario un bloque sembrado con lo que deduzcas del proyecto (no lo escribas sin su aprobación).
+6. **Reporte ejecutivo (3 puntos):** contexto inmediato (STATE + última tarea en DONE), backlog prioritario de tu rol, locks activos.
 
 ---
 
 ## 1 · Reglas de Oro compartidas (inmutables, todos los roles)
 
-### 1.1 · Registro tras cada cambio + commit (3 pasos, sin excepción)
+### 1.1 · Registro tras cada cambio + commit (4 pasos, sin excepción)
 Al cerrar CUALQUIER tarea, el mismo agente que la ejecutó, en orden:
 1. Escribe en `tracking/DONE.md` **al principio** (cronológico inverso). Cabecera `(fecha, Rol (Herramienta), motivo)`.
-2. Actualiza `tracking/PENDING.md` — mueve la tarea a `## ✅ Completado` si se cerró (texto íntegro), o déjala anotada. Nunca un `[x]` mezclado entre los `[ ]`.
-3. Commit local: `git add . && git commit -m "feat/fix/docs: descripción"`, inmediatamente.
+2. Si la tarea cambió el estado, fijó una decisión o destapó un error a evitar, actualiza `tracking/STATE.md`: **reescribe** (no añadas), poda al pasar de ~50 líneas, actualiza "Última actualización". Si no existe, créalo **junto a `DONE.md`** (mismo directorio de tracking) desde la plantilla `core/tracking-templates/STATE.md` del harness (ruta en `.agents/HARNESS_SOURCE`). Tareas sin cambio de estado: salta este paso.
+3. Actualiza `tracking/PENDING.md` — mueve la tarea a `## ✅ Completado` si se cerró (texto íntegro), o déjala anotada. Nunca un `[x]` mezclado entre los `[ ]`.
+4. Commit local: `git add . && git commit -m "feat/fix/docs: descripción"`, inmediatamente.
 
 **Prohibido:** `git commit --amend` y `git reset --hard` / `git clean` sin autorización humana explícita.
 
