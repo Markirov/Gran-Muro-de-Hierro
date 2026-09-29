@@ -1,4 +1,4 @@
-(2026-09-29, Lead Developer (Antigravity), Purga total de dependencias cruzadas y resolución de build TypeScript Next.js para los módulos de reglas legacy)
+- [x] **Solucionados crash de ReferenceError en ModelDetails** (2026-09-29, Lead Developer (Antigravity), reportado por el usuario): Se pulió un bug en la cadena de fallback de variables globales de legacy en ctiveUpgrades cuando wb era omitido, que detonaba el Next.js Router en producción. Verificado con un ErrorBoundary temporal y validación de tipos ajustada en build.
 # TAREAS COMPLETADAS (DONE)
 
 > Cronológico inverso - lo más reciente arriba. Cada entrada: (fecha, Rol (Herramienta), motivo) + qué se hizo y cómo se verificó. Al superar ~1500 líneas, archiva lo antiguo a rchive/DONE-<año>-Q<trimestre>.md.
