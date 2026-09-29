@@ -7,7 +7,8 @@ export default function CrearBandaPage() {
   const router = useRouter();
   const [selectedFaction, setSelectedFaction] = useState<string>('new-antioch');
   const [selectedVariant, setSelectedVariant] = useState<string>('');
-  
+  const [budget, setBudget] = useState<number>(FACTIONS.find(f => f.id === 'new-antioch')?.budget ?? 700);
+
   const faction = FACTIONS.find(f => f.id === selectedFaction)!;
 
   const handleCreate = () => {
@@ -22,7 +23,7 @@ export default function CrearBandaPage() {
       name: '',
       factionId: selectedFaction,
       variantId: selectedVariant || null,
-      budgetTotal: faction.budget,
+      budgetTotal: budget,
       startingGlory: 0,
       models: [],
       glory: 0,
@@ -65,7 +66,7 @@ export default function CrearBandaPage() {
         {FACTIONS.map(f => (
           <div 
             key={f.id}
-            onClick={() => { setSelectedFaction(f.id); setSelectedVariant(''); }}
+            onClick={() => { setSelectedFaction(f.id); setSelectedVariant(''); setBudget(f.budget); }}
             className={`p-4 rounded border cursor-pointer transition-colors ${
               selectedFaction === f.id 
                 ? 'border-[#b8863c] bg-[rgba(95,25,25,0.35)]' 
@@ -97,6 +98,21 @@ export default function CrearBandaPage() {
           </select>
         </div>
       )}
+
+      <div className="mt-8 p-4 bg-[#1a0f0a] border border-[#5c3a21] rounded">
+        <label className="flex items-center justify-between gap-4">
+          <span className="text-[#b8863c] font-bold">Presupuesto (ducados)</span>
+          <input
+            type="number"
+            min={0}
+            step={5}
+            value={budget}
+            onChange={(e) => setBudget(Math.max(0, parseInt(e.target.value, 10) || 0))}
+            className="w-32 bg-[#2a1610] text-[#e2d4b7] border border-[#5c3a21] rounded p-2 text-right focus:border-[#b8863c] outline-none"
+          />
+        </label>
+        <p className="text-xs text-[#7a6a58] mt-2">Por defecto el de la facción ({faction.budget}). Se puede cambiar luego en el Roster.</p>
+      </div>
 
       <div className="mt-8 pt-4 border-t border-[#5c3a21] flex justify-end">
         <button 

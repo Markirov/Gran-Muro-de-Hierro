@@ -10,7 +10,8 @@ import {
   battlekitPurchaseCost,
   unitCostAltAllowed,
   classifyUpgrade,
-  displayAbilitiesForCard
+  displayAbilitiesForCard,
+  calculateTotalArmour
 } from '../../../lib/cost_calculation';
 import { classifyBattlekitItem } from '../../../lib/battlekit_legality_engine';
 import { KEYWORD_LIBRARY } from '../../../data/04_keyword_library';
@@ -109,7 +110,7 @@ export function ModelDetails({ wb, model, onUpdateModel }: Props) {
               <div key={k} className="bg-[#0a0503] border border-[#3a2110] rounded-lg p-2 text-center shadow-inner flex flex-col justify-center relative overflow-hidden">
                 <div className="text-[9px] uppercase text-[#7a6a58] tracking-widest z-10">{k === 'movement' ? 'Mov' : k}</div>
                 <div className={`font-serif text-2xl z-10 ${isOverridden(k) ? 'text-[#b8863c] drop-shadow-[0_0_5px_rgba(184,134,60,0.5)]' : 'text-[#e2d4b7]'}`}>
-                  {effStats[k]}
+                  {k === 'armour' ? calculateTotalArmour(model, unit, wb) : effStats[k]}
                 </div>
                 {/* Background icon per stat */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] text-4xl pointer-events-none">

@@ -1,4 +1,6 @@
-'use client';
+const fs = require('fs');
+
+const content = `'use client';
 import { useState, useRef } from 'react';
 import { getUnit, effectiveUnitName, displayAbilitiesForCard, findBattlekitItem, effectiveStats, getActiveVariant, calculateTotalArmour, findArmouryItemByName, effectiveKeywords } from '../../lib/cost_calculation';
 import { DATA } from '../../data/01_trench_crusade_game_data';
@@ -82,8 +84,8 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   };
 
   const getMarkerClass = (val: number, current: number, colorStart: string) => {
-    if (val === current) return `${colorStart} text-white font-bold border-white/50 scale-110 z-10 shadow-lg`;
-    if (val < current) return `${colorStart}/80 text-white border-transparent`;
+    if (val === current) return \`\${colorStart} text-white font-bold border-white/50 scale-110 z-10 shadow-lg\`;
+    if (val < current) return \`\${colorStart}/80 text-white border-transparent\`;
     return 'bg-[#2a1610] text-[#5c3a21] border-[#3a2110]';
   };
 
@@ -95,7 +97,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
           <button
             key={i}
             onClick={() => setter(i)}
-            className={`flex-1 aspect-square md:h-10 md:w-auto flex items-center justify-center border-y border-l last:border-r text-xs md:text-sm transition-all ${getMarkerClass(i, current || 0, colorClass)}`}
+            className={\`flex-1 aspect-square md:h-10 md:w-auto flex items-center justify-center border-y border-l last:border-r text-xs md:text-sm transition-all \${getMarkerClass(i, current || 0, colorClass)}\`}
             style={i === 0 ? { borderTopLeftRadius: '0.375rem', borderBottomLeftRadius: '0.375rem' } : i === 6 ? { borderTopRightRadius: '0.375rem', borderBottomRightRadius: '0.375rem' } : {}}
           >
             {i}
@@ -140,7 +142,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   let displayMov = stats.movement;
   if (status === 'down') {
     const baseMov = parseInt(stats.movement) || 0;
-    displayMov = Math.ceil(baseMov / 2) + '\" (' + stats.movement + ')';
+    displayMov = Math.ceil(baseMov / 2) + '\\" (' + stats.movement + ')';
   }
 
   // --- SEPARATE WEAPONS VS EQUIPMENT ---
@@ -157,7 +159,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   if (wb.factionId) {
     unifiedAbilities.push({
        name: 'FACTION',
-       desc: `El modelo pertenece a la facción ${factionName}.`
+       desc: \`El modelo pertenece a la facción \${factionName}.\`
     });
   }
   modelKeywords.forEach((kw: string) => {
@@ -259,7 +261,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                 if (status === 'out') return;
                 updateModel({ activated: !isActivated });
               }}
-              className={`px-4 py-2 rounded uppercase tracking-widest font-bold text-xs md:text-sm border transition-all ${getActivatorClass()}`}
+              className={\`px-4 py-2 rounded uppercase tracking-widest font-bold text-xs md:text-sm border transition-all \${getActivatorClass()}\`}
               disabled={status === 'out'}
             >
               {status === 'out' ? 'Baja' : isActivated ? 'Activado' : 'No Activado'}
@@ -269,13 +271,13 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
 
         {/* STATUS BUTTONS */}
         <div className="flex gap-2 mb-6">
-          <button onClick={() => setStatus('up')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('up')}`}>
+          <button onClick={() => setStatus('up')} className={\`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all \${statusColor('up')}\`}>
             En Pie
           </button>
-          <button onClick={() => setStatus('down')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('down')}`}>
+          <button onClick={() => setStatus('down')} className={\`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all \${statusColor('down')}\`}>
             Down
           </button>
-          <button onClick={() => setStatus('out')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('out')}`}>
+          <button onClick={() => setStatus('out')} className={\`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all \${statusColor('out')}\`}>
             Fuera
           </button>
         </div>
@@ -286,7 +288,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
             <div key={k} className="bg-[#1a0f0a] border border-[#3a2110] rounded p-2 md:p-3 text-center flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
               {k === 'movement' && status === 'down' && <div className="absolute inset-0 bg-orange-900/20"></div>}
               <span className="text-[9px] md:text-[10px] uppercase text-[#7a6a58] tracking-widest relative z-10">{k === 'movement' ? 'Mov' : k === 'ranged' ? 'Rng' : k === 'melee' ? 'Mel' : 'Arm'}</span>
-              <span className={`font-serif font-bold text-lg md:text-xl mt-1 relative z-10 ${k === 'movement' && status === 'down' ? 'text-orange-400' : 'text-[#b8863c]'}`}>
+              <span className={\`font-serif font-bold text-lg md:text-xl mt-1 relative z-10 \${k === 'movement' && status === 'down' ? 'text-orange-400' : 'text-[#b8863c]'}\`}>
                 {k === 'movement' ? displayMov : k === 'armour' ? totalArmour : stats[k] || '-'}
               </span>
             </div>
@@ -344,16 +346,16 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                         
                         const desc = resolveWeaponKeyword(kw);
                         return (
-                          <li key={kwi} className={`pl-4 relative ${isAttenuated ? 'opacity-40 line-through' : ''}`}>
+                          <li key={kwi} className={\`pl-4 relative \${isAttenuated ? 'opacity-40 line-through' : ''}\`}>
                             <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
                             <span className="font-serif text-[#b8863c] uppercase mr-1">{kw}</span> 
-                            {desc ? `— ${desc}` : ''}
+                            {desc ? \`— \${desc}\` : ''}
                           </li>
                         );
                       })}
                       {/* Custom Rules */}
                       {w.rules && w.rules.map((r: any, ri: number) => (
-                        <li key={`r-${ri}`} className="pl-4 relative">
+                        <li key={\`r-\${ri}\`} className="pl-4 relative">
                           <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
                           <span className="font-serif text-[#b8863c] uppercase mr-1">{r.name}</span> 
                           — {r.desc}
@@ -377,7 +379,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                 const isSpent = spent.includes(eq.name);
                 
                 return (
-                  <div key={i} className={`border border-[#3a2110] rounded bg-[#0a0503] p-3 shadow-sm ${isSpent ? 'opacity-50' : ''}`}>
+                  <div key={i} className={\`border border-[#3a2110] rounded bg-[#0a0503] p-3 shadow-sm \${isSpent ? 'opacity-50' : ''}\`}>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-baseline gap-2">
                         <span className="font-serif font-bold text-[#e2d4b7] text-lg uppercase">{eq.name}</span>
@@ -386,7 +388,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                       {isOneShot && (
                         <button 
                           onClick={() => toggleSpent(eq.name)}
-                          className={`text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-widest border font-bold ${isSpent ? 'bg-red-900/30 text-red-500 border-red-900/50' : 'bg-[#b8863c] text-[#1a0f0a] border-[#e2d4b7]'}`}
+                          className={\`text-[10px] md:text-xs px-2 py-1 rounded uppercase tracking-widest border font-bold \${isSpent ? 'bg-red-900/30 text-red-500 border-red-900/50' : 'bg-[#b8863c] text-[#1a0f0a] border-[#e2d4b7]'}\`}
                         >
                           {isSpent ? 'Gastado' : 'Usar'}
                         </button>
@@ -399,12 +401,12 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                           <li key={kwi} className="pl-4 relative">
                             <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
                             <span className="font-serif text-[#b8863c] uppercase mr-1">{kw}</span> 
-                            {desc ? `— ${desc}` : ''}
+                            {desc ? \`— \${desc}\` : ''}
                           </li>
                         );
                       })}
                       {eq.rules && eq.rules.map((r: any, ri: number) => (
-                        <li key={`r-${ri}`} className="pl-4 relative">
+                        <li key={\`r-\${ri}\`} className="pl-4 relative">
                           <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
                           <span className="font-serif text-[#b8863c] uppercase mr-1">{r.name}</span> 
                           — {r.desc}
@@ -427,7 +429,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                 <li key={i} className="pl-4 relative">
                   <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
                   <span className="font-serif text-[#b8863c] mr-1">{ab.name}</span> 
-                  {ab.desc ? `— ${ab.desc}` : ''}
+                  {ab.desc ? \`— \${ab.desc}\` : ''}
                 </li>
               ))}
             </ul>
@@ -441,10 +443,13 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
             <button 
               key={i} 
               onClick={() => setCurrentIndex(i)}
-              className={`w-3 h-3 rounded-full border border-[#b8863c] transition-all ${i === currentIndex ? 'bg-[#b8863c] scale-125' : 'bg-transparent'}`}
+              className={\`w-3 h-3 rounded-full border border-[#b8863c] transition-all \${i === currentIndex ? 'bg-[#b8863c] scale-125' : 'bg-transparent'}\`}
             />
          ))}
       </div>
     </div>
   );
 }
+`;
+
+fs.writeFileSync('app/(app)/partida/TabletopMode.tsx', content, 'utf8');

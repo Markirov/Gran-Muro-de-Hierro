@@ -833,3 +833,73 @@ function warbandTotals(wb) {
 }
 
 
+
+function findArmouryItemByName(name, wb) {
+  if (!name || !wb || !wb.factionId) return null;
+  const f = DATA.factions[wb.factionId];
+  if (!f || !f.armoury) return null;
+  
+  // Search standard armoury
+  for (const cat of Object.values(f.armoury)) {
+    if (!Array.isArray(cat)) continue;
+    const found = cat.find(x => x.name.toLowerCase() === name.toLowerCase());
+    if (found) return variantArmouryItem(wb, found);
+  }
+  
+  // Search variant overrides directly
+  const v = getActiveVariant(wb);
+  if (v && v.armouryOverrides) {
+    for (const cat of Object.values(v.armouryOverrides)) {
+      if (!Array.isArray(cat)) continue;
+      const found = cat.find(x => x.name.toLowerCase() === name.toLowerCase());
+      if (found) return found;
+    }
+  }
+  
+  // Search foreign armouries
+  for (const fa of ((v && v.foreignArmoury) || [])) {
+    const ff = DATA.factions[fa.factionId];
+    if (!ff) continue;
+    for (const cat of Object.values(ff.armoury)) {
+      if (!Array.isArray(cat)) continue;
+      const found = cat.find(x => x.name.toLowerCase() === name.toLowerCase());
+      if (found) return Object.assign({}, found, { _foreignFaction: fa.factionId },
+        itemHasForbiddenKeyword(v, found) ? { forbidden: true } : {});
+    }
+  }
+  
+  return null;
+}
+
+function calculateTotalArmour(model, unit, wb) {
+  const stats = effectiveStats(model, unit, wb);
+  let totalArmour = parseInt(stats.armour) || 0;
+  
+  const bkEquip = (model.battlekit || []).map(id => findBattlekitItem(wb.factionId, id, wb)).filter(Boolean);
+  const permEquip = (unit?.permanentEquipment || []).map(p => {
+    const cleanName = p.split(' (')[0];
+    const it = findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb);
+    return it || { name: p };
+  });
+  
+  const allEquip = [...permEquip, ...bkEquip];
+  const uniqueMap = new Map();
+  allEquip.forEach(eq => {
+    if (eq.name && !uniqueMap.has(eq.name)) {
+      uniqueMap.set(eq.name, eq);
+    }
+  });
+  
+  Array.from(uniqueMap.values()).forEach(eq => {
+    if (eq.weaponKeywords) {
+      eq.weaponKeywords.forEach(kw => {
+        const match = String(kw).match(/-(\d+)\s+INJURY MODIFIER/i);
+        if (match) {
+          totalArmour += parseInt(match[1], 10);
+        }
+      });
+    }
+  });
+  
+  return totalArmour > 0 ? `-${totalArmour}` : '0';
+}

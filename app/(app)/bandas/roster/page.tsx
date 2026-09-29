@@ -105,7 +105,20 @@ export default function RosterPage() {
             <div className="flex flex-col items-center">
               <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest mb-1">Presupuesto</span>
               <div className="text-2xl font-serif text-[#b8863c]">
-                {wb.budgetTotal - spentDucados} <span className="text-[#7a6a58] text-sm">/ {wb.budgetTotal} 👑</span>
+                {(wb.budgetTotal || 0) - spentDucados}{' '}
+                <span className="text-[#7a6a58] text-sm">
+                  /{' '}
+                  <input
+                    type="number"
+                    min={0}
+                    step={5}
+                    value={wb.budgetTotal ?? 0}
+                    onChange={(e) => saveWb({ ...wb, budgetTotal: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                    title="Presupuesto total de la banda"
+                    className="w-16 bg-transparent text-[#7a6a58] text-sm text-right border-b border-dashed border-[#5c3a21] focus:outline-none focus:border-[#b8863c] focus:text-[#e2d4b7]"
+                  />{' '}
+                  👑
+                </span>
               </div>
             </div>
             {wb.glory > 0 && (

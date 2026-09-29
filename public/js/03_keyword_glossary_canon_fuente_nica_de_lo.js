@@ -184,7 +184,7 @@ function glossaryEntryFor(name) {
 }
 
 /* Texto canon vigente de una keyword ('' si no está en el glosario). */
-function glossaryText(name) {
+const glossaryText(name) {
   const g = glossaryEntryFor(name);
   if (!g) return '';
   if (!g.param) return g.entry.text;
