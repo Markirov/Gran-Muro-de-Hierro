@@ -2,7 +2,7 @@
 
 > Resumen vivo, máximo ~50 líneas. Se reescribe (no se añade) cuando cambia algo (§1.1). La historia completa está en `DONE.md`; el backlog en `PENDING.md`.
 
-**Última actualización:** 2026-09-30, Lead Developer (Antigravity)
+**Última actualización:** 2026-09-30, QA Auditor / Security Reviewer (Antigravity)
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
