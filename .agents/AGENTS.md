@@ -1,6 +1,6 @@
 # AGENTS.md — Harness de trabajo (fuente única de protocolo núcleo)
 
-> **Harness v2.8.0** — núcleo sincronizado desde `agentic-framework/`. **Este archivo es 100% núcleo:** no lo edites a mano, se reemplaza entero en `harness update`. Una mejora al núcleo se propone con `harness propose`. Todo lo propio de este proyecto (roles, cabecera Proyecto/Stack, reglas de dominio) vive en **`.agents/PROJECT.md`** — ese archivo nunca lo toca `update`, es tuyo.
+> **Harness v2.10.0** — núcleo sincronizado desde `agentic-framework/`. **Este archivo es 100% núcleo:** no lo edites a mano, se reemplaza entero en `harness update`. Una mejora al núcleo se propone con `harness propose`. Todo lo propio de este proyecto (roles, cabecera Proyecto/Stack, reglas de dominio) vive en **`.agents/PROJECT.md`** — ese archivo nunca lo toca `update`, es tuyo.
 >
 > **Punto de entrada ÚNICO para cualquier agente (IA o humano) que toque este repositorio.** Léelo entero antes de hacer nada, y después `.agents/PROJECT.md` (quién trabaja aquí) y tu regla dedicada.
 > `CLAUDE.md` / `GEMINI.md` / `AGENTS.md` de la raíz son solo punteros a este archivo.

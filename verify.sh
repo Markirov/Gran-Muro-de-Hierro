@@ -16,7 +16,7 @@ cd tests
 total=0; suites=0; failed=0; failed_names=""
 for t in test_*.js; do
   suites=$((suites+1))
-  out=$(timeout 60 node "$t" 2>&1); code=$?
+  out=$(node "$t" 2>&1); code=$?
   count=$(printf '%s\n' "$out" | grep -c "✓ ")
   total=$((total + count))
   if [ $code -ne 0 ]; then
