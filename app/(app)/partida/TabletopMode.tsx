@@ -11,6 +11,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showInfection, setShowInfection] = useState(false);
   const [showBlessing, setShowBlessing] = useState(false);
+  const [toughAlert, setToughAlert] = useState<{ modelName: string; factionSymbol: string } | null>(null);
   
   // Touch handlers for swipe
   const touchStartX = useRef(0);
@@ -176,6 +177,39 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   // Nota si la keyword de un arma no aplica a este modelo ('' si aplica)
   const keywordInactive = (kw: string) => (kw === 'HEAVY' && hasStrong ? 'STRONG: no aplica' : '');
 
+  // TOUGH (Rulebook 1.0.2): La primera vez que sufre un resultado de Out of Action, se salva y vuelve a En Pie
+  const getFactionSymbol = (factionId: string): string => {
+    switch (factionId) {
+      case 'iron-sultanate': return '☾';
+      case 'new-antioch': return '✠';
+      case 'trench-pilgrims': return '☦';
+      case 'heretic-legion': return '⛧';
+      case 'black-grail': return '☣';
+      case 'court-seven-headed-serpent': return '🐍';
+      default: return '✦';
+    }
+  };
+
+  const factionSymbol = getFactionSymbol(wb.factionId);
+  const hasTough = modelKeywords.includes('TOUGH') || abilities.some((a: any) => String(a.name || a).toUpperCase() === 'TOUGH');
+  const toughUsed = !!st.toughUsed;
+  const toughActive = hasTough && !toughUsed;
+
+  const handleSetStatus = (s: string) => {
+    if (s === 'out' && toughActive) {
+      updateModel({
+        status: 'up',
+        toughUsed: true
+      });
+      setToughAlert({
+        modelName: displayName,
+        factionSymbol
+      });
+      return;
+    }
+    setStatus(s);
+  };
+
   // Unified abilities list: keywords + abilities
   
   const unifiedAbilities: any[] = [];
@@ -285,17 +319,50 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
         </div>
 
         {/* STATUS BUTTONS */}
-        <div className="flex gap-2 mb-6">
-          <button onClick={() => setStatus('up')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('up')}`}>
+        <div className="flex gap-2 mb-3">
+          <button onClick={() => handleSetStatus('up')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('up')}`}>
             En Pie
           </button>
-          <button onClick={() => setStatus('down')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('down')}`}>
+          <button onClick={() => handleSetStatus('down')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('down')}`}>
             Down
           </button>
-          <button onClick={() => setStatus('out')} className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all ${statusColor('out')}`}>
-            Fuera
+          <button 
+            onClick={() => handleSetStatus('out')} 
+            className={`flex-1 py-2 text-xs md:text-sm font-bold uppercase tracking-widest rounded border transition-all flex items-center justify-center gap-1.5 ${statusColor('out')}`}
+            title={toughActive ? `TOUGH activo (${factionSymbol}): la primera vez que caiga Fuera, se salva e ignora la baja volviendo a En Pie` : undefined}
+          >
+            <span>Fuera</span>
+            {toughActive && (
+              <span className="text-sm text-[#b8863c] font-serif font-black" title="TOUGH: La primera vez que caiga Fuera, se salva e ignora la baja">
+                {factionSymbol}
+              </span>
+            )}
           </button>
         </div>
+
+        {/* TOUGH STATUS BADGE */}
+        {toughActive && (
+          <div className="flex items-center gap-1.5 text-[10px] text-[#b8863c] mb-5 px-1 bg-[#1a0f0a] py-1 px-2 rounded border border-[#5c3a21]/40">
+            <span className="text-xs font-serif font-black">{factionSymbol}</span>
+            <span className="italic">Regla TOUGH activa: el primer resultado «Fuera» se ignorará automáticamente volviendo a En Pie.</span>
+          </div>
+        )}
+        {hasTough && toughUsed && (
+          <div className="flex justify-between items-center text-[10px] text-[#7a6a58] mb-5 px-2 py-1 rounded bg-[#1a0f0a] border border-[#3a2110]">
+            <span className="flex items-center gap-1">
+              <span className="text-[#b8863c] line-through font-serif">{factionSymbol}</span>
+              <span>Regla TOUGH: <strong className="text-red-400">Gastada</strong></span>
+            </span>
+            <button
+              type="button"
+              onClick={() => updateModel({ toughUsed: false })}
+              className="text-[#9e9178] hover:text-[#b8863c] underline uppercase tracking-wider text-[9px] cursor-pointer"
+              title="Restaurar regla TOUGH para esta miniatura"
+            >
+              Restaurar {factionSymbol}
+            </button>
+          </div>
+        )}
 
         {/* STATS ROW */}
         <div className="grid grid-cols-4 gap-2 mb-8">
@@ -470,6 +537,36 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
             />
          ))}
       </div>
+
+      {/* TOUGH ALERT MODAL */}
+      {toughAlert && (
+        <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[#1a0f0a] border-2 border-[#b8863c] rounded-xl max-w-sm w-full p-5 text-center shadow-[0_0_30px_rgba(184,134,60,0.3)] space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-full bg-[#2a1610] border border-[#b8863c] flex items-center justify-center text-3xl text-[#b8863c] font-serif font-black shadow-inner">
+              {toughAlert.factionSymbol}
+            </div>
+            <div>
+              <div className="font-serif text-lg font-bold text-[#e2d4b7] uppercase tracking-wider">
+                ¡Regla TOUGH Activada!
+              </div>
+              <div className="text-xs text-[#b8863c] font-mono mt-0.5">
+                Primer resultado Fuera de Combate
+              </div>
+            </div>
+            <p className="text-xs text-[#9e9178] leading-relaxed">
+              Es la primera vez que <strong className="text-[#e2d4b7]">{toughAlert.modelName}</strong> sufre un resultado de <strong className="text-red-400">Fuera</strong>. 
+              Su resistencia heroica se activa: el símbolo <strong className="text-[#b8863c] font-serif">{toughAlert.factionSymbol}</strong> se retira y la miniatura permanece <strong className="text-[#b8863c]">En Pie</strong>.
+            </p>
+            <button
+              type="button"
+              onClick={() => setToughAlert(null)}
+              className="w-full py-2.5 bg-[#b8863c] hover:bg-[#c9974d] text-[#1a0f0a] font-bold text-xs uppercase tracking-widest rounded-lg shadow-md transition-all cursor-pointer"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
