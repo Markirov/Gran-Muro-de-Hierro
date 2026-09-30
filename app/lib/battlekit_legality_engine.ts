@@ -1,6 +1,6 @@
 // @ts-nocheck -- puente legacy: comparte helpers con el motor clásico.
 import { DATA } from '../data/01_trench_crusade_game_data';
-import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades, findBattlekitItem, getUnit, variantUnitOverride, modelNegatesKeyword, unitCostAltAllowed } from './cost_calculation';
+import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades, findBattlekitItem, getUnit, variantUnitOverride, modelNegatesKeyword, unitCostAltAllowed, findArmouryItemByName } from './cost_calculation';
 
 /* ======================================================================
    BATTLEKIT LEGALITY ENGINE
@@ -145,6 +145,18 @@ export function modelHasCategoryItem(wb, model, category, excludeItemId=null) {
     if (kid === excludeItemId) continue;
     if (getArmouryCategory(wb.factionId, kid) === category) return true;
   }
+  if (category === 'armour') {
+    const unit = getUnit(wb.factionId, model.unitId);
+    if (unit?.id === 'mech-heavy-inf') return true;
+    for (const p of (unit?.permanentEquipment || [])) {
+      const cleanName = p.split(' (')[0];
+      const it = findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb);
+      if (it) {
+        const cat = it.category || getArmouryCategory(wb.factionId, it.id) || (it.type?.toLowerCase() === 'armour' ? 'armour' : null);
+        if (cat === 'armour') return true;
+      }
+    }
+  }
   return false;
 }
 
@@ -154,6 +166,10 @@ export function modelHasHeadgear(wb, model, excludeItemId=null) {
     if (kid === excludeItemId) continue;
     const it = findBattlekitItem(wb.factionId, kid, wb);
     if (it && parseRestriction(it.restriction).tags.has('Headgear')) return true;
+  }
+  const unit = getUnit(wb.factionId, model.unitId);
+  for (const p of (unit?.permanentEquipment || [])) {
+    if (/headgear|helmet|capirote/i.test(p)) return true;
   }
   return false;
 }
@@ -934,6 +950,31 @@ export function getModelMeleeCapacity(model, unit, wb) {
       return it ? { ...it, _idx: idx } : null;
     })
     .filter(it => it && getArmouryCategory(wb.factionId, it.id) === 'melee');
+
+  if (unit?.permanentEquipment) {
+    const hasAnchoriteRanged = (model.battlekit || []).some(kid => {
+      const cat = getArmouryCategory(wb.factionId, kid);
+      return cat === 'anchoriteRanged' || cat === 'ranged';
+    });
+    for (const p of unit.permanentEquipment) {
+      if (unit.id === 'anchorite-shrine' && p.toLowerCase().includes('catherine wheel') && hasAnchoriteRanged) {
+        continue;
+      }
+      const cleanName = p.split(' (')[0];
+      const it = findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb);
+      if (it) {
+        const cat = it.category || getArmouryCategory(wb.factionId, it.id) || (it.range?.toLowerCase() === 'melee' && (it.type?.includes('Handed') || it.type === 'Melee') ? 'melee' : null);
+        if (cat === 'melee' && !items.some(x => x.name.toLowerCase() === it.name.toLowerCase())) {
+          items.push({
+            ...it,
+            isBuiltIn: true,
+            cost: 0,
+            displayCost: 'Base'
+          });
+        }
+      }
+    }
+  }
   
   let handsUsed = 0;
   items.forEach(it => {
@@ -978,6 +1019,24 @@ export function getModelRangedCapacity(model, unit, wb) {
       const cat = getArmouryCategory(wb.factionId, it.id);
       return cat === 'ranged' || cat === 'anchoriteRanged';
     });
+
+  if (unit?.permanentEquipment) {
+    for (const p of unit.permanentEquipment) {
+      const cleanName = p.split(' (')[0];
+      const it = findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb);
+      if (it) {
+        const cat = it.category || getArmouryCategory(wb.factionId, it.id) || (it.range && it.range !== 'Melee' && it.range !== '-' && it.type?.includes('Handed') ? 'ranged' : null);
+        if ((cat === 'ranged' || cat === 'anchoriteRanged') && !items.some(x => x.name.toLowerCase() === it.name.toLowerCase())) {
+          items.push({
+            ...it,
+            isBuiltIn: true,
+            cost: 0,
+            displayCost: 'Base'
+          });
+        }
+      }
+    }
+  }
   
   let handsUsed = 0;
   items.forEach(it => {
@@ -1028,10 +1087,42 @@ export function getModelArmourAndShield(model, unit, wb) {
     }
   }
 
-  let permEquip = unit?.permanentEquipment || [];
-  if (unit?.id === 'mech-heavy-inf') {
-    permEquip = permEquip.filter(p => !p.toLowerCase().includes('armour'));
+  // If no armour equipped and not MHI, resolve built-in armour from permanentEquipment
+  if (!armourItem && unit?.permanentEquipment) {
+    for (const p of unit.permanentEquipment) {
+      const cleanName = p.split(' (')[0];
+      const it = findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb);
+      if (it) {
+        const cat = it.category || getArmouryCategory(wb.factionId, it.id) || (it.type?.toLowerCase() === 'armour' ? 'armour' : null);
+        if (cat === 'armour') {
+          armourItem = {
+            ...it,
+            isBuiltIn: true,
+            cost: 0,
+            displayCost: 'Base'
+          };
+          break;
+        }
+      }
+    }
   }
+
+  // Filter permanentEquipment so it only leaves text items not represented in capacity cards
+  let permEquip = (unit?.permanentEquipment || []).filter(p => {
+    if (unit?.id === 'mech-heavy-inf') return false;
+    const cleanName = p.split(' (')[0];
+    const it = findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb);
+    if (!it) return true;
+    const cat = it.category || getArmouryCategory(wb.factionId, it.id) ||
+      (it.type?.toLowerCase() === 'armour' ? 'armour' :
+       it.type?.toLowerCase() === 'equipment' || it.type?.toLowerCase() === 'headgear' || it.type?.toLowerCase() === 'special' ? 'equipment' :
+       it.range?.toLowerCase() === 'melee' ? 'melee' :
+       it.range && it.range !== '-' ? 'ranged' : null);
+    if (['armour', 'shields', 'melee', 'ranged', 'anchoriteRanged', 'equipment', 'anchoriteBattlekit', 'grenades'].includes(cat)) {
+      return false;
+    }
+    return true;
+  });
   
   return {
     armour: armourItem,
@@ -1054,6 +1145,32 @@ export function getModelGearAndGrenades(model, unit, wb) {
     if (cat === 'grenades') grenades.push({ ...it, _idx: idx });
     else if (cat === 'equipment' || cat === 'anchoriteBattlekit') gear.push({ ...it, _idx: idx });
   });
+
+  if (unit?.permanentEquipment) {
+    for (const p of unit.permanentEquipment) {
+      const cleanName = p.split(' (')[0];
+      const it = findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb);
+      if (it) {
+        const cat = it.category || getArmouryCategory(wb.factionId, it.id) ||
+          (it.type?.toLowerCase() === 'equipment' || it.type?.toLowerCase() === 'headgear' || it.type?.toLowerCase() === 'special' ? 'equipment' : null);
+        if (cat === 'grenades' && !grenades.some(x => x.name.toLowerCase() === it.name.toLowerCase())) {
+          grenades.push({
+            ...it,
+            isBuiltIn: true,
+            cost: 0,
+            displayCost: 'Base'
+          });
+        } else if ((cat === 'equipment' || cat === 'anchoriteBattlekit') && !gear.some(x => x.name.toLowerCase() === it.name.toLowerCase())) {
+          gear.push({
+            ...it,
+            isBuiltIn: true,
+            cost: 0,
+            displayCost: 'Base'
+          });
+        }
+      }
+    }
+  }
   
   return {
     grenades,

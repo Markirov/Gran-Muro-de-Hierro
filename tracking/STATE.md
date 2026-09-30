@@ -6,15 +6,15 @@
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
-- Kingdom of Alba Assault Detachment canon: Mechanized Heavy Infantry (MHI) con selección/cambio de armadura (Reinforced 85 👑 o Machine Armour 95 👑) en tarjeta corporal y selector; descuento del 50% de Cold Steel reflejado en selectores, armas equipadas y costes en Roster; e inmunidad canónica de sus armaduras (y Celtic Machine Armour) a la penalización de movimiento al estar Down en Modo Mesa (`Sin penaliz. Down`).
+- Equipamiento permanente/innato integrado transversalmente: todas las bandas y mercenarios (Combat Engineers, Combat Medic, Anointed, Hell Knights, Anchorite Shrine, Artillery Witch, Hunter of LHP, Warlock, Scripture Guardian, Witchburner) integran su armadura y armas innatas en los 4 Contenedores de Capacidad de Roster (`ModelDetails.tsx`), bloqueando compras duplicadas de armadura/casco y mostrando badges `Innata`/`Innato` no removibles.
+- Anchorite Shrine dinámico: Catherine Wheel + Bonebreaker Mace integradas en Melee (2 manos); al equipar un arma a distancia Anchorite se sustituye automáticamente la Catherine Wheel pasando a 1 mano Melee + 1 Ranged.
+- Kingdom of Alba Assault Detachment canon: MHI con selección de armadura (Reinforced 85 👑 o Machine Armour 95 👑); descuento del 50% de Cold Steel en selectores, equipamiento y cálculo de costes; exención de penalización de movimiento Down en Modo Mesa (`Sin penaliz. Down`).
 - Modo Mesa interactivo con regla TOUGH: modelos con TOUGH muestran el símbolo de su facción en el botón "Fuera"; al pulsar por primera vez se devuelve a "En Pie", gasta el símbolo, notifica con modal explicativo y sombrea la habilidad TOUGH con (gastado) en la lista de Habilidades.
-- Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) y tabs temáticos ("Armería"/"Bazar" para Sultanato, "Arsenal"/"Intendencia" para Antioquía, etc.).
-- Modo Armería estricto de solo lectura: oculta botones de desequipar y selectores de compra; oculta secciones y sub-bloques vacíos para una vista ultra-limpia; si no porta equipo adicional, muestra banner directo al Bazar.
-- Tooltips de reglas e inspección visual en hover para habilidades innatas, keywords del modelo y de armamento.
-- Armería es solo lectura también para mejoras: muestra únicamente las activas y reserva añadir/quitar mejoras al Bazar.
-- Presupuesto libre y desequipado restrictivo: se puede fijar cualquier cantidad de Ducados; si el saldo es negativo, se muestra en rojo y el motor solo permite desequipar ítems, desactivar mejoras o despedir miniaturas hasta volver a estar en positivo.
-- Tooling saneado para Next 16: ESLint usa el CLI actual, el build valida TypeScript y las excepciones del runtime legacy están limitadas a cuatro módulos puente.
-- Workspace de Roster fijado a pantalla completa sin scrolls anidados (`h-screen overflow-hidden`), con cabecera de miniaturas y atributos (`MOV`, `RNG`, `MEL`, `ARM`, `BASE`) anclados permanentemente en la parte superior.
+- Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) y tabs temáticos ("Armería"/"Bazar", etc.).
+- Modo Armería estricto de solo lectura: oculta desequipado y selectores; oculta secciones y sub-bloques vacíos; tooltips de reglas e inspección visual en hover para habilidades innatas, keywords de modelo y armas.
+- Presupuesto libre y desequipado restrictivo: saldo editable; si es negativo se resalta en rojo y solo permite desequipar ítems, desactivar mejoras o despedir miniaturas.
+- Tooling saneado para Next 16: ESLint usa CLI actual con `max-warnings=0`, `tsc --noEmit` limpio y Turbopack optimizado.
+- Workspace de Roster fijado a pantalla completa sin scrolls anidados (`h-screen overflow-hidden`) y cabecera de atributos anclada.
 
 ## Decisiones vigentes (y por qué)
 - **Zero remote push:** GitHub está congelado; solo commits locales y despliegue a Firebase Hosting (`firebase deploy --only hosting`).

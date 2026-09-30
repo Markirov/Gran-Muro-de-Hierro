@@ -816,7 +816,7 @@ const DATA = {
             forbidCategories:['ranged','melee','grenades','shields','armour','equipment'],
             // Hasta 1 Anchorite Ranged Weapon (sustituye Catherine Wheel)
             // Hasta 2 Anchorite Battlekit
-            weaponLimits:{ meleeMax:0, rangedMax:1, totalMax:1, strongBonus:false },
+            weaponLimits:{ meleeMax:2, rangedMax:1, totalMax:2, strongBonus:false },
             // Custom: max 2 anchorite battlekit pieces (controlled separately)
             anchoriteBattlekitMax: 2,
           },
@@ -2228,14 +2228,18 @@ const DATA = {
   ],
   // Battlekit propio de los mercenarios (revisión de reglas de abril 2026, beta).
   mercenaryArmoury: [
-    { id:'tenderiser-maul-merc', name:'Tenderiser Maul', cost:0, currency:'👑', restriction:'Sin Eater only · permanente',
-      type:'2-Handed', range:'Melee', weaponKeywords:['+1 INJURY MODIFIER','HEAVY'] },
-    { id:'flaying-claws-merc', name:'Flaying Iron Claws', cost:0, currency:'👑', restriction:'Goetic Warlock only · permanente',
-      type:'2-Handed', range:'Melee', weaponKeywords:['CLEAVE 2','CRITICAL'] },
-    { id:'gavel-justice-merc', name:'Gavel of Justice', cost:0, currency:'👑', restriction:'Witchburner only · permanente',
-      type:'1-Handed', range:'Melee', weaponKeywords:['CRITICAL','FIRE'] },
-    { id:'vengeful-scripture-merc', name:'Vengeful Scripture', cost:0, currency:'👑', restriction:'Scripture Guardian only · permanente',
-      type:'Special', range:'18"', weaponKeywords:['ASSAULT','IGNORE COVER'] },
+    { id:'tenderiser-maul-merc', name:'Tenderiser Maul', cost:0, currency:'👑', restriction:'Sin Eater only · permanente', type:'2-Handed', range:'Melee', category:'melee', weaponKeywords:['+1 INJURY MODIFIER','HEAVY'] },
+    { id:'flaying-claws-merc', name:'Flaying Iron Claws', cost:0, currency:'👑', restriction:'Goetic Warlock only · permanente', type:'2-Handed', range:'Melee', category:'melee', weaponKeywords:['CLEAVE 2','CRITICAL'] },
+    { id:'gavel-justice-merc', name:'Gavel of Justice', cost:0, currency:'👑', restriction:'Witchburner only · permanente', type:'1-Handed', range:'Melee', category:'melee', weaponKeywords:['CRITICAL','FIRE'] },
+    { id:'vengeful-scripture-merc', name:'Vengeful Scripture', cost:0, currency:'👑', restriction:'Scripture Guardian only · permanente', type:'Special', range:'18"', category:'equipment', weaponKeywords:['ASSAULT','IGNORE COVER'] },
+  ],
+  // Equipamiento y armas integradas de miniaturas específicas (canon 1.0.2).
+  unitArmoury: [
+    { id:'catherine-wheel-tp', name:'Catherine Wheel', cost:0, currency:'👑', restriction:'Anchorite Shrine only · permanente', type:'1-Handed', range:'Melee', category:'melee', weaponKeywords:['+1 DICE','DEADLY','HEAVY','RISKY'] },
+    { id:'bonebreaker-mace-tp', name:'Bonebreaker Mace', cost:0, currency:'👑', restriction:'Anchorite Shrine only · permanente', type:'1-Handed', range:'Melee', category:'melee', weaponKeywords:['+1 INJURY DICE','RISKY'] },
+    { id:'infernal-bombs-hl', name:'Infernal Bombs', cost:0, currency:'👑', restriction:'Artillery Witch only · permanente', type:'1-Handed', range:'36"', category:'grenades', weaponKeywords:['BLAST 3"','IGNORE COVER','IGNORE ELEVATED POSITION','IGNORE LONG RANGE','RELOAD','SCATTER','SHRAPNEL'] },
+    { id:'bow-of-lethe-co', name:'Bow of Lethe', cost:0, currency:'👑', restriction:'Hunter of the Left-Hand Path only · permanente', type:'1-Handed', range:'24"', category:'ranged', weaponKeywords:['ASSAULT'] },
+    { id:'atonement-bell-na', name:'Atonement Bell', cost:0, currency:'👑', restriction:'Crimson Communicant only · permanente', type:'1-Handed', range:'Melee', category:'melee', weaponKeywords:['OFF-HAND'] },
   ],
 };
 

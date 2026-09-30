@@ -406,6 +406,11 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                     <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono bg-[#2a1610] text-[#b8863c] border border-[#5c3a21]">
                                       {it.type || 'Melee'}
                                     </span>
+                                    {it.isBuiltIn && (
+                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
+                                        Innata
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
                                     {(it.weaponKeywords || []).map((kw: string, kwi: number) => {
@@ -424,6 +429,13 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                 </div>
                                 <div className="flex items-center gap-3">
                                   {(() => {
+                                    if (it.isBuiltIn) {
+                                      return (
+                                        <span className="text-xs font-mono text-[#7a6a58]">
+                                          {it.displayCost || 'Base'}
+                                        </span>
+                                      );
+                                    }
                                     const actualCost = battlekitPurchaseCost(wb, it, model);
                                     const hasDiscount = actualCost < it.cost;
                                     return (
@@ -440,7 +452,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       </span>
                                     );
                                   })()}
-                                  {isShop && (
+                                  {isShop && !it.isBuiltIn && (
                                     <button 
                                       onClick={() => handleRemoveItem(it.id)}
                                       className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
@@ -563,6 +575,11 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                     <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono bg-[#2a1610] text-[#b8863c] border border-[#5c3a21]">
                                       {it.range ? `${it.range}"` : it.type}
                                     </span>
+                                    {it.isBuiltIn && (
+                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
+                                        Innata
+                                      </span>
+                                    )}
                                   </div>
                                   <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
                                     {(it.weaponKeywords || []).map((kw: string, kwi: number) => {
@@ -580,8 +597,10 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs font-mono text-[#e2d4b7]">{it.cost} {it.currency}</span>
-                                  {isShop && (
+                                  <span className="text-xs font-mono text-[#e2d4b7]">
+                                    {it.isBuiltIn ? (it.displayCost || 'Base') : `${it.cost} ${it.currency}`}
+                                  </span>
+                                  {isShop && !it.isBuiltIn && (
                                     <button 
                                       onClick={() => handleRemoveItem(it.id)}
                                       className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
@@ -765,13 +784,15 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                   </span>
                                   {isShop && (
                                     armourShield.armour.isBuiltIn ? (
-                                      <button 
-                                        onClick={() => setSelectorOpen(selectorOpen === 'armour' ? null : 'armour')}
-                                        className="px-2 py-0.5 rounded bg-[#2a1610] hover:bg-[#3a2110] text-[#b8863c] hover:text-[#e2d4b7] border border-[#5c3a21] text-xs transition-all font-mono"
-                                        title="Cambiar armadura"
-                                      >
-                                        Cambiar
-                                      </button>
+                                      unit.costAlt ? (
+                                        <button 
+                                          onClick={() => setSelectorOpen(selectorOpen === 'armour' ? null : 'armour')}
+                                          className="px-2 py-0.5 rounded bg-[#2a1610] hover:bg-[#3a2110] text-[#b8863c] hover:text-[#e2d4b7] border border-[#5c3a21] text-xs transition-all font-mono"
+                                          title="Cambiar armadura"
+                                        >
+                                          Cambiar
+                                        </button>
+                                      ) : null
                                     ) : (
                                       <button 
                                         onClick={() => handleRemoveItem(armourShield.armour.id)}
@@ -941,11 +962,18 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                   <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2 flex justify-between items-center text-xs">
                                     <div>
                                       <span className="font-bold text-[#e2d4b7]">💣 {g.name}</span>
+                                      {g.isBuiltIn && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21] ml-2">
+                                          Innata
+                                        </span>
+                                      )}
                                       <span className="text-[9px] text-[#7a6a58] ml-2">({(g.weaponKeywords || []).slice(0, 3).join(', ')})</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <span className="font-mono text-[#b8863c]">{g.cost} {g.currency}</span>
-                                      {isShop && (
+                                      <span className="font-mono text-[#b8863c]">
+                                        {g.isBuiltIn ? (g.displayCost || 'Base') : `${g.cost} ${g.currency}`}
+                                      </span>
+                                      {isShop && !g.isBuiltIn && (
                                         <button onClick={() => handleRemoveItem(g.id)} className="text-[#7a6a58] hover:text-red-400 px-1">✕</button>
                                       )}
                                     </div>
@@ -997,11 +1025,18 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                   <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2 flex justify-between items-center text-xs">
                                     <div>
                                       <span className="font-bold text-[#e2d4b7]">{it.name}</span>
+                                      {it.isBuiltIn && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21] ml-2">
+                                          Innato
+                                        </span>
+                                      )}
                                       {it.restriction && <span className="text-[9px] text-[#b8863c] ml-2">({it.restriction})</span>}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <span className="font-mono text-[#b8863c]">{it.cost} {it.currency}</span>
-                                      {isShop && (
+                                      <span className="font-mono text-[#b8863c]">
+                                        {it.isBuiltIn ? (it.displayCost || 'Base') : `${it.cost} ${it.currency}`}
+                                      </span>
+                                      {isShop && !it.isBuiltIn && (
                                         <button onClick={() => handleRemoveItem(it.id)} className="text-[#7a6a58] hover:text-red-400 px-1">✕</button>
                                       )}
                                     </div>

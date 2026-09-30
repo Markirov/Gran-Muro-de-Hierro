@@ -840,39 +840,73 @@ export function warbandTotals(wb) {
 
 
 export function findArmouryItemByName(name, wb) {
-  if (!name || !wb || !wb.factionId) return null;
-  const f = DATA.factions[wb.factionId];
-  if (!f || !f.armoury) return null;
-  
-  // Search standard armoury
-  for (const cat of Object.values(f.armoury)) {
-    if (!Array.isArray(cat)) continue;
-    const found = cat.find(x => x.name.toLowerCase() === name.toLowerCase());
-    if (found) return variantArmouryItem(wb, found);
-  }
-  
-  // Search variant overrides directly
-  const v = getActiveVariant(wb);
-  if (v && v.armouryOverrides) {
-    for (const cat of Object.values(v.armouryOverrides)) {
+  if (!name) return null;
+  const cleanName = name.split(' (')[0].trim().toLowerCase();
+
+  const match = (item) => item && (
+    item.name?.toLowerCase() === cleanName ||
+    item.id?.toLowerCase() === cleanName ||
+    item.name?.toLowerCase() === name.trim().toLowerCase()
+  );
+
+  // 1. Search standard armoury of current faction
+  if (wb && wb.factionId && DATA.factions?.[wb.factionId]?.armoury) {
+    const f = DATA.factions[wb.factionId];
+    for (const cat of Object.values(f.armoury)) {
       if (!Array.isArray(cat)) continue;
-      const found = cat.find(x => x.name.toLowerCase() === name.toLowerCase());
-      if (found) return found;
+      const found = cat.find(match);
+      if (found) return variantArmouryItem(wb, found);
     }
   }
-  
-  // Search foreign armouries
-  for (const fa of ((v && v.foreignArmoury) || [])) {
-    const ff = DATA.factions[fa.factionId];
-    if (!ff) continue;
-    for (const cat of Object.values(ff.armoury)) {
-      if (!Array.isArray(cat)) continue;
-      const found = cat.find(x => x.name.toLowerCase() === name.toLowerCase());
-      if (found) return Object.assign({}, found, { _foreignFaction: fa.factionId },
-        itemHasForbiddenKeyword(v, found) ? { forbidden: true } : {});
+
+  // 2. Search variant overrides directly
+  if (wb) {
+    const v = getActiveVariant(wb);
+    if (v && v.armouryOverrides) {
+      for (const cat of Object.values(v.armouryOverrides)) {
+        if (!Array.isArray(cat)) continue;
+        const found = cat.find(match);
+        if (found) return found;
+      }
+    }
+    
+    // 3. Search foreign armouries
+    for (const fa of ((v && v.foreignArmoury) || [])) {
+      const ff = DATA.factions?.[fa.factionId];
+      if (!ff || !ff.armoury) continue;
+      for (const cat of Object.values(ff.armoury)) {
+        if (!Array.isArray(cat)) continue;
+        const found = cat.find(match);
+        if (found) return Object.assign({}, found, { _foreignFaction: fa.factionId },
+          itemHasForbiddenKeyword(v, found) ? { forbidden: true } : {});
+      }
     }
   }
-  
+
+  // 4. Search mercenaryArmoury
+  if (DATA.mercenaryArmoury && Array.isArray(DATA.mercenaryArmoury)) {
+    const found = DATA.mercenaryArmoury.find(match);
+    if (found) return found;
+  }
+
+  // 5. Search unitArmoury (built-in unit weapons: Catherine Wheel, Bonebreaker Mace, Infernal Bombs, Bow of Lethe, Atonement Bell)
+  if (DATA.unitArmoury && Array.isArray(DATA.unitArmoury)) {
+    const found = DATA.unitArmoury.find(match);
+    if (found) return found;
+  }
+
+  // 6. Search across ALL faction armouries as universal fallback (e.g. for common armour/helmets on mercenaries/foreign allies)
+  if (DATA.factions) {
+    for (const [fId, faction] of Object.entries(DATA.factions)) {
+      if (wb && fId === wb.factionId) continue;
+      for (const cat of Object.values(faction.armoury || {})) {
+        if (!Array.isArray(cat)) continue;
+        const found = cat.find(match);
+        if (found) return found;
+      }
+    }
+  }
+
   return null;
 }
 

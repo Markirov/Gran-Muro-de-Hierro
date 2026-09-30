@@ -18,6 +18,7 @@ const eslintConfig = defineConfig([
     "scripts/**",
     "fix_*.js",
     "patch_*.js",
+    "*.js",
   ]),
   {
     files: ["**/*.{ts,tsx}"],
