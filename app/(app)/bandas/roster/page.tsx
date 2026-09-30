@@ -93,9 +93,12 @@ export default function RosterPage() {
       (spentDucados > Number(wb?.budgetTotal ?? 0) && nextSpentDucados <= spentDucados);
   };
   const rejectBudgetPurchase = () => {
-    setBudgetError('No hay suficientes Ducados para esa compra.');
+    if (spentDucados > Number(wb?.budgetTotal ?? 0)) {
+      setBudgetError('Presupuesto excedido. Solo puedes desequipar hasta volver a estar en positivo.');
+    } else {
+      setBudgetError('No hay suficientes Ducados para esa compra.');
+    }
   };
-  const minimumBudget = spentDucados;
 
   const openBudgetModal = () => {
     setTempBudget(wb.budgetTotal ?? 0);
@@ -106,7 +109,7 @@ export default function RosterPage() {
   const handleSaveBudget = () => {
     saveWb({
       ...wb,
-      budgetTotal: Math.max(minimumBudget, tempBudget),
+      budgetTotal: Math.max(0, tempBudget),
       glory: Math.max(0, tempGlory)
     });
     setShowBudgetModal(false);
@@ -124,7 +127,7 @@ export default function RosterPage() {
 
   const faction = FACTIONS.find(f => f.id === wb.factionId);
   const variant = faction?.variants?.find(v => v.id === wb.variantId);
-  const remainingDucados = Math.max(0, (wb.budgetTotal || 0) - spentDucados);
+  const remainingDucados = (wb.budgetTotal ?? 0) - spentDucados;
 
   // Calcular gloria gastada
   let spentGlory = 0;
@@ -161,7 +164,7 @@ export default function RosterPage() {
               <span className="text-[10px] uppercase text-[#7a6a58] group-hover:text-[#b8863c] tracking-widest mb-1 flex items-center gap-1 font-bold">
                 Presupuesto <span className="text-[9px]">✎</span>
               </span>
-              <div className="text-2xl font-serif text-[#b8863c]">
+              <div className={`text-2xl font-serif ${remainingDucados < 0 ? 'text-red-400 font-bold' : 'text-[#b8863c]'}`}>
                 {remainingDucados}{' '}
                 <span className="text-[#7a6a58] text-sm">
                   / {wb.budgetTotal ?? 0} 👑
@@ -313,12 +316,17 @@ export default function RosterPage() {
                 </label>
                 <input
                   type="number"
-                  min={spentDucados}
+                  min={0}
                   step={5}
                   value={tempBudget}
-                  onChange={(e) => setTempBudget(Math.max(spentDucados, parseInt(e.target.value, 10) || 0))}
+                  onChange={(e) => setTempBudget(Math.max(0, parseInt(e.target.value, 10) || 0))}
                   className="w-full bg-[#0a0503] border border-[#5c3a21] focus:border-[#b8863c] rounded-lg px-3 py-2 text-[#b8863c] font-serif text-xl outline-none font-bold shadow-inner"
                 />
+                {tempBudget < spentDucados && (
+                  <p className="text-[11px] text-red-400 font-sans leading-tight">
+                    ⚠️ El presupuesto ({tempBudget} 👑) es inferior al gasto actual ({spentDucados} 👑). La banda quedará con saldo negativo ({tempBudget - spentDucados} 👑) y solo podrás desequipar hasta volver a estar en positivo.
+                  </p>
+                )}
               </div>
 
               {/* GLORIA */}

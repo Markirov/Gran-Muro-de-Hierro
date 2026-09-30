@@ -11,7 +11,7 @@
 - Modo Armería estricto de solo lectura: oculta botones de desequipar y selectores de compra; oculta secciones y sub-bloques vacíos para una vista ultra-limpia; si no porta equipo adicional, muestra banner directo al Bazar.
 - Tooltips de reglas e inspección visual en hover para habilidades innatas, keywords del modelo y de armamento.
 - Armería es solo lectura también para mejoras: muestra únicamente las activas y reserva añadir/quitar mejoras al Bazar.
-- Las compras del Roster respetan el presupuesto total: ninguna alta o modificación puede aumentar el gasto por encima de los Ducados disponibles; el saldo visible no baja de cero.
+- Presupuesto libre y desequipado restrictivo: se puede fijar cualquier cantidad de Ducados; si el saldo es negativo, se muestra en rojo y el motor solo permite desequipar ítems, desactivar mejoras o despedir miniaturas hasta volver a estar en positivo.
 - Tooling saneado para Next 16: ESLint usa el CLI actual, el build valida TypeScript y las excepciones del runtime legacy están limitadas a cuatro módulos puente.
 - Workspace de Roster fijado a pantalla completa sin scrolls anidados (`h-screen overflow-hidden`), con cabecera de miniaturas y atributos (`MOV`, `RNG`, `MEL`, `ARM`, `BASE`) anclados permanentemente en la parte superior.
 

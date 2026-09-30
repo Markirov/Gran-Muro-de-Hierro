@@ -15,7 +15,7 @@ const crear = read('(app)', 'bandas', 'crear', 'page.tsx');
 
 console.log('\nGroup 1: Roster');
 ok(/openBudgetModal[\s\S]*setTempBudget\(wb\.budgetTotal/.test(roster) && /<input[^>]*type=["']number["'][^>]*value=\{tempBudget\}/.test(roster), 'el modal de presupuesto tiene un input numérico ligado a tempBudget');
-ok(/budgetTotal:\s*Math\.max\(minimumBudget,\s*tempBudget\)/.test(roster) && /saveWb\(\{\s*\.\.\.wb,/.test(roster), 'guardar el modal persiste el nuevo budgetTotal sin bajar del gasto');
+ok(/budgetTotal:\s*Math\.max\(0,\s*tempBudget\)/.test(roster) && /saveWb\(\{\s*\.\.\.wb,/.test(roster), 'guardar el modal persiste el nuevo budgetTotal');
 
 console.log('\nGroup 2: Crear banda');
 ok(/useState<number>\(\s*FACTIONS/.test(crear) || /setBudget\(/.test(crear), 'hay estado de presupuesto en la creación');

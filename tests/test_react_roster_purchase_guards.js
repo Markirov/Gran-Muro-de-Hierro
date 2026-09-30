@@ -29,12 +29,13 @@ ok(/if \(!canAffordWarband\(newWb\)\) \{/.test(roster), 'reclutar bloquea una ba
 ok(/if \(!canAffordWarband\(newWb\)\) \{/.test(roster.slice(roster.indexOf('onUpdateModel={(newModel) =>'))),
   'actualizar equipo o mejoras bloquea una banda sobregirada');
 
-console.log('\nGroup 3: edición del presupuesto');
-ok(/const minimumBudget = spentDucados/.test(roster), 'el presupuesto mínimo se basa en lo ya gastado');
-ok(/budgetTotal: Math\.max\(minimumBudget, tempBudget\)/.test(roster), 'guardar presupuesto nunca baja del gasto actual');
-ok(/min=\{spentDucados\}/.test(roster), 'el input refleja el mínimo gastado');
-ok(/const remainingDucados = Math\.max\(0,/.test(roster) && /\{remainingDucados\}/.test(roster),
-  'el saldo visible nunca se renderiza en negativo');
+console.log('\nGroup 3: edición libre de presupuesto y desequipado hasta positivo');
+ok(/budgetTotal:\s*Math\.max\(0,\s*tempBudget\)/.test(roster), 'guardar presupuesto permite cualquier cantidad');
+ok(/const remainingDucados = \(wb\.budgetTotal \?\? 0\) - spentDucados/.test(roster),
+  'el saldo restante permite números negativos');
+ok(/remainingDucados < 0 \? 'text-red-400/.test(roster), 'el saldo negativo se resalta en rojo');
+ok(/nextSpentDucados <= nextBudget \|\|\s*\(spentDucados > Number\(wb\?\.budgetTotal \?\? 0\) && nextSpentDucados <= spentDucados\)/.test(roster),
+  'si el presupuesto está excedido, solo se puede desequipar o reducir gasto');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
