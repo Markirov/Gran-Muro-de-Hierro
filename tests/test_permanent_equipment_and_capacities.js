@@ -1,16 +1,19 @@
 const assert = require('assert');
 const fs = require('fs');
+const path = require('path');
 
 // Load environment and engines
-eval(fs.readFileSync('public/js/01_trench_crusade_game_data.js', 'utf8') + '\nglobal.DATA = DATA;');
-eval(fs.readFileSync('public/js/02_ability_library.js', 'utf8') + '\nglobal.ABILITY_LIBRARY = ABILITY_LIBRARY;');
-eval(fs.readFileSync('public/js/03_keyword_glossary_canon_fuente_nica_de_lo.js', 'utf8') + '\nglobal.KEYWORD_GLOSSARY = KEYWORD_GLOSSARY;');
-eval(fs.readFileSync('public/js/04_keyword_library.js', 'utf8') + '\nglobal.KEYWORD_LIBRARY = KEYWORD_LIBRARY;');
-eval(fs.readFileSync('public/js/05_weapon_keyword_library.js', 'utf8') + '\nglobal.WEAPON_KEYWORD_LIBRARY = WEAPON_KEYWORD_LIBRARY;');
-eval(fs.readFileSync('public/js/06_faction_special_rules_library.js', 'utf8') + '\nglobal.FACTION_RULES_LIBRARY = FACTION_RULES_LIBRARY;');
-eval(fs.readFileSync('public/js/20_cost_calculation.js', 'utf8'));
-eval(fs.readFileSync('public/js/21_limit_validation.js', 'utf8'));
-eval(fs.readFileSync('public/js/22_battlekit_legality_engine.js', 'utf8'));
+const loadFile = (rel) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
+
+eval(loadFile('public/js/01_trench_crusade_game_data.js') + '\nglobal.DATA = DATA;');
+eval(loadFile('public/js/02_ability_library.js') + '\nglobal.ABILITY_LIBRARY = ABILITY_LIBRARY;');
+eval(loadFile('public/js/03_keyword_glossary_canon_fuente_nica_de_lo.js') + '\nglobal.KEYWORD_GLOSSARY = KEYWORD_GLOSSARY;');
+eval(loadFile('public/js/04_keyword_library.js') + '\nglobal.KEYWORD_LIBRARY = KEYWORD_LIBRARY;');
+eval(loadFile('public/js/05_weapon_keyword_library.js') + '\nglobal.WEAPON_KEYWORD_LIBRARY = WEAPON_KEYWORD_LIBRARY;');
+eval(loadFile('public/js/06_faction_special_rules_library.js') + '\nglobal.FACTION_RULES_LIBRARY = FACTION_RULES_LIBRARY;');
+eval(loadFile('public/js/20_cost_calculation.js'));
+eval(loadFile('public/js/21_limit_validation.js'));
+eval(loadFile('public/js/22_battlekit_legality_engine.js'));
 
 console.log('=== TEST: PERMANENT EQUIPMENT AND CAPACITY CONTAINERS AUDIT ===\n');
 

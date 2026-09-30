@@ -2,12 +2,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FACTIONS } from '../../../data/factions';
+import { CompanionImportModal } from '../../../components/CompanionImportModal';
 
 export default function CrearBandaPage() {
   const router = useRouter();
   const [selectedFaction, setSelectedFaction] = useState<string>('new-antioch');
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   const [budget, setBudget] = useState<number>(FACTIONS.find(f => f.id === 'new-antioch')?.budget ?? 700);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   const faction = FACTIONS.find(f => f.id === selectedFaction)!;
 
@@ -59,6 +61,24 @@ export default function CrearBandaPage() {
           className="text-[#9e9178] underline hover:text-[#e2d4b7]"
         >
           Volver a Mis Bandas
+        </button>
+      </div>
+
+      {/* Banner Importar Companion */}
+      <div className="bg-[#2a1610]/60 border border-[#b8863c]/50 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-md">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">📥</span>
+          <div>
+            <span className="text-sm font-bold text-[#e2d4b7] block">¿Ya creaste tu banda en Trench Companion?</span>
+            <span className="text-xs text-[#9e9178]">Importa directamente tu archivo .json con tus soldados, armas y equipo listos.</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowImportModal(true)}
+          className="bg-[#b8863c] text-[#1a0f0a] font-bold px-4 py-2 rounded text-xs uppercase tracking-widest hover:bg-[#e2d4b7] transition-all shrink-0 shadow"
+        >
+          Importar .json
         </button>
       </div>
 
@@ -122,6 +142,11 @@ export default function CrearBandaPage() {
           Crear y Configurar Roster
         </button>
       </div>
+
+      <CompanionImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+      />
     </div>
   );
 }

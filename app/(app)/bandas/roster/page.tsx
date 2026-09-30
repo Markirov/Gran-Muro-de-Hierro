@@ -8,6 +8,8 @@ import { RosterList } from './RosterList';
 import { ModelDetails } from './ModelDetails';
 import { modelCost } from '../../../lib/cost_calculation';
 import { TabletopMode } from '../../partida/TabletopMode';
+import { CompanionExportModal } from '../../../components/CompanionExportModal';
+import { CompanionImportModal } from '../../../components/CompanionImportModal';
 
 function calculateSpentDucados(warband: any) {
   return (warband?.models || []).reduce((total: number, model: any) => {
@@ -26,6 +28,8 @@ export default function RosterPage() {
   const [selectedUid, setSelectedUid] = useState<string | null>(null);
   const [showTabletop, setShowTabletop] = useState(false);
   const [tabletopSession, setTabletopSession] = useState<any>({ modelStates: {} });
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     try {
@@ -185,7 +189,7 @@ export default function RosterPage() {
           <div className="flex flex-col gap-2">
             <button 
               onClick={() => setShowTabletop(true)}
-              className="bg-[#b8863c] border border-[#b8863c] text-[#1a0f0a] px-4 py-2 text-sm rounded font-bold hover:bg-[#e2d4b7] transition-all shadow-lg uppercase tracking-widest"
+              className="bg-[#b8863c] border border-[#b8863c] text-[#1a0f0a] px-4 py-2 text-sm rounded font-bold hover:bg-[#e2d4b7] transition-all shadow-lg uppercase tracking-widest cursor-pointer"
             >
               📱 Modo Mesa (Libre)
             </button>
@@ -194,9 +198,29 @@ export default function RosterPage() {
                 localStorage.setItem('warband-forge-v1:current', wb.id);
                 router.push('/partida');
               }}
-              className="bg-red-900/80 border border-red-500/50 text-[#e2d4b7] px-4 py-2 text-sm rounded font-bold hover:bg-red-700 transition-all shadow-lg hover:shadow-red-900/50 uppercase tracking-widest"
+              className="bg-red-900/80 border border-red-500/50 text-[#e2d4b7] px-4 py-2 text-sm rounded font-bold hover:bg-red-700 transition-all shadow-lg hover:shadow-red-900/50 uppercase tracking-widest cursor-pointer"
             >
               ⚔ Jugar Partida
+            </button>
+          </div>
+
+          {/* Botones Companion */}
+          <div className="flex flex-col gap-1.5 border-l border-[#3a2110] pl-3 md:pl-4">
+            <button 
+              type="button"
+              onClick={() => setShowExportModal(true)}
+              className="bg-[#2a1610] border border-[#b8863c] text-[#e2d4b7] hover:bg-[#b8863c] hover:text-[#1a0f0a] px-3 py-1.5 text-xs rounded font-bold transition-all shadow uppercase tracking-widest flex items-center justify-center gap-1.5 cursor-pointer"
+              title="Exportar esta banda a JSON de Trench Companion"
+            >
+              <span>📤</span> Companion
+            </button>
+            <button 
+              type="button"
+              onClick={() => setShowImportModal(true)}
+              className="bg-[#1a0f0a] border border-[#5c3a21] text-[#9e9178] hover:text-[#e2d4b7] hover:border-[#b8863c] px-3 py-1 text-[11px] rounded transition-all uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
+              title="Cargar o refrescar banda desde un JSON de Trench Companion"
+            >
+              <span>📥</span> Refrescar
             </button>
           </div>
         </div>
@@ -366,6 +390,24 @@ export default function RosterPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL EXPORTAR A COMPANION */}
+      <CompanionExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        wb={wb}
+      />
+
+      {/* MODAL IMPORTAR / REFRESCAR DESDE COMPANION */}
+      <CompanionImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={(newWb) => {
+          // Si refrescamos la banda activa, conservamos su ID local
+          const refreshed = { ...newWb, id: wb.id };
+          saveWb(refreshed);
+        }}
+      />
     </div>
   );
 }
