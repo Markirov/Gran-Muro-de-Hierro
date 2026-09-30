@@ -514,13 +514,17 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
           <div className="mb-6">
             <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest mb-2 font-bold px-1">Habilidades</div>
             <ul className="text-xs md:text-sm text-[#9e9178] leading-relaxed space-y-2">
-              {dedupedAbilities.map((ab: any, i: number) => (
-                <li key={i} className="pl-4 relative">
-                  <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
-                  <span className="font-serif text-[#b8863c] mr-1">{ab.name}</span> 
-                  {ab.desc ? `— ${ab.desc}` : ''}
-                </li>
-              ))}
+              {dedupedAbilities.map((ab: any, i: number) => {
+                const isToughSpent = String(ab.name).toUpperCase() === 'TOUGH' && toughUsed;
+                return (
+                  <li key={i} className={`pl-4 relative transition-opacity ${isToughSpent ? 'opacity-40' : ''}`}>
+                    <span className={`absolute left-0 top-[0.1em] text-[10px] ${isToughSpent ? 'text-[#7a6a58]' : 'text-[#b8863c]'}`}>●</span>
+                    <span className={`font-serif mr-1 ${isToughSpent ? 'text-[#7a6a58] line-through' : 'text-[#b8863c]'}`}>{ab.name}</span>
+                    {isToughSpent && <span className="italic text-[10px] text-red-400 font-mono mr-1">(gastado)</span>}
+                    {ab.desc ? `— ${ab.desc}` : ''}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}

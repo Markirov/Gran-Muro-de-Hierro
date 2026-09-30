@@ -35,5 +35,10 @@ ok(/toughActive &&[\s\S]{0,200}factionSymbol/.test(src), 'muestra el símbolo de
 ok(/toughAlert &&[\s\S]{0,800}Regla TOUGH Activada/i.test(src), 'modal de alerta de TOUGH implementado');
 ok(/toughUsed &&[\s\S]{0,800}Restaurar/i.test(src), 'permite restaurar TOUGH si se gastó por error');
 
+console.log('\nGroup 4: TOUGH sombreado en Habilidades al gastarse');
+ok(/isToughSpent/.test(src), 'cálculo isToughSpent');
+ok(/isToughSpent[\s\S]{0,100}opacity-40/.test(src), 'aplica atenuación opacity-40 a la habilidad TOUGH gastada');
+ok(/isToughSpent[\s\S]{0,200}gastado/.test(src), 'muestra etiqueta (gastado)');
+
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

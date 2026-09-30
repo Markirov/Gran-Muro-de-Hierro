@@ -6,7 +6,7 @@
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
-- Modo Mesa interactivo con regla TOUGH: modelos con TOUGH muestran el símbolo de su facción en el botón "Fuera"; al pulsar por primera vez se devuelve a "En Pie", gasta el símbolo y notifica con modal explicativo.
+- Modo Mesa interactivo con regla TOUGH: modelos con TOUGH muestran el símbolo de su facción en el botón "Fuera"; al pulsar por primera vez se devuelve a "En Pie", gasta el símbolo, notifica con modal explicativo y sombrea la habilidad TOUGH con (gastado) en la lista de Habilidades.
 - Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) y tabs temáticos ("Armería"/"Bazar" para Sultanato, "Arsenal"/"Intendencia" para Antioquía, etc.).
 - Modo Armería estricto de solo lectura: oculta botones de desequipar y selectores de compra; oculta secciones y sub-bloques vacíos para una vista ultra-limpia; si no porta equipo adicional, muestra banner directo al Bazar.
 - Tooltips de reglas e inspección visual en hover para habilidades innatas, keywords del modelo y de armamento.
