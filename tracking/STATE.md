@@ -6,6 +6,7 @@
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
+- Fuente Única de Verdad (`/referencia`) establecida: `KEYWORDS.md` (36 KB, glosario 1.0.2 oficial con erratas), `ARMAS.md` (21 KB, perfiles de daño, alcance, manos y keywords), `ARMADURAS_Y_ESCUDOS.md` (5.8 KB, modificadores reales y reglas) y `EQUIPO_Y_MUNICION.md` (14 KB, municiones y herramientas con efectos canónicos).
 - Importación y exportación bidireccional Trench Companion blindada y activa: inferencia multi-fuente de facciones (keywords, IDs de modelo, variantes, heurística) con 100% de cobertura; sanitización estricta contra valores `undefined` para evitar excepciones en Firebase Firestore; resiliencia ante miniaturas no canónicas en `RosterList` y `ModelDetails` con fallback temático descriptivo.
 - Integración UI en Mis Bandas (`/bandas`, drag&drop `.json`, modal de importación y botón de exportar por tarjeta), Crear Banda (`/bandas/crear`, banner de importación directa) y Roster (`/bandas/roster`, botones Companion y Refrescar con modales interactivos).
 - Equipamiento permanente/innato integrado transversalmente: todas las bandas y mercenarios integran su armadura y armas innatas en los 4 Contenedores de Capacidad de Roster (`ModelDetails.tsx`), bloqueando compras duplicadas de armadura/casco y mostrando badges `Innata`/`Innato` no removibles.

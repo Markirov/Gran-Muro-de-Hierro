@@ -1,3 +1,15 @@
+- [x] **Creación de la suite documental de Fuente Única de Verdad (`/referencia`) y aclaración canónica de reglas** (2026-09-30, Lead Developer (Antigravity), Petición de Marcos):
+  1. **Aclaración canónica de reglas (Rulebook 1.0.2):**
+     - **`RELOAD`:** En Trench Crusade no existe la mecánica de arma descargada ni acción de recarga con fichas; la regla canónica indica literalmente que si un modelo ataca con un arma con `RELOAD`, su activación termina al resolverse la acción con la que atacó. En el Sultanato de Hierro la única arma con `RELOAD` es la Machine Gun (`AUTOMATIC 3, HEAVY, RELOAD`).
+     - **Granadas:** Las granadas comunes no tienen la keyword `CONSUMABLE`; son armas a distancia estándar del Battlekit utilizables en cualquier Shoot ACTION sin agotarse tras un tiro.
+     - **Munición Especial:** `AMMUNITION (X)` se porta por la miniatura y otorga la keyword indicada a los ataques a distancia del modelo (y a pistolas en cuerpo a cuerpo).
+  2. **Creación de documentos canónicos en `/referencia`:**
+     - `referencia/KEYWORDS.md` (36 KB): Compendio consolidado de todo el glosario oficial 1.0.2, keywords de modelo, de armas, efectos de combate y notas de Rules Commentaries.
+     - `referencia/ARMAS.md` (21 KB): Catálogo íntegro de armas cuerpo a cuerpo, a distancia y granadas de todas las facciones con sus perfiles de daño, alcance, manos, keywords y costes.
+     - `referencia/ARMADURAS_Y_ESCUDOS.md` (5.8 KB): Todas las armaduras corporales con sus modificadores de daño reales (-1, -2, -3 INJURY MODIFIER), escudos y reglas especiales (Standfast, Bulky, Impervious, etc.).
+     - `referencia/EQUIPO_Y_MUNICION.md` (14 KB): Municiones especiales, herramientas tácticas (Medi-kit, Binoculars, Shovel, Mountaineer Kit) y reliquias con sus efectos canónicos detallados.
+     - Script generador automatizado `scripts/build_reference_docs.ts`.
+
 - [x] **Corrección de error crítico al abrir bandas importadas de Trench Companion** (2026-09-30, Lead Developer (Antigravity), Petición de Marcos "Cuando importo una banda de companion da error al intentar abrirla"):
   1. **Diagnóstico del fallo:** Se identificaron tres vectores de fallo combinados:
      - En `RosterList.tsx` (línea 108), `{model.unitId.replace(/-/g, ' ')}` arrojaba `TypeError: Cannot read properties of null (reading 'replace')` cada vez que una miniatura importada no enlazaba con una unidad canónica del catálogo local (`unitId: null`), bloqueando el renderizado de React en `/bandas/roster`.
