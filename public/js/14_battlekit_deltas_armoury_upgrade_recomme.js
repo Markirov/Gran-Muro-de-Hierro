@@ -1,4 +1,5 @@
-// @ts-nocheck
+// @ts-nocheck -- puente legacy: consume globals del simulador clásico.
+
 /* ======================================================================
    BATTLEKIT DELTAS — armoury upgrade recommender
    Heuristic-based (deterministic, no simulation needed).
@@ -2464,6 +2465,5 @@ function makeBandFactory_lab(battleBand) {
     isOut: false,
   }));
 }
-
 
 

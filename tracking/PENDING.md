@@ -30,6 +30,7 @@
 ---
 
 ## ✅ Completado
+- [x] **Warnings de Next, lint y TypeScript corregidos** (2026-09-30, Lead Developer (Codex), petición de Marcos): se retiraron las opciones obsoletas `eslint` y `typescript.ignoreBuildErrors` de `next.config.js`; `npm run lint` usa el CLI de ESLint con las dependencias configuradas; el build vuelve a validar TypeScript y los cuatro puentes legacy que dependen del runtime clásico tienen una excepción `@ts-nocheck` acotada a sus archivos. Verificado: `npm run lint`, `npx tsc --noEmit`, `npm run build` y `bash verify.sh` → 183 suites · 3747 verificaciones · 0 fallos.
 - [x] **Armería bloqueada y presupuesto sin saldo negativo** (2026-09-30, Lead Developer (Codex), petición de Marcos): se bloquean mutaciones de mejoras fuera de Bazar y cualquier compra que supere los Ducados disponibles; el presupuesto editable respeta el gasto actual y el saldo visible nunca baja de cero. Test dedicado: 10 ✓. Verificado con `npm run build` y `bash verify.sh` → 183 suites · 3754 verificaciones · 0 fallos.
 - [x] **Armería también bloquea añadir o eliminar mejoras** (2026-09-30, Lead Developer (Codex), petición de Marcos): Armería solo muestra las mejoras activas y no permite mutarlas; Bazar mantiene la gestión completa. Test dedicado: 5 ✓. Verificado con `npm run build` y `bash verify.sh` → 182 suites · 3734 verificaciones · 0 fallos.
 - [x] **Remodelación UX del Gestor de Bandas y Home** (2026-09-29): Se diseñó e implementó un `home` de entrada global y una separación real de responsabilidades en la pantalla de "Bandas" (Mis Bandas, Crear, Roster).

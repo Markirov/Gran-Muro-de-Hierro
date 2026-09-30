@@ -1,4 +1,5 @@
-// @ts-nocheck
+// @ts-nocheck -- puente legacy: el Lab resuelve funciones del runtime clásico.
+
 /* ======================================================================
    LOADOUT LAB — analyse single-model variants with different equipment
    Construye un battle model desde una unit + lista de items de armoury,

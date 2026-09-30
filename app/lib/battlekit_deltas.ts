@@ -1,3 +1,4 @@
+// @ts-nocheck -- puente legacy: consume globals del simulador clásico.
 import { DATA } from '../data/01_trench_crusade_game_data';
 
 /* ======================================================================
@@ -2465,6 +2466,5 @@ export function makeBandFactory_lab(battleBand) {
     isOut: false,
   }));
 }
-
 
 

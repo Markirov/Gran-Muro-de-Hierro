@@ -1,3 +1,4 @@
+// @ts-nocheck -- puente legacy: el Lab resuelve funciones del runtime clásico.
 import { DATA } from '../data/01_trench_crusade_game_data';
 
 /* ======================================================================

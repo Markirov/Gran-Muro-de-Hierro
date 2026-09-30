@@ -1,4 +1,5 @@
-// @ts-nocheck
+// @ts-nocheck -- puente legacy: mantiene compatibilidad con datos sin tipar.
+
 /* ======================================================================
    COST CALCULATION
    ====================================================================== */

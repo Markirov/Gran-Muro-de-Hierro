@@ -104,7 +104,7 @@ export default function CampanaPage() {
             <div className="text-[#9e9178] border border-[#5c3a21] p-6 rounded bg-[#2a1610] text-center">
               <span className="text-xl">⚠️ Interfaz en migración</span>
               <p className="mt-2 text-sm">
-                Las partidas se juegan desde el nuevo botón "Partida" en el menú principal. <br />
+                Las partidas se juegan desde el nuevo botón &quot;Partida&quot; en el menú principal. <br />
                 En una próxima fase terminaremos la UI para registrar resultados de la campaña aquí directamente.
               </p>
             </div>

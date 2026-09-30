@@ -15,6 +15,10 @@ function calculateSpentDucados(warband: any) {
   }, 0);
 }
 
+function createModelUid() {
+  return 'm_' + Date.now().toString(36);
+}
+
 export default function RosterPage() {
   const router = useRouter();
   const [wb, setWb] = useState<any>(null);
@@ -50,7 +54,7 @@ export default function RosterPage() {
 
   const handleAddUnit = (u: any) => {
     const newModel = {
-      uid: 'm_' + Date.now().toString(36),
+      uid: createModelUid(),
       unitId: u.id,
       name: '',
       xp: 0,

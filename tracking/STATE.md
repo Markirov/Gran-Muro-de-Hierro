@@ -11,6 +11,7 @@
 - Tooltips de reglas e inspección visual en hover para habilidades innatas, keywords del modelo y de armamento.
 - Armería es solo lectura también para mejoras: muestra únicamente las activas y reserva añadir/quitar mejoras al Bazar.
 - Las compras del Roster respetan el presupuesto total: ninguna alta o modificación puede aumentar el gasto por encima de los Ducados disponibles; el saldo visible no baja de cero.
+- Tooling saneado para Next 16: ESLint usa el CLI actual, el build valida TypeScript y las excepciones del runtime legacy están limitadas a cuatro módulos puente.
 - Workspace de Roster fijado a pantalla completa sin scrolls anidados (`h-screen overflow-hidden`), con cabecera de miniaturas y atributos (`MOV`, `RNG`, `MEL`, `ARM`, `BASE`) anclados permanentemente en la parte superior.
 
 ## Decisiones vigentes (y por qué)

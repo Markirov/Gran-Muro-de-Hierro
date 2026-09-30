@@ -1,3 +1,4 @@
+// @ts-nocheck -- puente legacy: comparte helpers con el motor clásico.
 import { DATA } from '../data/01_trench_crusade_game_data';
 import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades, findBattlekitItem, getUnit, variantUnitOverride, modelNegatesKeyword } from './cost_calculation';
 
@@ -1028,6 +1029,5 @@ export function getModelGearAndGrenades(model, unit, wb) {
     gear
   };
 }
-
 
 

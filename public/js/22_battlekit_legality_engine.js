@@ -1,4 +1,5 @@
-// @ts-nocheck
+// @ts-nocheck -- puente legacy: comparte helpers con el motor clásico.
+
 /* ======================================================================
    BATTLEKIT LEGALITY ENGINE
    Determines which armoury items a model can legally equip.
@@ -1026,6 +1027,5 @@ function getModelGearAndGrenades(model, unit, wb) {
     gear
   };
 }
-
 
 
