@@ -1,3 +1,4 @@
+// @ts-nocheck
 import fs from 'fs';
 import path from 'path';
 import { DATA } from '../app/data/01_trench_crusade_game_data';

@@ -1,3 +1,24 @@
+- [x] **Enriquecimiento táctico y canónico de Armas en Roster y Modo Mesa** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Vamos a empezar con las armas"):
+  1. **Módulo de utilidades de armamento (`app/lib/weapon_helpers.ts` / `.js`):**
+     - Normalización y saneamiento de alcance `formatRange` (eliminación de dobles comillas erróneas `24""` -> `24"`).
+     - Clasificación unificada de manos `getWeaponHand`: detección de 1H, 2H, Pistol, Granada y conversión automática `1H (STRONG)` cuando aplica la regla canónica (CaC 2H no CUMBERSOME).
+     - Extracción precisa de modificadores de combate `extractWeaponCombatModifiers`: separa modificadores de dados de ataque (`+1 DICE`, `-1 DICE`), modificadores de herida/daño (`+1 INJURY MODIFIER`, `+1 INJURY DICE`, `-1 INJURY DICE`) y keywords tácticas.
+     - Detección de munición especial en el tirador `getModelSpecialAmmunition` y comprobación de aplicabilidad `isAmmunitionApplicableToWeapon` (armas a distancia y pistolas en cuerpo a cuerpo según Errata Q4).
+     - Notas tácticas y recordatorios canónicos `getTacticalRuleNote` para `RELOAD`, `AUTOMATIC (X)`, `ASSAULT`, `PISTOL`, `CRITICAL`, `FIRE`, `BLAST`, `HEAVY`, `CUMBERSOME`, `IGNORE ARMOUR`, `IGNORE COVER`, `SHRED`, `SHRAPNEL`, `FUMBLE`.
+  2. **Mejoras en Roster (`app/(app)/bandas/roster/ModelDetails.tsx`):**
+     - Perfiles de armas cuerpo a cuerpo y a distancia con badges claros de manos, alcance formateado, modificadores numéricos de ataque (`Atq +1 DICE`) y daño (`Daño +1 INJURY`), y badges de munición especial activa (`⌖ [Keyword]`).
+     - Alerta visual en armas con `RELOAD`.
+     - Selector del Bazar con vista previa táctica enriquecida: manos, alcance, modificadores de combate y keywords principales visibles antes de adquirir el arma.
+  3. **Mejoras en Modo Mesa (`app/(app)/partida/TabletopMode.tsx`):**
+     - Cabecera táctica completa por arma: nombre en gran formato, badge de manos (con tachado `<s>2H</s> 1H` para STRONG), alcance real y chips destacados de modificadores de ataque y daño.
+     - Detección e indicador en cabecera de munición especial portada por el combatiente, con desglose de su efecto directo en cada arma aplicable.
+     - Banner de alerta canónico destacado para armas con `RELOAD`: *"Atacar con este arma concluye la activación de la miniatura inmediatamente tras resolverse la acción de disparo."*
+     - Soporte e integración de `test_react_tabletop_keywords.js` (12 ✓).
+  4. **Verificación y suite automatizada:**
+     - Nuevo test dedicado `tests/test_weapon_features.js` (23 ✓ sin fallos).
+     - `verify.sh`: 187 suites · 3841 verificaciones · 0 fallos.
+     - `npm run lint` (`--max-warnings=0`) y `npm run build` con Turbopack y TypeScript 100% exitosos.
+
 - [x] **Creación de la suite documental de Fuente Única de Verdad (`/referencia`) y aclaración canónica de reglas** (2026-09-30, Lead Developer (Antigravity), Petición de Marcos):
   1. **Aclaración canónica de reglas (Rulebook 1.0.2):**
      - **`RELOAD`:** En Trench Crusade no existe la mecánica de arma descargada ni acción de recarga con fichas; la regla canónica indica literalmente que si un modelo ataca con un arma con `RELOAD`, su activación termina al resolverse la acción con la que atacó. En el Sultanato de Hierro la única arma con `RELOAD` es la Machine Gun (`AUTOMATIC 3, HEAVY, RELOAD`).

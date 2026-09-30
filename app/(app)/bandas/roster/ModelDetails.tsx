@@ -23,6 +23,14 @@ import { ABILITY_LIBRARY } from '../../../data/02_ability_library';
 import { glossaryText } from '../../../data/03_keyword_glossary_canon_fuente_nica_de_lo';
 import { WEAPON_KEYWORD_LIBRARY } from '../../../data/05_weapon_keyword_library';
 import { FACTIONS } from '../../../data/factions';
+import { 
+  formatRange, 
+  getWeaponHand, 
+  extractWeaponCombatModifiers, 
+  getModelSpecialAmmunition, 
+  isAmmunitionApplicableToWeapon, 
+  getTacticalRuleNote 
+} from '../../../lib/weapon_helpers';
 
 function getArmouryTabNames(factionId: string) {
   switch (factionId) {
@@ -208,6 +216,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
     const armourShield = getModelArmourAndShield(model, unit, wb);
     const gearGrenades = getModelGearAndGrenades(model, unit, wb);
     const totalArmour = calculateTotalArmour(model, unit, wb);
+    const specialAmmos = getModelSpecialAmmunition(model, wb);
 
     // Sum costs per section
     const sumCost = (list: any[]) => list.reduce((acc, it) => acc + (it.cost || 0), 0);
@@ -440,72 +449,105 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                               Sin armas cuerpo a cuerpo
                             </div>
                           ) : (
-                            meleeCap.items.map((it: any, i: number) => (
-                              <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center shadow-sm">
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-serif font-bold text-sm text-[#e2d4b7]">{it.name}</span>
-                                    <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono bg-[#2a1610] text-[#b8863c] border border-[#5c3a21]">
-                                      {it.type || 'Melee'}
-                                    </span>
-                                    {it.isBuiltIn && (
-                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
-                                        Innata
+                            meleeCap.items.map((it: any, i: number) => {
+                              const handInfo = getWeaponHand(it, meleeCap.isStrong);
+                              const cleanRange = formatRange(it.range);
+                              const mods = extractWeaponCombatModifiers(it);
+                              const applicableAmmos = isAmmunitionApplicableToWeapon(it) ? specialAmmos : [];
+                              const hasReload = (it.weaponKeywords || []).some((kw: string) => /^reload$/i.test(kw));
+
+                              return (
+                                <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center shadow-sm">
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-serif font-bold text-sm text-[#e2d4b7]">{it.name}</span>
+                                      <span className="text-[9px] uppercase px-1.5 py-0.5 rounded font-mono bg-[#2a1610] text-[#b8863c] border border-[#5c3a21]">
+                                        {handInfo.label}
                                       </span>
+                                      {cleanRange !== '-' && cleanRange !== 'Melee' && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded font-mono bg-[#1a0f0a] text-[#9e9178] border border-[#3a2110]">
+                                          {cleanRange}
+                                        </span>
+                                      )}
+                                      {it.isBuiltIn && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
+                                          Innata
+                                        </span>
+                                      )}
+                                      {mods.attackModifiers.map(m => (
+                                        <span key={m} className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-300">
+                                          Atq {m}
+                                        </span>
+                                      ))}
+                                      {mods.injuryModifiers.map(m => (
+                                        <span key={m} className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-950/60 border border-red-500/50 text-red-300">
+                                          Daño {m}
+                                        </span>
+                                      ))}
+                                      {applicableAmmos.map(a => (
+                                        <span key={a.id} className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#2a1610] border border-[#b8863c] text-[#e2d4b7] flex items-center gap-1">
+                                          <span className="text-[#b8863c]">⌖</span> {a.effectKeyword}
+                                        </span>
+                                      ))}
+                                      {hasReload && (
+                                        <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/50 text-amber-300" title="Atacar con este arma concluye la activación">
+                                          RELOAD
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
+                                      {mods.tacticalKeywords.map((kw: string, kwi: number) => {
+                                        const kwDesc = getWeaponKeywordDesc(kw);
+                                        return (
+                                          <span 
+                                            key={kwi} 
+                                            title={kwDesc || undefined}
+                                            className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help"
+                                          >
+                                            • {kw}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    {(() => {
+                                      if (it.isBuiltIn) {
+                                        return (
+                                          <span className="text-xs font-mono text-[#7a6a58]">
+                                            {it.displayCost || 'Base'}
+                                          </span>
+                                        );
+                                      }
+                                      const actualCost = battlekitPurchaseCost(wb, it, model);
+                                      const hasDiscount = actualCost < it.cost;
+                                      return (
+                                        <span className="text-xs font-mono text-[#e2d4b7] flex items-center gap-1.5">
+                                          {hasDiscount && (
+                                            <span className="line-through text-[#7a6a58] text-[10px]">{it.cost}</span>
+                                          )}
+                                          <span className={hasDiscount ? 'text-[#b8863c] font-bold' : ''}>
+                                            {actualCost} {it.currency}
+                                          </span>
+                                          {hasDiscount && (
+                                            <span className="text-[8px] bg-[#2a1610] text-[#b8863c] px-1 py-0.5 rounded border border-[#5c3a21]">Cold Steel</span>
+                                          )}
+                                        </span>
+                                      );
+                                    })()}
+                                    {isShop && !it.isBuiltIn && (
+                                      <button 
+                                        onClick={() => handleRemoveItem(it.id)}
+                                        className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
+                                        title="Desequipar"
+                                      >
+                                        ✕
+                                      </button>
                                     )}
                                   </div>
-                                  <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
-                                    {(it.weaponKeywords || []).map((kw: string, kwi: number) => {
-                                      const kwDesc = getWeaponKeywordDesc(kw);
-                                      return (
-                                        <span 
-                                          key={kwi} 
-                                          title={kwDesc || undefined}
-                                          className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help"
-                                        >
-                                          • {kw}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  {(() => {
-                                    if (it.isBuiltIn) {
-                                      return (
-                                        <span className="text-xs font-mono text-[#7a6a58]">
-                                          {it.displayCost || 'Base'}
-                                        </span>
-                                      );
-                                    }
-                                    const actualCost = battlekitPurchaseCost(wb, it, model);
-                                    const hasDiscount = actualCost < it.cost;
-                                    return (
-                                      <span className="text-xs font-mono text-[#e2d4b7] flex items-center gap-1.5">
-                                        {hasDiscount && (
-                                          <span className="line-through text-[#7a6a58] text-[10px]">{it.cost}</span>
-                                        )}
-                                        <span className={hasDiscount ? 'text-[#b8863c] font-bold' : ''}>
-                                          {actualCost} {it.currency}
-                                        </span>
-                                        {hasDiscount && (
-                                          <span className="text-[8px] bg-[#2a1610] text-[#b8863c] px-1 py-0.5 rounded border border-[#5c3a21]">Cold Steel</span>
-                                        )}
-                                      </span>
-                                    );
-                                  })()}
-                                  {isShop && !it.isBuiltIn && (
-                                    <button 
-                                      onClick={() => handleRemoveItem(it.id)}
-                                      className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
-                                      title="Desequipar"
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
 
@@ -521,6 +563,9 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                 {getSelectorOptions('melee').map(({ item, cls }: any) => {
                                   const isEquipped = cls.state === 'equipped';
                                   const isDisabled = cls.state === 'disabled';
+                                  const itemHand = getWeaponHand(item, meleeCap.isStrong);
+                                  const itemRange = formatRange(item.range);
+                                  const itemMods = extractWeaponCombatModifiers(item);
                                   return (
                                     <button
                                       key={item.id}
@@ -535,10 +580,27 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       }`}
                                     >
                                       <div className="flex flex-col">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                           <span className="font-bold">{item.name}</span>
-                                          <span className="text-[9px] text-[#7a6a58] uppercase font-mono">({item.type})</span>
+                                          <span className="text-[9px] text-[#b8863c] uppercase font-mono px-1 py-0.2 bg-[#2a1610] rounded border border-[#5c3a21]">
+                                            {itemHand.label}{itemRange !== '-' ? ` · ${itemRange}` : ''}
+                                          </span>
+                                          {itemMods.attackModifiers.map(m => (
+                                            <span key={m} className="text-[8px] font-mono font-bold px-1 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-300">
+                                              {m}
+                                            </span>
+                                          ))}
+                                          {itemMods.injuryModifiers.map(m => (
+                                            <span key={m} className="text-[8px] font-mono font-bold px-1 rounded bg-red-950/60 border border-red-500/50 text-red-300">
+                                              {m}
+                                            </span>
+                                          ))}
                                         </div>
+                                        {itemMods.tacticalKeywords.length > 0 && (
+                                          <div className="text-[9px] text-[#9e9178] mt-0.5 truncate max-w-xs">
+                                            {itemMods.tacticalKeywords.slice(0, 3).join(', ')}{itemMods.tacticalKeywords.length > 3 ? '...' : ''}
+                                          </div>
+                                        )}
                                         {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
                                         {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
                                       </div>
@@ -609,51 +671,84 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                               Sin armas a distancia
                             </div>
                           ) : (
-                            rangedCap.items.map((it: any, i: number) => (
-                              <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center shadow-sm">
-                                <div className="flex flex-col">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-serif font-bold text-sm text-[#e2d4b7]">{it.name}</span>
-                                    <span className="text-[9px] uppercase px-1.5 py-0.2 rounded font-mono bg-[#2a1610] text-[#b8863c] border border-[#5c3a21]">
-                                      {it.range ? `${it.range}"` : it.type}
-                                    </span>
-                                    {it.isBuiltIn && (
-                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
-                                        Innata
+                            rangedCap.items.map((it: any, i: number) => {
+                              const handInfo = getWeaponHand(it, false);
+                              const cleanRange = formatRange(it.range);
+                              const mods = extractWeaponCombatModifiers(it);
+                              const applicableAmmos = isAmmunitionApplicableToWeapon(it) ? specialAmmos : [];
+                              const hasReload = (it.weaponKeywords || []).some((kw: string) => /^reload$/i.test(kw));
+
+                              return (
+                                <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center shadow-sm">
+                                  <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="font-serif font-bold text-sm text-[#e2d4b7]">{it.name}</span>
+                                      <span className="text-[9px] uppercase px-1.5 py-0.5 rounded font-mono bg-[#2a1610] text-[#b8863c] border border-[#5c3a21]">
+                                        {handInfo.label}
                                       </span>
+                                      {cleanRange !== '-' && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded font-mono bg-[#1a0f0a] text-[#9e9178] border border-[#3a2110]">
+                                          {cleanRange}
+                                        </span>
+                                      )}
+                                      {it.isBuiltIn && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
+                                          Innata
+                                        </span>
+                                      )}
+                                      {mods.attackModifiers.map(m => (
+                                        <span key={m} className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-300">
+                                          Atq {m}
+                                        </span>
+                                      ))}
+                                      {mods.injuryModifiers.map(m => (
+                                        <span key={m} className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-950/60 border border-red-500/50 text-red-300">
+                                          Daño {m}
+                                        </span>
+                                      ))}
+                                      {applicableAmmos.map(a => (
+                                        <span key={a.id} className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#2a1610] border border-[#b8863c] text-[#e2d4b7] flex items-center gap-1">
+                                          <span className="text-[#b8863c]">⌖</span> {a.effectKeyword}
+                                        </span>
+                                      ))}
+                                      {hasReload && (
+                                        <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-500/50 text-amber-300" title="Atacar con este arma concluye la activación">
+                                          RELOAD
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
+                                      {mods.tacticalKeywords.map((kw: string, kwi: number) => {
+                                        const kwDesc = getWeaponKeywordDesc(kw);
+                                        return (
+                                          <span 
+                                            key={kwi} 
+                                            title={kwDesc || undefined}
+                                            className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help"
+                                          >
+                                            • {kw}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs font-mono text-[#e2d4b7]">
+                                      {it.isBuiltIn ? (it.displayCost || 'Base') : `${it.cost} ${it.currency}`}
+                                    </span>
+                                    {isShop && !it.isBuiltIn && (
+                                      <button 
+                                        onClick={() => handleRemoveItem(it.id)}
+                                        className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
+                                        title="Desequipar"
+                                      >
+                                        ✕
+                                      </button>
                                     )}
                                   </div>
-                                  <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
-                                    {(it.weaponKeywords || []).map((kw: string, kwi: number) => {
-                                      const kwDesc = getWeaponKeywordDesc(kw);
-                                      return (
-                                        <span 
-                                          key={kwi} 
-                                          title={kwDesc || undefined}
-                                          className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help"
-                                        >
-                                          • {kw}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs font-mono text-[#e2d4b7]">
-                                    {it.isBuiltIn ? (it.displayCost || 'Base') : `${it.cost} ${it.currency}`}
-                                  </span>
-                                  {isShop && !it.isBuiltIn && (
-                                    <button 
-                                      onClick={() => handleRemoveItem(it.id)}
-                                      className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
-                                      title="Desequipar"
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ))
+                              );
+                            })
                           )}
                         </div>
 
@@ -669,6 +764,9 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                 {getSelectorOptions('ranged').map(({ item, cls }: any) => {
                                   const isEquipped = cls.state === 'equipped';
                                   const isDisabled = cls.state === 'disabled';
+                                  const itemHand = getWeaponHand(item, false);
+                                  const itemRange = formatRange(item.range);
+                                  const itemMods = extractWeaponCombatModifiers(item);
                                   return (
                                     <button
                                       key={item.id}
@@ -683,10 +781,27 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       }`}
                                     >
                                       <div className="flex flex-col">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                           <span className="font-bold">{item.name}</span>
-                                          <span className="text-[9px] text-[#7a6a58] uppercase font-mono">({item.range ? `${item.range}"` : item.type})</span>
+                                          <span className="text-[9px] text-[#b8863c] uppercase font-mono px-1 py-0.2 bg-[#2a1610] rounded border border-[#5c3a21]">
+                                            {itemHand.label}{itemRange !== '-' ? ` · ${itemRange}` : ''}
+                                          </span>
+                                          {itemMods.attackModifiers.map(m => (
+                                            <span key={m} className="text-[8px] font-mono font-bold px-1 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-300">
+                                              {m}
+                                            </span>
+                                          ))}
+                                          {itemMods.injuryModifiers.map(m => (
+                                            <span key={m} className="text-[8px] font-mono font-bold px-1 rounded bg-red-950/60 border border-red-500/50 text-red-300">
+                                              {m}
+                                            </span>
+                                          ))}
                                         </div>
+                                        {itemMods.tacticalKeywords.length > 0 && (
+                                          <div className="text-[9px] text-[#9e9178] mt-0.5 truncate max-w-xs">
+                                            {itemMods.tacticalKeywords.slice(0, 3).join(', ')}{itemMods.tacticalKeywords.length > 3 ? '...' : ''}
+                                          </div>
+                                        )}
                                         {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
                                         {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
                                       </div>

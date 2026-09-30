@@ -2,10 +2,11 @@
 
 > Resumen vivo, máximo ~50 líneas. Se reescribe (no se añade) cuando cambia algo (§1.1). La historia completa está en `DONE.md`; el backlog en `PENDING.md`.
 
-**Última actualización:** 2026-09-30, Lead Developer (Antigravity)
+**Última actualización:** 2026-10-01, Lead Developer (Antigravity)
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
+- Armas en Roster y Modo Mesa enriquecidas y canónicas: módulo `weapon_helpers.ts` con saneamiento de alcance (sin dobles comillas `24""`), manos unificadas (`1H`, `2H`, `Pistol`, `Granada`, `1H (STRONG)`), desglose de modificadores de combate (`Atq +1 DICE`, `Daño +1 INJURY`), detección de munición especial en tirador e impacto visual en armas aplicables, aviso canónico de `RELOAD` ("atacar concluye la activación"), vista previa táctica en selectores del Bazar y test dedicado `test_weapon_features.js` (23 ✓).
 - Fuente Única de Verdad (`/referencia`) establecida al 100%: `REGLAS_Y_HABILIDADES.md` (79.3 KB, mecánicas, habilidades, reglas de facción y doctrinas de variantes), `MINIATURAS.md` (76.6 KB, catálogo exhaustivo de perfiles, atributos, costes y Battlekit), `KEYWORDS.md` (36.4 KB, glosario oficial 1.0.2 con erratas), `ARMAS.md` (21.2 KB, perfiles de daño, alcance, manos y keywords), `ARMADURAS_Y_ESCUDOS.md` (5.7 KB, modificadores reales y reglas) y `EQUIPO_Y_MUNICION.md` (15.9 KB, municiones y herramientas canónicas).
 - Importación y exportación bidireccional Trench Companion blindada y activa: inferencia multi-fuente de facciones (keywords, IDs de modelo, variantes, heurística) con 100% de cobertura; sanitización estricta contra valores `undefined` para evitar excepciones en Firebase Firestore; resiliencia ante miniaturas no canónicas en `RosterList` y `ModelDetails` con fallback temático descriptivo.
 - Integración UI en Mis Bandas (`/bandas`, drag&drop `.json`, modal de importación y botón de exportar por tarjeta), Crear Banda (`/bandas/crear`, banner de importación directa) y Roster (`/bandas/roster`, botones Companion y Refrescar con modales interactivos).

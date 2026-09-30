@@ -5,6 +5,14 @@ import { glossaryText } from '../../data/03_keyword_glossary_canon_fuente_nica_d
 import { KEYWORD_LIBRARY } from '../../data/04_keyword_library';
 import { WEAPON_KEYWORD_LIBRARY } from '../../data/05_weapon_keyword_library';
 import { ABILITY_LIBRARY } from '../../data/02_ability_library';
+import { 
+  formatRange, 
+  getWeaponHand, 
+  extractWeaponCombatModifiers, 
+  getModelSpecialAmmunition, 
+  isAmmunitionApplicableToWeapon, 
+  getTacticalRuleNote 
+} from '../../lib/weapon_helpers';
 
 export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   const models = wb.models;
@@ -249,10 +257,12 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
 
   // Resolve weapon keywords with parameters like AMMUNITION (+1 DICE)
   const resolveWeaponKeyword = (kw: string) => {
+    const tac = getTacticalRuleNote(kw);
+    if (tac) return tac;
     if (WEAPON_KEYWORD_LIBRARY[kw]) return WEAPON_KEYWORD_LIBRARY[kw].summary;
     // Try regex matching
     if (kw.startsWith('AMMUNITION (')) {
-       return 'La pieza se usa en la siguiente partida del modelo. Al desplegarlo, eliges 1 arma a distancia que gana la keyword indicada hasta el final de la partida.';
+       return 'Otorga la keyword indicada a todos los ataques a distancia del modelo (y a pistolas en combate cuerpo a cuerpo).';
     }
     return '';
   };
@@ -425,57 +435,120 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
         </div>
 
         {/* --- ARMAS --- */}
-        {weapons.length > 0 && (
-          <div className="mb-6">
-            <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest mb-2 font-bold px-1">Armas</div>
-            <div className="space-y-3">
-              {weapons.map((w: any, i: number) => {
-                const hand = w.type?.toLowerCase().includes('2-handed') ? '2H' 
-                           : w.type?.toLowerCase().includes('1-handed') ? '1H'
-                           : w.type?.toLowerCase().includes('pistol') ? 'Pistol'
-                           : w.type?.toLowerCase().includes('grenade') ? 'Granada' : '';
-                const range = w.range && w.range !== '-' ? w.range : '';
-                const strongOneHand = hasStrong && hand === '2H' && /melee/i.test(w.range || '');
-                return (
-                  <div key={i} className="border border-[#3a2110] rounded bg-[#0a0503] p-3 shadow-sm">
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="font-serif font-bold text-[#e2d4b7] text-lg uppercase">{w.name}</span>
-                      <span className="text-[#b8863c] text-[10px] md:text-xs">
-                         {strongOneHand ? (
-                           <><span className="line-through opacity-50" title="STRONG: arma CaC de 2 manos como de 1 mano">2H</span> 1H</>
-                         ) : hand}
-                         {hand && range ? ' · ' : ''}{range}
-                      </span>
-                    </div>
-                    <ul className="text-xs md:text-sm text-[#9e9178] leading-relaxed space-y-2">
-                      {/* Standard Keywords */}
-                      {w.weaponKeywords && w.weaponKeywords.map((kw: string, kwi: number) => {
-                        const inactive = keywordInactive(kw);
-                        const desc = resolveWeaponKeyword(kw);
-                        return (
-                          <li key={kwi} className={`pl-4 relative ${inactive ? 'opacity-40' : ''}`}>
+        {weapons.length > 0 && (() => {
+          const specialAmmos = getModelSpecialAmmunition(model, wb);
+          return (
+            <div className="mb-6">
+              <div className="flex justify-between items-center mb-2 px-1">
+                <span className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold">Armas</span>
+                {specialAmmos.length > 0 && (
+                  <span className="text-[10px] text-[#b8863c] font-mono flex items-center gap-1 bg-[#1a0f0a] px-2 py-0.5 rounded border border-[#5c3a21]">
+                    <span>⌖ Munición activa:</span>
+                    <strong className="text-[#e2d4b7]">{specialAmmos.map(a => a.name).join(', ')}</strong>
+                  </span>
+                )}
+              </div>
+              <div className="space-y-3">
+                {weapons.map((w: any, i: number) => {
+                  const hand = w.type?.toLowerCase().includes('2-handed') ? '2H' 
+                             : w.type?.toLowerCase().includes('1-handed') ? '1H'
+                             : w.type?.toLowerCase().includes('pistol') ? 'Pistol'
+                             : w.type?.toLowerCase().includes('grenade') ? 'Granada' : '';
+                  const handInfo = getWeaponHand(w, hasStrong);
+                  const strongOneHand = hasStrong && hand === '2H' && /melee/i.test(w.range || '');
+                  const cleanRange = formatRange(w.range);
+                  const mods = extractWeaponCombatModifiers(w);
+                  const applicableAmmos = isAmmunitionApplicableToWeapon(w) ? specialAmmos : [];
+                  const hasReload = (w.weaponKeywords || []).some((kw: string) => /^reload$/i.test(kw));
+
+                  return (
+                    <div key={i} className="border border-[#3a2110] rounded-xl bg-[#0a0503] p-3 shadow-md space-y-2">
+                      {/* HEADER ARMA */}
+                      <div className="flex flex-wrap justify-between items-start gap-2 border-b border-[#3a2110]/50 pb-2">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-serif font-bold text-[#e2d4b7] text-lg uppercase tracking-wide">{w.name}</span>
+                            <span className="text-[9px] md:text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#1a0f0a] text-[#b8863c] border border-[#5c3a21]">
+                              {strongOneHand ? (
+                                <><span className="line-through opacity-50" title="STRONG: arma CaC de 2 manos como de 1 mano">2H</span> 1H</>
+                              ) : handInfo.label}
+                            </span>
+                            {cleanRange !== '-' && (
+                              <span className="text-[9px] md:text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#1a0f0a] text-[#9e9178] border border-[#3a2110]">
+                                {cleanRange}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* BADGES DE COMBATE (DAÑO, ATAQUE, MUNICIÓN) */}
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {mods.attackModifiers.map((am, ami) => (
+                            <span key={ami} className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-950/60 border border-emerald-500/50 text-emerald-300">
+                              Ataque {am}
+                            </span>
+                          ))}
+                          {mods.injuryModifiers.map((im, imi) => (
+                            <span key={imi} className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-red-950/60 border border-red-500/50 text-red-300">
+                              Daño {im}
+                            </span>
+                          ))}
+                          {applicableAmmos.map((ammo, ammi) => (
+                            <span key={ammi} className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#2a1610] border border-[#b8863c] text-[#e2d4b7] flex items-center gap-1 shadow-sm">
+                              <span className="text-[#b8863c]">⌖ Munición:</span> {ammo.effectKeyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* BANNER DE REGLA RELOAD */}
+                      {hasReload && (
+                        <div className="bg-amber-950/40 border border-amber-600/60 rounded-lg p-2 text-xs text-amber-200 flex items-start gap-2 shadow-inner">
+                          <span className="text-amber-400 font-bold text-sm leading-none mt-0.5">⚠</span>
+                          <div>
+                            <strong className="uppercase tracking-wider font-mono text-amber-300">Regla Canónica RELOAD:</strong> Atacar con este arma concluye la activación de la miniatura inmediatamente tras resolverse la acción de disparo.
+                          </div>
+                        </div>
+                      )}
+
+                      {/* KEYWORDS TÁCTICAS Y REGLAS */}
+                      <ul className="text-xs md:text-sm text-[#9e9178] leading-relaxed space-y-1.5 pt-1">
+                        {mods.tacticalKeywords.map((kw: string, kwi: number) => {
+                          const inactive = keywordInactive(kw);
+                          const desc = resolveWeaponKeyword(kw);
+                          return (
+                            <li key={kwi} className={`pl-4 relative ${inactive ? 'opacity-40' : ''}`}>
+                              <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
+                              <span className="font-serif text-[#b8863c] uppercase mr-1">{kw}</span> 
+                              {inactive && <span className="italic mr-1">({inactive})</span>}
+                              {desc ? `— ${desc}` : ''}
+                            </li>
+                          );
+                        })}
+                        {/* Custom Rules */}
+                        {w.rules && w.rules.map((r: any, ri: number) => (
+                          <li key={`r-${ri}`} className="pl-4 relative">
                             <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
-                            <span className="font-serif text-[#b8863c] uppercase mr-1">{kw}</span> 
-                            {inactive && <span className="italic mr-1">({inactive})</span>}
-                            {desc ? `— ${desc}` : ''}
+                            <span className="font-serif text-[#b8863c] uppercase mr-1">{r.name}</span> 
+                            — {r.desc}
                           </li>
-                        );
-                      })}
-                      {/* Custom Rules */}
-                      {w.rules && w.rules.map((r: any, ri: number) => (
-                        <li key={`r-${ri}`} className="pl-4 relative">
-                          <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
-                          <span className="font-serif text-[#b8863c] uppercase mr-1">{r.name}</span> 
-                          — {r.desc}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
+                        ))}
+                        {/* Indicador de munición especial si aplica */}
+                        {applicableAmmos.map((ammo, ammi) => (
+                          <li key={`ammo-${ammi}`} className="pl-4 relative text-[#b8863c]">
+                            <span className="absolute left-0 text-[#b8863c] top-[0.1em] text-[10px]">●</span>
+                            <span className="font-serif uppercase mr-1">MUNICIÓN ESPECIAL ({ammo.name}):</span>
+                            <span className="text-[#e2d4b7]">{ammo.summary}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* --- EQUIPO --- */}
         {otherEquip.length > 0 && (
