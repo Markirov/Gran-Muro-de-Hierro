@@ -873,8 +873,24 @@ function findArmouryItemByName(name, wb) {
 }
 
 function calculateTotalArmour(model, unit, wb) {
+  if (unit?.id === 'mech-heavy-inf') {
+    let arm = (model.costVariant === 'alt') ? 3 : 2;
+    const bkEquip = (model.battlekit || []).map(id => findBattlekitItem(wb.factionId, id, wb)).filter(Boolean);
+    bkEquip.forEach(eq => {
+      if (eq.weaponKeywords) {
+        eq.weaponKeywords.forEach(kw => {
+          const match = String(kw).match(/-(\d+)\s+INJURY MODIFIER/i);
+          if (match) {
+            arm += parseInt(match[1], 10);
+          }
+        });
+      }
+    });
+    return `-${arm}`;
+  }
+
   const stats = effectiveStats(model, unit, wb);
-  let totalArmour = parseInt(stats.armour) || 0;
+  let totalArmour = Math.abs(parseInt(stats.armour) || 0);
   
   const bkEquip = (model.battlekit || []).map(id => findBattlekitItem(wb.factionId, id, wb)).filter(Boolean);
   const permEquip = (unit?.permanentEquipment || []).map(p => {
@@ -883,7 +899,11 @@ function calculateTotalArmour(model, unit, wb) {
     return it || { name: p };
   });
   
-  const allEquip = [...permEquip, ...bkEquip];
+  const allEquip = [...bkEquip];
+  if ((parseInt(stats.armour) || 0) === 0) {
+    allEquip.push(...permEquip);
+  }
+
   const uniqueMap = new Map();
   allEquip.forEach(eq => {
     if (eq.name && !uniqueMap.has(eq.name)) {

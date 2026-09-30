@@ -1,6 +1,6 @@
 // @ts-nocheck -- puente legacy: comparte helpers con el motor clásico.
 import { DATA } from '../data/01_trench_crusade_game_data';
-import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades, findBattlekitItem, getUnit, variantUnitOverride, modelNegatesKeyword } from './cost_calculation';
+import { variantArmouryItem, getActiveVariant, effectiveKeywords, activeUpgrades, findBattlekitItem, getUnit, variantUnitOverride, modelNegatesKeyword, unitCostAltAllowed } from './cost_calculation';
 
 /* ======================================================================
    BATTLEKIT LEGALITY ENGINE
@@ -458,6 +458,18 @@ export function classifyBattlekitItem(item, model, unit, wb) {
 
   // Forbidden categories (e.g. MHI/Combat Engineers cannot take from Armour table)
   if (access.forbidCategories && access.forbidCategories.includes(category) && !item.bypassUnitCategoryLimits) {
+    if (unit.id === 'mech-heavy-inf' && (item.id === 'reinforced-armour-na' || item.id === 'machine-armour-na')) {
+      if (item.id === 'machine-armour-na' && !unitCostAltAllowed(wb, unit)) {
+        return { state: 'disabled', reason: 'Variante no permite Machine Armour en MHI' };
+      }
+      if (item.id === 'machine-armour-na' && model.costVariant === 'alt') {
+        return { state: 'equipped', reason: 'Equipada' };
+      }
+      if (item.id === 'reinforced-armour-na' && (!model.costVariant || model.costVariant === 'base')) {
+        return { state: 'equipped', reason: 'Equipada' };
+      }
+      return { state: 'available' };
+    }
     return { state: 'hidden', reason: 'Categoría no permitida para esta unidad' };
   }
 
@@ -1001,11 +1013,30 @@ export function getModelArmourAndShield(model, unit, wb) {
     if (cat === 'armour') armourItem = { ...it, _idx: idx };
     if (cat === 'shields') shieldItem = { ...it, _idx: idx };
   });
+
+  if (unit?.id === 'mech-heavy-inf') {
+    const isAlt = model.costVariant === 'alt';
+    const armourId = isAlt ? 'machine-armour-na' : 'reinforced-armour-na';
+    const it = findBattlekitItem(wb.factionId, armourId, wb);
+    if (it) {
+      armourItem = {
+        ...it,
+        isBuiltIn: true,
+        cost: 0,
+        displayCost: isAlt ? '95 👑 (Base)' : '85 👑 (Base)'
+      };
+    }
+  }
+
+  let permEquip = unit?.permanentEquipment || [];
+  if (unit?.id === 'mech-heavy-inf') {
+    permEquip = permEquip.filter(p => !p.toLowerCase().includes('armour'));
+  }
   
   return {
     armour: armourItem,
     shield: shieldItem,
-    permanentEquipment: unit?.permanentEquipment || []
+    permanentEquipment: permEquip
   };
 }
 

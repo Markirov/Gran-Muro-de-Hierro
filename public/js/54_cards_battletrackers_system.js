@@ -592,7 +592,7 @@ const VARIANT_FACTION_RULES = {
     { name: 'Bagpipes',
       desc: 'Los amigos a 8" del modelo con Bagpipes tienen NEGATE FEAR.' },
     { name: 'Celtic Machine Armour',
-      desc: 'La Machine Armour mantiene Charge Bonus D6".' },
+      desc: 'La Machine Armour mantiene Charge Bonus D6" y sus armaduras no sufren penalización de movimiento por Down.' },
   ],
   'new-antioch:prussia': [
     { name: 'Masters of the Grenade',

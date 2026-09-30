@@ -21,7 +21,7 @@ const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join(
 const bootIdx = js.search(/\nfunction boot\(\)/);
 const dom = new JSDOM(html.replace('</body>', '<script>' + js + '</script></body>').replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
 dom.window.alert = () => {};
-dom.window.eval(js.slice(0, bootIdx) + '\n;window.__X = { DATA, classifyBattlekitItem, findBattlekitItem, getUnit, modelCost, warbandTotals, effectiveKeywords, effectiveStats, battlekitPurchaseCost: typeof battlekitPurchaseCost === "function" ? battlekitPurchaseCost : null };');
+dom.window.eval(js.slice(0, bootIdx) + '\n;window.__X = { DATA, FACTION_RULES_LIBRARY: typeof FACTION_RULES_LIBRARY !== "undefined" ? FACTION_RULES_LIBRARY : null, classifyBattlekitItem, findBattlekitItem, getUnit, modelCost, warbandTotals, effectiveKeywords, effectiveStats, calculateTotalArmour, getModelArmourAndShield, battlekitPurchaseCost: typeof battlekitPurchaseCost === "function" ? battlekitPurchaseCost : null };');
 const X = dom.window.__X;
 
 let pass = 0, fail = 0;
@@ -71,6 +71,18 @@ const two = [M('shock-troopers', ['smg-na'])];
 ok(state(BASE, M('shock-troopers'), 'smg-na', two) === 'available', 'sin variante: SMG Limit 2');
 
 console.log('\nGroup 3: Lightly-armoured');
+const mhiBase = M('mech-heavy-inf');
+const mhiAlt = M('mech-heavy-inf'); mhiAlt.costVariant = 'alt';
+ok(state(ALBA, mhiBase, 'reinforced-armour-na') === 'equipped', 'MHI base: Reinforced Armour equipada');
+ok(state(ALBA, mhiBase, 'machine-armour-na') === 'available', 'MHI base: Machine Armour disponible para equipar/cambiar');
+ok(state(ALBA, mhiAlt, 'machine-armour-na') === 'equipped', 'MHI alt: Machine Armour equipada');
+ok(state(ALBA, mhiAlt, 'reinforced-armour-na') === 'available', 'MHI alt: Reinforced Armour disponible para equipar/cambiar');
+ok(X.calculateTotalArmour(mhiBase, X.getUnit(NA, 'mech-heavy-inf'), ALBA([])) === '-2', 'MHI base total ARM: -2');
+ok(X.calculateTotalArmour(mhiAlt, X.getUnit(NA, 'mech-heavy-inf'), ALBA([])) === '-3', 'MHI alt total ARM: -3');
+const asBase = X.getModelArmourAndShield(mhiBase, X.getUnit(NA, 'mech-heavy-inf'), ALBA([]));
+ok(asBase.armour && asBase.armour.id === 'reinforced-armour-na' && asBase.armour.isBuiltIn, 'getModelArmourAndShield devuelve Reinforced Armour para MHI base');
+const asAlt = X.getModelArmourAndShield(mhiAlt, X.getUnit(NA, 'mech-heavy-inf'), ALBA([]));
+ok(asAlt.armour && asAlt.armour.id === 'machine-armour-na' && asAlt.armour.isBuiltIn, 'getModelArmourAndShield devuelve Machine Armour para MHI alt');
 ok(state(ALBA, M('lieutenant'), 'reinforced-armour-na') === 'available', 'Lieutenant: Reinforced Armour');
 ok(/Lieutenant/.test(X.findBattlekitItem(NA, 'reinforced-armour-na', ALBA()).restriction), 'Reinforced Armour: Lieutenant y MHI');
 ok(state(ALBA, M('trench-cleric'), 'reinforced-armour-na') === 'hidden', 'otro ELITE (Trench Cleric): sin Reinforced Armour');
@@ -89,6 +101,9 @@ const st1 = M('shock-troopers', ['great-hammer-na']);
 ok(state(ALBA, st1, 'sword-na') === 'available', 'STRONG de Highland Strength: Great Hammer + Sword');
 const music = X.findBattlekitItem(NA, 'music-na', wbK);
 ok(/Bagpipes/.test(music.note || '') && /NEGATE FEAR/.test(music.note || ''), 'Bagpipes en la nota del Musical Instrument');
+
+const fRules = X.FACTION_RULES_LIBRARY ? X.FACTION_RULES_LIBRARY['Kingdom of Alba Assault'] : null;
+ok(fRules && /no sufren penalización de movimiento por Down/.test(fRules.summary), 'Kingdom of Alba Assault: regla canon de movimiento por Down en resumen');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);

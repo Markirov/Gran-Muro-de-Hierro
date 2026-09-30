@@ -14,7 +14,8 @@ import {
   getModelMeleeCapacity,
   getModelRangedCapacity,
   getModelArmourAndShield,
-  getModelGearAndGrenades
+  getModelGearAndGrenades,
+  unitCostAltAllowed
 } from '../../../lib/cost_calculation';
 import { classifyBattlekitItem } from '../../../lib/battlekit_legality_engine';
 import { KEYWORD_LIBRARY } from '../../../data/04_keyword_library';
@@ -86,6 +87,18 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
     };
 
     const handleEquipItem = (itemId: string) => {
+      if (unit.id === 'mech-heavy-inf') {
+        if (itemId === 'machine-armour-na') {
+          onUpdateModel({ ...model, costVariant: 'alt' });
+          setSelectorOpen(null);
+          return;
+        }
+        if (itemId === 'reinforced-armour-na') {
+          onUpdateModel({ ...model, costVariant: 'base' });
+          setSelectorOpen(null);
+          return;
+        }
+      }
       const bk = [...(model.battlekit || [])];
       bk.push(itemId);
       onUpdateModel({ ...model, battlekit: bk });
@@ -156,7 +169,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
 
     // Sum costs per section
     const sumCost = (list: any[]) => list.reduce((acc, it) => acc + (it.cost || 0), 0);
-    const meleeCost = sumCost(meleeCap.items);
+    const meleeCost = meleeCap.items.reduce((acc: number, it: any) => acc + battlekitPurchaseCost(wb, it, model), 0);
     const rangedCost = sumCost(rangedCap.items);
     const armourShieldCost = (armourShield.armour?.cost || 0) + (armourShield.shield?.cost || 0);
     const gearCost = sumCost(gearGrenades.grenades) + sumCost(gearGrenades.gear);
@@ -212,7 +225,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
               <div className="text-[#9e9178] text-xs uppercase tracking-widest mt-1">
                 {effName !== unit.name ? `${effName} (${unit.name})` : effName} 
                 <span className="mx-2">•</span> 
-                Base: {unit.cost} {unit.currency}
+                Base: {(model.costVariant === 'alt' && unit.costAlt) ? unit.costAlt : unit.cost} {unit.currency}
               </div>
             </div>
           </div>
@@ -410,7 +423,23 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs font-mono text-[#e2d4b7]">{it.cost} {it.currency}</span>
+                                  {(() => {
+                                    const actualCost = battlekitPurchaseCost(wb, it, model);
+                                    const hasDiscount = actualCost < it.cost;
+                                    return (
+                                      <span className="text-xs font-mono text-[#e2d4b7] flex items-center gap-1.5">
+                                        {hasDiscount && (
+                                          <span className="line-through text-[#7a6a58] text-[10px]">{it.cost}</span>
+                                        )}
+                                        <span className={hasDiscount ? 'text-[#b8863c] font-bold' : ''}>
+                                          {actualCost} {it.currency}
+                                        </span>
+                                        {hasDiscount && (
+                                          <span className="text-[8px] bg-[#2a1610] text-[#b8863c] px-1 py-0.5 rounded border border-[#5c3a21]">Cold Steel</span>
+                                        )}
+                                      </span>
+                                    );
+                                  })()}
                                   {isShop && (
                                     <button 
                                       onClick={() => handleRemoveItem(it.id)}
@@ -459,7 +488,21 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                         {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
                                         {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
                                       </div>
-                                      <span className="font-mono text-xs text-[#b8863c] shrink-0">{item.cost} {item.currency}</span>
+                                      {(() => {
+                                        const price = battlekitPurchaseCost(wb, item, model);
+                                        const isDiscounted = price < item.cost;
+                                        return (
+                                          <div className="flex items-center gap-1.5 shrink-0">
+                                            {isDiscounted && (
+                                              <span className="line-through text-[#7a6a58] text-[9px]">{item.cost}</span>
+                                            )}
+                                            <span className="font-mono text-xs text-[#b8863c]">{price} {item.currency}</span>
+                                            {isDiscounted && (
+                                              <span className="text-[8px] bg-[#2a1610] text-[#b8863c] px-1 py-0.5 rounded border border-[#5c3a21]">Cold Steel</span>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
                                     </button>
                                   );
                                 })}
@@ -636,7 +679,40 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                         {/* Sub-slot: Armadura Corporal */}
                         {(isShop || armourShield.armour || (armourShield.permanentEquipment && armourShield.permanentEquipment.length > 0)) && (
                           <div>
-                            <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-1.5">Armadura Corporal</div>
+                            <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-1.5 flex justify-between items-center">
+                              <span>Armadura Corporal</span>
+                              {unit.id === 'mech-heavy-inf' && isShop && (
+                                <span className="text-[9px] text-[#b8863c] font-mono">Variante MHI</span>
+                              )}
+                            </div>
+
+                            {/* MHI Quick Armour Switcher (Shop mode) */}
+                            {unit.id === 'mech-heavy-inf' && isShop && (
+                              <div className="grid grid-cols-2 gap-2 mb-2">
+                                <button
+                                  onClick={() => onUpdateModel({ ...model, costVariant: 'base' })}
+                                  className={`py-1.5 px-2 rounded text-xs font-serif font-bold border transition-all text-center ${
+                                    (!model.costVariant || model.costVariant === 'base')
+                                      ? 'bg-[#2a1610] text-[#b8863c] border-[#b8863c] shadow'
+                                      : 'bg-[#140b07] text-[#7a6a58] border-[#3a2110] hover:text-[#e2d4b7]'
+                                  }`}
+                                >
+                                  Reinforced (85 👑)
+                                </button>
+                                <button
+                                  disabled={!unitCostAltAllowed(wb, unit)}
+                                  onClick={() => onUpdateModel({ ...model, costVariant: 'alt' })}
+                                  className={`py-1.5 px-2 rounded text-xs font-serif font-bold border transition-all text-center ${
+                                    model.costVariant === 'alt'
+                                      ? 'bg-[#2a1610] text-[#b8863c] border-[#b8863c] shadow'
+                                      : 'bg-[#140b07] text-[#7a6a58] border-[#3a2110] hover:text-[#e2d4b7]'
+                                  } ${!unitCostAltAllowed(wb, unit) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                >
+                                  Machine (95 👑)
+                                </button>
+                              </div>
+                            )}
+
                             {armourShield.permanentEquipment && armourShield.permanentEquipment.length > 0 && (
                               <div className="space-y-1.5 mb-2">
                                 {armourShield.permanentEquipment.map((pe: string, peIdx: number) => (
@@ -654,7 +730,19 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                             {armourShield.armour ? (
                               <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center">
                                 <div>
-                                  <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.armour.name}</div>
+                                  <div className="flex items-center gap-2">
+                                    <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.armour.name}</div>
+                                    {armourShield.armour.isBuiltIn && (
+                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
+                                        Innata
+                                      </span>
+                                    )}
+                                    {armourShield.armour.id === 'machine-armour-na' && wb.variantId === 'alba' && (
+                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 font-mono border border-emerald-800/40">
+                                        Celtic (+D6&quot; Charge)
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
                                     {(armourShield.armour.weaponKeywords || []).map((kw: string, kwi: number) => {
                                       const kwDesc = getWeaponKeywordDesc(kw);
@@ -665,51 +753,85 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       );
                                     })}
                                   </div>
+                                  {armourShield.armour.id === 'machine-armour-na' && wb.variantId === 'alba' && (
+                                    <div className="text-[9px] text-emerald-400/90 font-mono mt-1">
+                                      Celtic Machine Armour: Charge Bonus D6&quot; · Sin penaliz. Mov Down
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className="text-xs font-mono text-[#e2d4b7]">{armourShield.armour.cost} {armourShield.armour.currency}</span>
+                                  <span className="text-xs font-mono text-[#e2d4b7]">
+                                    {armourShield.armour.displayCost || `${armourShield.armour.cost} ${armourShield.armour.currency}`}
+                                  </span>
                                   {isShop && (
-                                    <button 
-                                      onClick={() => handleRemoveItem(armourShield.armour.id)}
-                                      className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
-                                      title="Desequipar armadura"
-                                    >
-                                      ✕
-                                    </button>
+                                    armourShield.armour.isBuiltIn ? (
+                                      <button 
+                                        onClick={() => setSelectorOpen(selectorOpen === 'armour' ? null : 'armour')}
+                                        className="px-2 py-0.5 rounded bg-[#2a1610] hover:bg-[#3a2110] text-[#b8863c] hover:text-[#e2d4b7] border border-[#5c3a21] text-xs transition-all font-mono"
+                                        title="Cambiar armadura"
+                                      >
+                                        Cambiar
+                                      </button>
+                                    ) : (
+                                      <button 
+                                        onClick={() => handleRemoveItem(armourShield.armour.id)}
+                                        className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
+                                        title="Desequipar armadura"
+                                      >
+                                        ✕
+                                      </button>
+                                    )
                                   )}
                                 </div>
                               </div>
-                            ) : (
-                              isShop && (
-                                selectorOpen === 'armour' ? (
-                                  <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
-                                    <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
-                                      <span>Elegir Armadura</span>
-                                      <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
-                                    </div>
-                                    {getSelectorOptions('armour').map(({ item, cls }: any) => (
-                                      <button
-                                        key={item.id}
-                                        disabled={cls.state !== 'available'}
-                                        onClick={() => handleEquipItem(item.id)}
-                                        className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
-                                          cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
-                                        }`}
-                                      >
+                            ) : null}
+
+                            {/* Selector de armadura */}
+                            {isShop && selectorOpen === 'armour' && (
+                              <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar mt-2">
+                                <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
+                                  <span>Elegir Armadura</span>
+                                  <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
+                                </div>
+                                {getSelectorOptions('armour').map(({ item, cls }: any) => {
+                                  const isEquipped = cls.state === 'equipped';
+                                  const isDisabled = cls.state === 'disabled';
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      disabled={isEquipped || isDisabled}
+                                      onClick={() => handleEquipItem(item.id)}
+                                      className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs transition-all ${
+                                        isEquipped 
+                                          ? 'bg-[#1a0f0a] border border-[#b8863c]/40 text-[#b8863c] opacity-60' 
+                                          : isDisabled 
+                                            ? 'opacity-40 text-[#7a6a58] border border-transparent cursor-not-allowed'
+                                            : 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]'
+                                      }`}
+                                    >
+                                      <div className="flex flex-col">
                                         <span>{item.name}</span>
-                                        <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => setSelectorOpen('armour')}
-                                    className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
-                                  >
-                                    + Equipar Armadura
-                                  </button>
-                                )
-                              )
+                                        {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
+                                        {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
+                                      </div>
+                                      <span className="font-mono text-[#b8863c]">
+                                        {unit.id === 'mech-heavy-inf' 
+                                          ? (item.id === 'machine-armour-na' ? '95 👑 (Base)' : '85 👑 (Base)')
+                                          : `${item.cost} ${item.currency}`}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {isShop && !armourShield.armour && selectorOpen !== 'armour' && (
+                              <button
+                                onClick={() => setSelectorOpen('armour')}
+                                className="w-full border border-dashed border-[#5c3a21] hover:border-[#b8863c] bg-[#1a0f0a]/60 hover:bg-[#2a1610] text-[#9e9178] hover:text-[#e2d4b7] py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all"
+                              >
+                                + Equipar Armadura
+                              </button>
                             )}
                           </div>
                         )}

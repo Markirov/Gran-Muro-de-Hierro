@@ -160,11 +160,25 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   // Calculate total armor dynamically
   const totalArmour = calculateTotalArmour(model, unit, wb);
   
-  // Calculate Movement (halved if DOWN)
+  // Alba / Celtic Armour: sus armaduras no sufren penalización de movimiento por Down
+  const isAlba = wb.variantId === 'alba';
+  const hasMachineArmour = (model.battlekit || []).includes('machine-armour-na') || 
+                           (model.unitId === 'mech-heavy-inf' && model.costVariant === 'alt') ||
+                           equipment.some((e: any) => e.name?.toLowerCase().includes('machine armour') || e.id === 'machine-armour-na');
+  const hasArmourItem = (model.battlekit || []).some((k: string) => k.includes('armour')) || 
+                        model.unitId === 'mech-heavy-inf' || 
+                        equipment.some((e: any) => e.type?.toLowerCase() === 'armour' || e.name?.toLowerCase().includes('armour'));
+  const ignoresDownMovementPenalty = (isAlba && hasArmourItem) || hasMachineArmour;
+
+  // Calculate Movement (halved if DOWN, unless immune)
   let displayMov = stats.movement;
   if (status === 'down') {
-    const baseMov = parseInt(stats.movement) || 0;
-    displayMov = Math.ceil(baseMov / 2) + '\" (' + stats.movement + ')';
+    if (ignoresDownMovementPenalty) {
+      displayMov = stats.movement;
+    } else {
+      const baseMov = parseInt(stats.movement) || 0;
+      displayMov = Math.ceil(baseMov / 2) + '\" (' + stats.movement + ')';
+    }
   }
 
   // --- SEPARATE WEAPONS VS EQUIPMENT ---
@@ -368,11 +382,19 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
         <div className="grid grid-cols-4 gap-2 mb-8">
           {['movement', 'ranged', 'melee', 'armour'].map(k => (
             <div key={k} className="bg-[#1a0f0a] border border-[#3a2110] rounded p-2 md:p-3 text-center flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
-              {k === 'movement' && status === 'down' && <div className="absolute inset-0 bg-orange-900/20"></div>}
+              {k === 'movement' && status === 'down' && !ignoresDownMovementPenalty && <div className="absolute inset-0 bg-orange-900/20"></div>}
+              {k === 'movement' && status === 'down' && ignoresDownMovementPenalty && <div className="absolute inset-0 bg-emerald-950/20"></div>}
               <span className="text-[9px] md:text-[10px] uppercase text-[#7a6a58] tracking-widest relative z-10">{k === 'movement' ? 'Mov' : k === 'ranged' ? 'Rng' : k === 'melee' ? 'Mel' : 'Arm'}</span>
-              <span className={`font-serif font-bold text-lg md:text-xl mt-1 relative z-10 ${k === 'movement' && status === 'down' ? 'text-orange-400' : 'text-[#b8863c]'}`}>
+              <span className={`font-serif font-bold text-lg md:text-xl mt-1 relative z-10 ${
+                k === 'movement' && status === 'down' 
+                  ? (ignoresDownMovementPenalty ? 'text-emerald-400' : 'text-orange-400')
+                  : 'text-[#b8863c]'
+              }`}>
                 {k === 'movement' ? displayMov : k === 'armour' ? totalArmour : stats[k] || '-'}
               </span>
+              {k === 'movement' && status === 'down' && ignoresDownMovementPenalty && (
+                <span className="text-[8px] text-emerald-400/90 font-mono tracking-tight relative z-10">Sin penaliz. Down</span>
+              )}
             </div>
           ))}
         </div>
