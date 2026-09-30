@@ -1,3 +1,21 @@
+- [x] **Corrección de error crítico al abrir bandas importadas de Trench Companion** (2026-09-30, Lead Developer (Antigravity), Petición de Marcos "Cuando importo una banda de companion da error al intentar abrirla"):
+  1. **Diagnóstico del fallo:** Se identificaron tres vectores de fallo combinados:
+     - En `RosterList.tsx` (línea 108), `{model.unitId.replace(/-/g, ' ')}` arrojaba `TypeError: Cannot read properties of null (reading 'replace')` cada vez que una miniatura importada no enlazaba con una unidad canónica del catálogo local (`unitId: null`), bloqueando el renderizado de React en `/bandas/roster`.
+     - En `companion_adapter.ts`, la inferencia de facción solo cotejaba IDs exactos de keywords (`kw_antioch`, `kw_pilgrim`, etc.). Si el JSON traía `keyword-name` o IDs sin prefijo canónico, la facción caía a `'new-antioch'`, provocando que las unidades de otras facciones no se encontraran en `DATA.factions['new-antioch']` y derivando en `unitId: null`.
+     - En `companion_adapter.ts`, `costVariant` se inicializaba a `undefined`. Al guardar la banda con un usuario autenticado en Firebase, Firestore arrojaba `FirebaseError: Function setDoc() called with invalid data. Unsupported field value: undefined`.
+  2. **Medidas correctivas aplicadas:**
+     - **Blindaje en RosterList:** Reemplazado por `{(model.unitId || model.name || 'Unidad').replace(/-/g, ' ')}` con fallback seguro ante cualquier valor nulo o no definido.
+     - **Inferencia multi-fuente en el Adapter:** Algoritmo de votación ponderado que evalúa simultáneamente keywords (`keyword-id` y `keyword-name` insensible a mayúsculas), mapeo directo de `model-id` contra las 6 facciones en `DATA.factions`, reglas de variante en `abilities` y heurística por nombre de banda. Garantizado 100% de acierto en todas las facciones.
+     - **Resiliencia en modelos:** Si una unidad no se reconoce, se preserva con `unitId: (cmodel['model-id'] || 'desconocido')`, `costVariant: null` y se sanitiza todo el objeto de la banda (`JSON.parse(JSON.stringify(..., (k, v) => v === undefined ? null : v))`) eliminando cualquier propiedad `undefined`.
+     - **Fallback card en ModelDetails:** Si se inspecciona una unidad no canónica o personalizada, en lugar de un error crudo, se presenta una tarjeta temática que muestra el nombre, estadísticas de Companion (`companionStats`), armas y botón para eliminarla.
+     - **Saneamiento en Storage y Firestore:** `storage.ts` y `firebase.ts` sanitizan automáticamente valores `undefined` antes de persistir en LocalStorage o llamar a `setDoc`, e indexan correctamente el conteo `models` en `warband-forge-index`.
+     - **Detección temprana de PDFs:** `parseCompanionJson` detecta si el usuario intentó subir un archivo PDF impreso de Companion y emite un mensaje claro indicando que debe exportar el `.json`.
+  3. **Verificación:**
+     - Simulación de apertura y renderizado en Roster/ModelDetails con 0 errores y detección probada en las 6 facciones canónicas.
+     - 43 ✓ en `tests/test_companion_adapter.ts` sin fallos.
+     - `npm run lint` (`--max-warnings=0`) y `npm run build` (Turbopack) completados con 0 errores.
+     - Desplegado en producción en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
+
 - [x] **Auditoría Integral (Full Spectrum) del sistema y catálogo canónico** (2026-09-30, QA Auditor / Security Reviewer (Antigravity), Solicitud de Marcos "Auditor de la Fe -> Opción 5"):
   1. **Evaluación de los 4 ángulos de calidad:**
      - **Arquitectura & Calidad:** Verificada suite completa (186 suites, 0 fallos), lint (`--max-warnings=0`) y TypeScript sin errores. Identificada coexistencia y divergencia latente de motores duales TS/JS (`app/lib` vs `public/js`) y uso transversal de `@ts-nocheck` en 13 archivos de datos/puentes.

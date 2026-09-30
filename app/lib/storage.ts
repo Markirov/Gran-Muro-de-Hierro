@@ -1,33 +1,35 @@
 import { auth, saveWarbandToCloud, saveCampaignToCloud, db } from './firebase';
 import { doc, setDoc, deleteField } from 'firebase/firestore';
 
+function sanitizeData(obj: any): any {
+  return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
+}
+
 export async function saveWarbandLocallyAndCloud(warbandId: string, warbandData: any) {
   // Update updatedAt
   warbandData.updatedAt = new Date().toISOString();
+  const cleanData = sanitizeData(warbandData);
   
   // 1. Guardar en LocalStorage
-  localStorage.setItem(`warband-forge-v1:${warbandId}`, JSON.stringify(warbandData));
+  localStorage.setItem(`warband-forge-v1:${warbandId}`, JSON.stringify(cleanData));
   
   // 2. Actualizar el Index Local
   try {
     const rawIdx = localStorage.getItem('warband-forge-index');
     let idx: any[] = rawIdx ? JSON.parse(rawIdx) : [];
     const existing = idx.find(i => i.id === warbandId);
+    const entry = {
+      id: warbandId,
+      name: cleanData.name,
+      cost: cleanData.budgetTotal ?? cleanData.cost ?? 0,
+      factionId: cleanData.factionId,
+      models: Array.isArray(cleanData.models) ? cleanData.models.length : 0,
+      updatedAt: cleanData.updatedAt
+    };
     if (existing) {
-      Object.assign(existing, { 
-        name: warbandData.name, 
-        cost: warbandData.cost, 
-        factionId: warbandData.factionId, 
-        updatedAt: warbandData.updatedAt 
-      });
+      Object.assign(existing, entry);
     } else {
-      idx.push({ 
-        id: warbandId, 
-        name: warbandData.name, 
-        cost: warbandData.cost, 
-        factionId: warbandData.factionId, 
-        updatedAt: warbandData.updatedAt 
-      });
+      idx.push(entry);
     }
     localStorage.setItem('warband-forge-index', JSON.stringify(idx));
   } catch (e) {
@@ -37,7 +39,7 @@ export async function saveWarbandLocallyAndCloud(warbandId: string, warbandData:
   // 3. Guardar en Firebase (si está logueado)
   const user = auth.currentUser;
   if (user) {
-    await saveWarbandToCloud(user.uid, warbandId, warbandData);
+    await saveWarbandToCloud(user.uid, warbandId, cleanData);
   }
 }
 

@@ -43,8 +43,9 @@ export async function saveWarbandToCloud(uid: string, warbandId: string, warband
     let data = snap.exists() ? snap.data() : { warbands: {} };
     
     if (!data.warbands) data.warbands = {};
+    const sanitizedData = JSON.parse(JSON.stringify(warbandData, (k, v) => (v === undefined ? null : v)));
     data.warbands[warbandId] = {
-      ...warbandData,
+      ...sanitizedData,
       cloudUpdatedAt: new Date().toISOString()
     };
     

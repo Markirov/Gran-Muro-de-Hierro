@@ -66,7 +66,49 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
 
     const unit = getUnit(wb.factionId, model.unitId);
     if (!unit) {
-      return <div className="text-red-500 p-8">Unidad no encontrada en los registros.</div>;
+      return (
+        <div className="p-6 bg-[#1a0f0a] border border-[#5c3a21] rounded-xl text-[#e2d4b7] space-y-4 m-4">
+          <div className="flex justify-between items-start border-b border-[#5c3a21] pb-3">
+            <div>
+              <h3 className="font-serif text-2xl text-[#b8863c] uppercase tracking-wide">
+                {model.name || 'Unidad Importada'}
+              </h3>
+              <p className="text-xs text-[#9e9178] uppercase tracking-widest mt-1">
+                Identificador: {model.unitId || 'Personalizado / No canónico'}
+              </p>
+            </div>
+            {onRemoveModel && (
+              <button
+                onClick={() => onRemoveModel(model.uid)}
+                className="text-red-400 hover:text-red-200 border border-red-800/60 bg-red-950/40 px-3 py-1.5 rounded text-xs uppercase tracking-wider font-bold transition-all cursor-pointer"
+              >
+                Eliminar
+              </button>
+            )}
+          </div>
+          <p className="text-sm text-[#9e9178]">
+            Esta miniatura proviene de una importación de Trench Companion o un catálogo externo y no está vinculada directamente a una entrada canónica de {wb.factionId}.
+          </p>
+          {model.companionStats && (
+            <div className="grid grid-cols-4 gap-2 bg-[#0a0503] p-3 rounded border border-[#3a2110] text-center font-mono">
+              <div><span className="text-[10px] text-[#7a6a58] block uppercase">MOV</span>{model.companionStats.move || '—'}</div>
+              <div><span className="text-[10px] text-[#7a6a58] block uppercase">MEL</span>{model.companionStats.melee || '—'}</div>
+              <div><span className="text-[10px] text-[#7a6a58] block uppercase">DIS</span>{model.companionStats.ranged || '—'}</div>
+              <div><span className="text-[10px] text-[#7a6a58] block uppercase">BLI</span>{model.companionStats.armour || '—'}</div>
+            </div>
+          )}
+          {model.battlekit?.length > 0 && (
+            <div className="space-y-1">
+              <span className="text-xs text-[#b8863c] uppercase font-bold tracking-widest block">Equipo Equipado:</span>
+              <ul className="text-xs text-[#e2d4b7] list-disc list-inside">
+                {model.battlekit.map((k: string, idx: number) => (
+                  <li key={idx}>{k}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
     }
 
     const effStats = effectiveStats(model, unit, wb);

@@ -286,6 +286,22 @@ export const COMPANION_ITEM_ALIASES: Record<string, string> = {
 // ----------------------------------------------------------------------
 
 export function parseCompanionJson(text: string | object): CompanionParseResult {
+  if (typeof text === 'string') {
+    const trimmed = text.trim();
+    if (trimmed.startsWith('%PDF')) {
+      return {
+        ok: false,
+        error: 'El archivo subido es un documento PDF. Para importar en la Forja, por favor descárgalo o expórtalo como archivo JSON (.json) desde Trench Companion.'
+      };
+    }
+    if (trimmed.startsWith('<!DOCTYPE html>') || trimmed.startsWith('<html')) {
+      return {
+        ok: false,
+        error: 'El archivo subido es una página web HTML. Por favor copia o descarga el contenido JSON (.json) de Trench Companion.'
+      };
+    }
+  }
+
   let data: any;
   try {
     data = typeof text === 'string' ? JSON.parse(text) : text;
@@ -465,32 +481,66 @@ export function importCompanionWarband(jsonOrText: string | object): CompanionIm
   const json = parsed.data;
   const warnings: string[] = [];
 
-  // Inferencia de facción por keywords
-  const factionKwToId: Record<string, string> = {
-    'kw_antioch':       'new-antioch',
-    'kw_pilgrim':       'trench-pilgrims',
-    'kw_pilgrims':      'trench-pilgrims',
-    'kw_sultanate':     'iron-sultanate',
-    'kw_heretic':       'heretic-legions',
-    'kw_blackgrail':    'black-grail',
-    'kw_black_grail':   'black-grail',
-    'kw_court':         'court-serpent',
-    'kw_thecourt':      'court-serpent',
-  };
-
+  // Inferencia robusta de facción: voto combinado por keywords, IDs de modelo y variantes
   const factionVotes: Record<string, number> = {};
   const variantVotes: Record<string, number> = {};
 
+  const registerFactionVote = (fid: string, weight = 1) => {
+    if (!fid || !DATA.factions[fid]) return;
+    factionVotes[fid] = (factionVotes[fid] || 0) + weight;
+  };
+
   (json.models || []).forEach((m: any) => {
+    // 1. Voto por model-id conocido
+    const unitMatch = findUnitForCompanionModel(m);
+    if (unitMatch && unitMatch.factionId && unitMatch.factionId !== 'mercenaries') {
+      registerFactionVote(unitMatch.factionId, 3);
+    }
+
+    // 2. Voto por keywords de modelo (keyword-id y keyword-name)
     (m.keywords || []).forEach((k: any) => {
-      const fid = factionKwToId[k['keyword-id']];
-      if (fid) factionVotes[fid] = (factionVotes[fid] || 0) + 1;
+      const kwId = (k['keyword-id'] || '').toLowerCase();
+      const kwName = (k['keyword-name'] || '').toUpperCase();
+
+      if (kwId === 'kw_antioch' || kwId.includes('antioch') || kwName.includes('ANTIOCH')) {
+        registerFactionVote('new-antioch', 4);
+      } else if (kwId === 'kw_pilgrim' || kwId === 'kw_pilgrims' || kwId.includes('pilgrim') || kwName.includes('PILGRIM')) {
+        registerFactionVote('trench-pilgrims', 4);
+      } else if (kwId === 'kw_sultanate' || kwId.includes('sultanate') || kwName.includes('SULTANATE')) {
+        registerFactionVote('iron-sultanate', 4);
+      } else if (kwId === 'kw_heretic' || kwId.includes('heretic') || kwName.includes('HERETIC')) {
+        registerFactionVote('heretic-legions', 4);
+      } else if (kwId === 'kw_blackgrail' || kwId === 'kw_black_grail' || kwId.includes('grail') || kwName.includes('GRAIL')) {
+        registerFactionVote('black-grail', 4);
+      } else if (kwId === 'kw_court' || kwId === 'kw_thecourt' || kwId.includes('court') || kwName.includes('COURT') || kwName.includes('SERPENT')) {
+        registerFactionVote('court-serpent', 4);
+      }
     });
+
+    // 3. Voto por habilidades de variante
     (m.abilities || []).forEach((a: any) => {
       const vid = COMPANION_RULE_TO_VARIANT[a['ability-id']];
-      if (vid) variantVotes[vid] = (variantVotes[vid] || 0) + 1;
+      if (vid) {
+        variantVotes[vid] = (variantVotes[vid] || 0) + 1;
+        for (const [fId, fObj] of Object.entries(DATA.factions)) {
+          if ((fObj as any).variants?.some((v: any) => v.id === vid)) {
+            registerFactionVote(fId, 2);
+          }
+        }
+      }
     });
   });
+
+  // Heurística de respaldo por nombre de banda si no hay votos
+  const wbNameUpper = (json['warband-name'] || '').toUpperCase();
+  if (Object.keys(factionVotes).length === 0) {
+    if (wbNameUpper.includes('ANTIOCH')) registerFactionVote('new-antioch', 1);
+    else if (wbNameUpper.includes('PILGRIM')) registerFactionVote('trench-pilgrims', 1);
+    else if (wbNameUpper.includes('SULTAN') || wbNameUpper.includes('MURO')) registerFactionVote('iron-sultanate', 1);
+    else if (wbNameUpper.includes('HERETIC') || wbNameUpper.includes('HEREJE')) registerFactionVote('heretic-legions', 1);
+    else if (wbNameUpper.includes('GRAIL') || wbNameUpper.includes('GRIAL')) registerFactionVote('black-grail', 1);
+    else if (wbNameUpper.includes('COURT') || wbNameUpper.includes('CORTE') || wbNameUpper.includes('SERPENT')) registerFactionVote('court-serpent', 1);
+  }
 
   let detectedFaction = 'new-antioch';
   let bestFCount = 0;
@@ -509,7 +559,6 @@ export function importCompanionWarband(jsonOrText: string | object): CompanionIm
     const facObj = FACTIONS.find(f => f.id === detectedFaction);
     const hasVar = facObj?.variants?.some(v => v.id === detectedVariant);
     if (!hasVar) {
-      // Si la regla apunta a una variante de otra facción, sincronizar facción
       for (const f of FACTIONS) {
         if (f.variants?.some(v => v.id === detectedVariant)) {
           detectedFaction = f.id;
@@ -548,11 +597,11 @@ export function importCompanionWarband(jsonOrText: string | object): CompanionIm
     }
 
     const unit = unitMatch ? unitMatch.unit : null;
-    const unitId = unit ? unit.id : null;
+    const unitId = unit ? unit.id : (cmodel['model-id'] || 'desconocido');
     const modelName = cmodel['name'] || cmodel['model-name'] || unit?.name || 'Miniatura';
 
     const battlekit: string[] = [];
-    let costVariant: 'alt' | 'base' | undefined = undefined;
+    let costVariant: 'alt' | 'base' | null = null;
 
     // Equipar armas y equipo
     (cmodel.equipment || []).forEach((eq: any) => {
@@ -591,7 +640,7 @@ export function importCompanionWarband(jsonOrText: string | object): CompanionIm
       name: modelName,
       isElite,
       xp: 0,
-      costVariant,
+      costVariant: costVariant,
       equipment: [...battlekit],
       battlekit: battlekit,
       upgrades: upgrades,
@@ -606,8 +655,8 @@ export function importCompanionWarband(jsonOrText: string | object): CompanionIm
         ranged: cmodel['stat-ranged'] || '',
         armour: cmodel['stat-armour'] || ''
       },
-      companionCost: (cmodel.cost && cmodel.cost.ducats) !== undefined ? cmodel.cost.ducats : undefined,
-      companionGlory: (cmodel.cost && cmodel.cost.glory) !== undefined ? cmodel.cost.glory : 0,
+      companionCost: (cmodel.cost && typeof cmodel.cost.ducats === 'number') ? cmodel.cost.ducats : (typeof cmodel.cost === 'number' ? cmodel.cost : null),
+      companionGlory: (cmodel.cost && typeof cmodel.cost.glory === 'number') ? cmodel.cost.glory : 0,
       companionEquipment: cmodel.equipment || [],
       companionAbilities: cmodel.abilities || [],
       companionKeywords: cmodel.keywords || [],
@@ -618,7 +667,10 @@ export function importCompanionWarband(jsonOrText: string | object): CompanionIm
     wb.models.push(forgeModel);
   });
 
-  return { ok: true, warband: wb, warnings };
+  // Sanitización total de campos undefined para evitar fallos de Firestore
+  const cleanWb = JSON.parse(JSON.stringify(wb, (k, v) => (v === undefined ? null : v)));
+
+  return { ok: true, warband: cleanWb, warnings };
 }
 
 // ----------------------------------------------------------------------

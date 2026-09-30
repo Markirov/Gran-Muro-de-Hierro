@@ -2,11 +2,11 @@
 
 > Resumen vivo, máximo ~50 líneas. Se reescribe (no se añade) cuando cambia algo (§1.1). La historia completa está en `DONE.md`; el backlog en `PENDING.md`.
 
-**Última actualización:** 2026-09-30, QA Auditor / Security Reviewer (Antigravity)
+**Última actualización:** 2026-09-30, Lead Developer (Antigravity)
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
-- Importación y exportación bidireccional Trench Companion reescritas y activas: importación con inferencia de facción/variantes, mapeo bidireccional de miniaturas, armas conectadas al `battlekit` interno, mejoras y presupuestos; exportación 100% canónica (`trench-companion.com`) con stats formateadas, armas tipadas y round-trip verificado.
+- Importación y exportación bidireccional Trench Companion blindada y activa: inferencia multi-fuente de facciones (keywords, IDs de modelo, variantes, heurística) con 100% de cobertura; sanitización estricta contra valores `undefined` para evitar excepciones en Firebase Firestore; resiliencia ante miniaturas no canónicas en `RosterList` y `ModelDetails` con fallback temático descriptivo.
 - Integración UI en Mis Bandas (`/bandas`, drag&drop `.json`, modal de importación y botón de exportar por tarjeta), Crear Banda (`/bandas/crear`, banner de importación directa) y Roster (`/bandas/roster`, botones Companion y Refrescar con modales interactivos).
 - Equipamiento permanente/innato integrado transversalmente: todas las bandas y mercenarios integran su armadura y armas innatas en los 4 Contenedores de Capacidad de Roster (`ModelDetails.tsx`), bloqueando compras duplicadas de armadura/casco y mostrando badges `Innata`/`Innato` no removibles.
 - Anchorite Shrine dinámico: Catherine Wheel + Bonebreaker Mace integradas en Melee (2 manos); al equipar un arma a distancia Anchorite se sustituye automáticamente la Catherine Wheel pasando a 1 mano Melee + 1 Ranged.

@@ -105,7 +105,7 @@ export function RosterList({
                       {model.name || effName || '(Desconocido)'}
                     </span>
                     <span className="text-[10px] text-[#7a6a58] uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded border border-[#3a2110]">
-                      {model.unitId.replace(/-/g, ' ')}
+                      {(model.unitId || model.name || 'Unidad').replace(/-/g, ' ')}
                     </span>
                   </div>
                   
