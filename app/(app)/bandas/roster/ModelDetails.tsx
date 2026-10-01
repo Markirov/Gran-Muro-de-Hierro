@@ -29,7 +29,10 @@ import {
   extractWeaponCombatModifiers, 
   getModelSpecialAmmunition, 
   isAmmunitionApplicableToWeapon, 
-  getTacticalRuleNote 
+  getTacticalRuleNote,
+  extractArmourDefenses,
+  getBulkyInfo,
+  getModelArmourBreakdown
 } from '../../../lib/weapon_helpers';
 
 function getArmouryTabNames(factionId: string) {
@@ -216,6 +219,8 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
     const armourShield = getModelArmourAndShield(model, unit, wb);
     const gearGrenades = getModelGearAndGrenades(model, unit, wb);
     const totalArmour = calculateTotalArmour(model, unit, wb);
+    const armourBreakdown = getModelArmourBreakdown(model, unit, wb);
+    const bulkyInfo = getBulkyInfo(model, unit, wb, armourShield.armour);
     const specialAmmos = getModelSpecialAmmunition(model, wb);
 
     // Sum costs per section
@@ -840,8 +845,16 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                           🛡️ Armadura & Escudos
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-[#3a2110] text-[#b8863c]">
+                          <span 
+                            className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-[#3a2110] text-[#b8863c] cursor-help"
+                            title={armourBreakdown.summary ? `Desglose: ${armourBreakdown.summary}` : undefined}
+                          >
                             Total ARM: {totalArmour}
+                            {armourBreakdown.parts.length > 1 && (
+                              <span className="text-[9px] text-[#7a6a58] ml-1">
+                                ({armourBreakdown.parts.map(p => `-${p.value} ${p.label}`).join(' + ')})
+                              </span>
+                            )}
                           </span>
                           {armourShieldCost > 0 && (
                             <span className="text-[10px] font-mono bg-red-950/40 text-red-400 px-1.5 py-0.5 rounded border border-red-900/40">
@@ -850,6 +863,19 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                           )}
                         </div>
                       </div>
+
+                      {/* Regla BULKY si aplica */}
+                      {bulkyInfo.isBulky && (
+                        <div className="mx-3 mt-3 p-2 rounded bg-[#160d08] border border-amber-900/50 flex flex-wrap items-center justify-between gap-1 text-[11px] text-amber-300">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold">⚖ BULKY:</span>
+                            <span className="text-amber-200/90">{bulkyInfo.note}</span>
+                          </div>
+                          <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-700/50">
+                            Peana {bulkyInfo.baseSize}
+                          </span>
+                        </div>
+                      )}
 
                       <div className="p-3 space-y-3">
                         {/* Sub-slot: Armadura Corporal */}
@@ -903,66 +929,82 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                               </div>
                             )}
 
-                            {armourShield.armour ? (
-                              <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center">
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.armour.name}</div>
-                                    {armourShield.armour.isBuiltIn && (
-                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
-                                        Innata
-                                      </span>
-                                    )}
-                                    {armourShield.armour.id === 'machine-armour-na' && wb.variantId === 'alba' && (
-                                      <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 font-mono border border-emerald-800/40">
-                                        Celtic (+D6&quot; Charge)
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
-                                    {(armourShield.armour.weaponKeywords || []).map((kw: string, kwi: number) => {
-                                      const kwDesc = getWeaponKeywordDesc(kw);
-                                      return (
-                                        <span key={kwi} title={kwDesc || undefined} className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help">
-                                          • {kw}
+                            {armourShield.armour ? (() => {
+                              const armDef = extractArmourDefenses(armourShield.armour);
+                              return (
+                                <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.armour.name}</div>
+                                      {armDef.injuryModifier && (
+                                        <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50">
+                                          ARM {armDef.injuryModifier}
                                         </span>
-                                      );
-                                    })}
-                                  </div>
-                                  {armourShield.armour.id === 'machine-armour-na' && wb.variantId === 'alba' && (
-                                    <div className="text-[9px] text-emerald-400/90 font-mono mt-1">
-                                      Celtic Machine Armour: Charge Bonus D6&quot; · Sin penaliz. Mov Down
+                                      )}
+                                      {armourShield.armour.isBuiltIn && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
+                                          Innata
+                                        </span>
+                                      )}
+                                      {armourShield.armour.id === 'machine-armour-na' && wb.variantId === 'alba' && (
+                                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-400 font-mono border border-emerald-800/40">
+                                          Celtic (+D6&quot; Charge)
+                                        </span>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs font-mono text-[#e2d4b7]">
-                                    {armourShield.armour.displayCost || `${armourShield.armour.cost} ${armourShield.armour.currency}`}
-                                  </span>
-                                  {isShop && (
-                                    armourShield.armour.isBuiltIn ? (
-                                      unit.costAlt ? (
+                                    <div className="text-[10px] text-[#9e9178] mt-1 flex flex-wrap gap-1">
+                                      {armDef.defensiveTraits.map((trait: string, ti: number) => {
+                                        const note = getTacticalRuleNote(trait);
+                                        return (
+                                          <span key={ti} title={note || undefined} className="px-1.5 py-0.2 rounded bg-[#22120b] border border-[#4a2a16] text-[#e2d4b7] font-mono text-[9px] cursor-help">
+                                            🛡️ {trait}
+                                          </span>
+                                        );
+                                      })}
+                                      {(armourShield.armour.weaponKeywords || []).filter((kw: string) => !armDef.defensiveTraits.includes(kw.toUpperCase()) && !kw.includes('INJURY MODIFIER')).map((kw: string, kwi: number) => {
+                                        const kwDesc = getWeaponKeywordDesc(kw);
+                                        return (
+                                          <span key={kwi} title={kwDesc || undefined} className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help">
+                                            • {kw}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                    {armourShield.armour.id === 'machine-armour-na' && wb.variantId === 'alba' && (
+                                      <div className="text-[9px] text-emerald-400/90 font-mono mt-1">
+                                        Celtic Machine Armour: Charge Bonus D6&quot; · Sin penaliz. Mov Down
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs font-mono text-[#e2d4b7]">
+                                      {armourShield.armour.displayCost || `${armourShield.armour.cost} ${armourShield.armour.currency}`}
+                                    </span>
+                                    {isShop && (
+                                      armourShield.armour.isBuiltIn ? (
+                                        unit.costAlt ? (
+                                          <button 
+                                            onClick={() => setSelectorOpen(selectorOpen === 'armour' ? null : 'armour')}
+                                            className="px-2 py-0.5 rounded bg-[#2a1610] hover:bg-[#3a2110] text-[#b8863c] hover:text-[#e2d4b7] border border-[#5c3a21] text-xs transition-all font-mono"
+                                            title="Cambiar armadura"
+                                          >
+                                            Cambiar
+                                          </button>
+                                        ) : null
+                                      ) : (
                                         <button 
-                                          onClick={() => setSelectorOpen(selectorOpen === 'armour' ? null : 'armour')}
-                                          className="px-2 py-0.5 rounded bg-[#2a1610] hover:bg-[#3a2110] text-[#b8863c] hover:text-[#e2d4b7] border border-[#5c3a21] text-xs transition-all font-mono"
-                                          title="Cambiar armadura"
+                                          onClick={() => handleRemoveItem(armourShield.armour.id)}
+                                          className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
+                                          title="Desequipar armadura"
                                         >
-                                          Cambiar
+                                          ✕
                                         </button>
-                                      ) : null
-                                    ) : (
-                                      <button 
-                                        onClick={() => handleRemoveItem(armourShield.armour.id)}
-                                        className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
-                                        title="Desequipar armadura"
-                                      >
-                                        ✕
-                                      </button>
-                                    )
-                                  )}
+                                      )
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            ) : null}
+                              );
+                            })() : null}
 
                             {/* Selector de armadura */}
                             {isShop && selectorOpen === 'armour' && (
@@ -974,6 +1016,7 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                 {getSelectorOptions('armour').map(({ item, cls }: any) => {
                                   const isEquipped = cls.state === 'equipped';
                                   const isDisabled = cls.state === 'disabled';
+                                  const itemDef = extractArmourDefenses(item);
                                   return (
                                     <button
                                       key={item.id}
@@ -987,12 +1030,26 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                             : 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]'
                                       }`}
                                     >
-                                      <div className="flex flex-col">
-                                        <span>{item.name}</span>
-                                        {isEquipped && <span className="text-[9px] text-[#b8863c]">✓ Ya equipada</span>}
-                                        {isDisabled && <span className="text-[9px] text-red-400">⚠ {cls.reason}</span>}
+                                      <div className="flex flex-col gap-0.5">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="font-bold">{item.name}</span>
+                                          {itemDef.injuryModifier && (
+                                            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/40">
+                                              ARM {itemDef.injuryModifier}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1 text-[9px]">
+                                          {itemDef.defensiveTraits.map((tr: string, tri: number) => (
+                                            <span key={tri} className="text-[#b8863c] font-mono">
+                                              🛡️ {tr}
+                                            </span>
+                                          ))}
+                                          {isEquipped && <span className="text-[#b8863c]">✓ Ya equipada</span>}
+                                          {isDisabled && <span className="text-red-400">⚠ {cls.reason}</span>}
+                                        </div>
                                       </div>
-                                      <span className="font-mono text-[#b8863c]">
+                                      <span className="font-mono text-[#b8863c] shrink-0 ml-2">
                                         {unit.id === 'mech-heavy-inf' 
                                           ? (item.id === 'machine-armour-na' ? '95 👑 (Base)' : '85 👑 (Base)')
                                           : `${item.cost} ${item.currency}`}
@@ -1018,35 +1075,51 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                         {(isShop || armourShield.shield) && (
                           <div>
                             <div className="text-[10px] uppercase text-[#7a6a58] tracking-widest font-bold mb-1.5">Escudo</div>
-                            {armourShield.shield ? (
-                              <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center">
-                                <div>
-                                  <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.shield.name}</div>
-                                  <div className="text-[10px] text-[#9e9178] mt-0.5 flex flex-wrap gap-1">
-                                    {(armourShield.shield.weaponKeywords || []).map((kw: string, kwi: number) => {
-                                      const kwDesc = getWeaponKeywordDesc(kw);
-                                      return (
-                                        <span key={kwi} title={kwDesc || undefined} className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help">
-                                          • {kw}
-                                        </span>
-                                      );
-                                    })}
+                            {armourShield.shield ? (() => {
+                              const shDef = extractArmourDefenses(armourShield.shield);
+                              return (
+                                <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-center">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <div className="font-serif font-bold text-sm text-[#e2d4b7]">{armourShield.shield.name}</div>
+                                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50">
+                                        ARM -1
+                                      </span>
+                                    </div>
+                                    <div className="text-[10px] text-[#9e9178] mt-1 flex flex-wrap gap-1">
+                                      {shDef.defensiveTraits.map((trait: string, ti: number) => {
+                                        const note = getTacticalRuleNote(trait);
+                                        return (
+                                          <span key={ti} title={note || undefined} className="px-1.5 py-0.2 rounded bg-[#22120b] border border-[#4a2a16] text-[#e2d4b7] font-mono text-[9px] cursor-help">
+                                            🛡️ {trait}
+                                          </span>
+                                        );
+                                      })}
+                                      {(armourShield.shield.weaponKeywords || []).filter((kw: string) => !shDef.defensiveTraits.includes(kw.toUpperCase()) && !kw.includes('INJURY MODIFIER')).map((kw: string, kwi: number) => {
+                                        const kwDesc = getWeaponKeywordDesc(kw);
+                                        return (
+                                          <span key={kwi} title={kwDesc || undefined} className="text-[#b8863c]/80 hover:text-[#b8863c] cursor-help">
+                                            • {kw}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs font-mono text-[#e2d4b7]">{armourShield.shield.cost} {armourShield.shield.currency}</span>
+                                    {isShop && (
+                                      <button 
+                                        onClick={() => handleRemoveItem(armourShield.shield.id)}
+                                        className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
+                                        title="Desequipar escudo"
+                                      >
+                                        ✕
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                  <span className="text-xs font-mono text-[#e2d4b7]">{armourShield.shield.cost} {armourShield.shield.currency}</span>
-                                  {isShop && (
-                                    <button 
-                                      onClick={() => handleRemoveItem(armourShield.shield.id)}
-                                      className="w-6 h-6 rounded bg-[#2a1610] hover:bg-red-950 text-[#9e9178] hover:text-red-400 border border-[#3a2110] flex items-center justify-center transition-all text-xs"
-                                      title="Desequipar escudo"
-                                    >
-                                      ✕
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
+                              );
+                            })() : (
                               isShop && (
                                 selectorOpen === 'shields' ? (
                                   <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
@@ -1054,22 +1127,37 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       <span>Elegir Escudo</span>
                                       <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
                                     </div>
-                                    {getSelectorOptions('shields').map(({ item, cls }: any) => (
-                                      <button
-                                        key={item.id}
-                                        disabled={cls.state !== 'available'}
-                                        onClick={() => handleEquipItem(item.id)}
-                                        className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
-                                          cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
-                                        }`}
-                                      >
-                                        <div className="flex flex-col">
-                                          <span>{item.name}</span>
-                                          {cls.state === 'disabled' && <span className="text-[9px] text-red-400">{cls.reason}</span>}
-                                        </div>
-                                        <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
-                                      </button>
-                                    ))}
+                                    {getSelectorOptions('shields').map(({ item, cls }: any) => {
+                                      const shDef = extractArmourDefenses(item);
+                                      return (
+                                        <button
+                                          key={item.id}
+                                          disabled={cls.state !== 'available'}
+                                          onClick={() => handleEquipItem(item.id)}
+                                          className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
+                                            cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
+                                          }`}
+                                        >
+                                          <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="font-bold">{item.name}</span>
+                                              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/40">
+                                                ARM -1
+                                              </span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1 text-[9px]">
+                                              {shDef.defensiveTraits.map((tr: string, tri: number) => (
+                                                <span key={tri} className="text-[#b8863c] font-mono">
+                                                  🛡️ {tr}
+                                                </span>
+                                              ))}
+                                              {cls.state === 'disabled' && <span className="text-red-400">⚠ {cls.reason}</span>}
+                                            </div>
+                                          </div>
+                                          <span className="font-mono text-[#b8863c] shrink-0 ml-2">{item.cost} {item.currency}</span>
+                                        </button>
+                                      );
+                                    })}
                                   </div>
                                 ) : (
                                   <button

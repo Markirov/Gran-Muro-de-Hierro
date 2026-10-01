@@ -215,5 +215,306 @@ export function getTacticalRuleNote(keyword: string): string | null {
   if (kw === 'FUMBLE') {
     return 'Tirada natural de 2 causa fallo crítico o malfunción (revisión abril 2026).';
   }
+  // Rasgos defensivos y de armaduras
+  if (kw === 'NEGATE FIRE') {
+    return 'Inmune a los efectos del fuego y a la keyword FIRE (no sufre Blood Markers por llamas).';
+  }
+  if (kw === 'NEGATE GAS') {
+    return 'Inmune a los efectos del Gas y las armas con la keyword GAS.';
+  }
+  if (kw === 'NEGATE SHRAPNEL') {
+    return 'Ignora el modificador de herida letal de armas y ataques con metralla (SHRAPNEL).';
+  }
+  if (kw === 'NEGATE FEAR') {
+    return 'Inmune al terror provocado por miniaturas y armas con FEAR.';
+  }
+  if (kw === 'IMPERVIOUS') {
+    return 'Inmune a efectos tóxicos, infecciosos, ponzoñas y corrupción sobrenatural.';
+  }
+  if (kw === 'BULKY') {
+    return 'Requiere peana mín. 40mm (o 50mm). El bonificador de Carga es D3" en vez de D6", y no puede portar Escudo de Trinchera.';
+  }
+  if (kw === 'STANDFAST') {
+    return 'Un resultado de "Down" en la tabla de Injury cuenta como "Minor Hit" (permanece en pie).';
+  }
+  if (kw === 'COVER') {
+    return 'Otorga beneficio de Cobertura (+1 DICE a la supervivencia frente a ataques frontales a distancia).';
+  }
+  if (kw === 'FLAME REPELLENT') {
+    return '-1 INJURY DICE a las tiradas de herida de ataques con FIRE contra el portador, incluso si el arma tiene IGNORE ARMOUR.';
+  }
   return null;
+}
+
+/**
+ * Extrae modificadores de herida y rasgos defensivos de una armadura, escudo o pieza de equipo.
+ */
+export function extractArmourDefenses(item: any): {
+  injuryModifier: string | null;
+  modifierNumber: number;
+  isShield: boolean;
+  defensiveTraits: string[];
+  rules: string[];
+} {
+  if (!item) {
+    return {
+      injuryModifier: null,
+      modifierNumber: 0,
+      isShield: false,
+      defensiveTraits: [],
+      rules: []
+    };
+  }
+
+  const kws: string[] = item.weaponKeywords || [];
+  const rulesList: string[] = [];
+  let modifierNumber = 0;
+  let injuryModifier: string | null = null;
+  const defensiveTraits: string[] = [];
+
+  const nameUpper = (item.name || '').toUpperCase();
+  const isShield = (item.type || '').toLowerCase().includes('shield') || 
+                   (item.category || '').toLowerCase().includes('shield') ||
+                   nameUpper.includes('SHIELD') || 
+                   nameUpper.includes('KALKAN');
+
+  for (const kw of kws) {
+    const match = String(kw).match(/-(\d+)\s+INJURY\s+MODIFIER/i);
+    if (match) {
+      modifierNumber += parseInt(match[1], 10);
+      injuryModifier = `-${match[1]}`;
+    } else if (/^(NEGATE\s+(?:FIRE|GAS|SHRAPNEL|FEAR)|IMPERVIOUS|COVER|STANDFAST|BULKY)$/i.test(kw.trim())) {
+      defensiveTraits.push(kw.trim().toUpperCase());
+    } else {
+      rulesList.push(kw);
+    }
+  }
+
+  // Deducciones por nombre o reglas conocidas
+  if (nameUpper.includes('MACHINE ARMOUR') || nameUpper.includes('TANK PALANQUIN')) {
+    if (!defensiveTraits.includes('BULKY')) defensiveTraits.push('BULKY');
+  }
+  if (nameUpper.includes('TANK PALANQUIN')) {
+    if (!defensiveTraits.includes('STANDFAST')) defensiveTraits.push('STANDFAST');
+  }
+  if (nameUpper.includes('HEAVY BALLISTIC SHIELD') || nameUpper.includes('KALKAN')) {
+    if (!defensiveTraits.includes('COVER')) defensiveTraits.push('COVER');
+  }
+  if (nameUpper.includes('FIRE SHIELD')) {
+    if (!defensiveTraits.includes('NEGATE FIRE')) defensiveTraits.push('NEGATE FIRE');
+    if (!defensiveTraits.includes('FLAME REPELLENT')) defensiveTraits.push('FLAME REPELLENT');
+  }
+  if (nameUpper.includes('ALCHEMIST ARMOUR')) {
+    if (!defensiveTraits.includes('NEGATE FIRE')) defensiveTraits.push('NEGATE FIRE');
+    if (!defensiveTraits.includes('NEGATE GAS')) defensiveTraits.push('NEGATE GAS');
+  }
+  if (nameUpper.includes('TARNISHED ARMOUR')) {
+    if (!defensiveTraits.includes('NEGATE GAS')) defensiveTraits.push('NEGATE GAS');
+  }
+  if (nameUpper.includes('ENGINEER BODY ARMOUR')) {
+    if (!defensiveTraits.includes('NEGATE SHRAPNEL')) defensiveTraits.push('NEGATE SHRAPNEL');
+  }
+  if (nameUpper.includes('INFERNAL IRON ARMOUR') || nameUpper.includes('HOLY ICON')) {
+    if (!defensiveTraits.includes('IMPERVIOUS')) defensiveTraits.push('IMPERVIOUS');
+  }
+
+  return {
+    injuryModifier,
+    modifierNumber,
+    isShield,
+    defensiveTraits: Array.from(new Set(defensiveTraits)),
+    rules: rulesList
+  };
+}
+
+/**
+ * Evalúa las restricciones y efectos de la regla BULKY para una miniatura.
+ */
+export function getBulkyInfo(model: any, unit: any, wb: any, armourItem?: any): {
+  isBulky: boolean;
+  baseSize: string;
+  chargeBonus: string;
+  isCeltic: boolean;
+  note: string;
+} {
+  const isAlba = wb?.variantId === 'alba';
+  const hasMachineArmour = (model?.battlekit || []).includes('machine-armour-na') ||
+    (model?.unitId === 'mech-heavy-inf' && model?.costVariant === 'alt') ||
+    (armourItem && (armourItem.id === 'machine-armour-na' || (armourItem.name || '').toLowerCase().includes('machine armour')));
+
+  const hasTankPalanquin = (model?.battlekit || []).includes('tank-palanquin') ||
+    (armourItem && (armourItem.id === 'tank-palanquin' || (armourItem.name || '').toLowerCase().includes('tank palanquin')));
+
+  const unitHasBulky = (unit?.keywords || []).includes('BULKY');
+
+  if (hasMachineArmour && isAlba) {
+    return {
+      isBulky: true,
+      baseSize: '40mm+',
+      chargeBonus: 'D6"',
+      isCeltic: true,
+      note: 'Celtic Machine Armour: Carga D6" (no D3") y sin penalización de movimiento por Down.'
+    };
+  }
+
+  if (hasTankPalanquin) {
+    return {
+      isBulky: true,
+      baseSize: '50mm',
+      chargeBonus: 'D3"',
+      isCeltic: false,
+      note: 'Bulky: Peana mín. 50mm, Carga D3" en vez de D6", no puede llevar escudo. Standfast: Down cuenta como Minor Hit.'
+    };
+  }
+
+  if (hasMachineArmour) {
+    return {
+      isBulky: true,
+      baseSize: '40mm+',
+      chargeBonus: 'D3"',
+      isCeltic: false,
+      note: 'Bulky: Peana mín. 40mm, Carga D3" en vez de D6". No puede equipar Escudo de Trinchera.'
+    };
+  }
+
+  if (unitHasBulky) {
+    return {
+      isBulky: true,
+      baseSize: '40mm+',
+      chargeBonus: 'D3"',
+      isCeltic: false,
+      note: 'Bulky: Peana mín. 40mm, Carga D3" en vez de D6".'
+    };
+  }
+
+  return {
+    isBulky: false,
+    baseSize: '25mm/32mm',
+    chargeBonus: 'D6"',
+    isCeltic: false,
+    note: ''
+  };
+}
+
+/**
+ * Desglose detallado de la armadura total de una miniatura (innata, corporal y escudo).
+ */
+export function getModelArmourBreakdown(model: any, unit: any, wb: any): {
+  totalArmour: string;
+  totalNumber: number;
+  parts: Array<{ label: string; value: number; name: string }>;
+  summary: string;
+} {
+  const parts: Array<{ label: string; value: number; name: string }> = [];
+
+  // MHI especial
+  if (unit?.id === 'mech-heavy-inf') {
+    const isAlt = model?.costVariant === 'alt';
+    const baseArm = isAlt ? 3 : 2;
+    parts.push({
+      label: isAlt ? 'Machine Armour' : 'Reinforced Armour',
+      value: baseArm,
+      name: isAlt ? 'Machine Armour' : 'Reinforced Armour'
+    });
+  } else {
+    // Innata
+    const rawArmour = unit?.stats?.armour;
+    const innateNum = Math.abs(parseInt(rawArmour) || 0);
+    if (innateNum > 0) {
+      parts.push({
+        label: 'Innata',
+        value: innateNum,
+        name: 'Armadura Base'
+      });
+    }
+  }
+
+  // Items en battlekit y equipamiento
+  const bkEquip = (model?.battlekit || []).map((id: string) => findBattlekitItem(wb?.factionId, id, wb)).filter(Boolean);
+  const permEquip = (unit?.permanentEquipment || []).map((p: string) => {
+    const cleanName = p.split(' (')[0];
+    return findArmouryItemByName(cleanName, wb) || findArmouryItemByName(p, wb) || { name: p };
+  });
+
+  const allItems = [...bkEquip];
+  if (parts.length === 0) {
+    allItems.push(...permEquip);
+  }
+
+  const seen = new Set<string>();
+  allItems.forEach((it: any) => {
+    if (!it?.name || seen.has(it.name)) return;
+    seen.add(it.name);
+
+    if (it.weaponKeywords) {
+      it.weaponKeywords.forEach((kw: string) => {
+        const match = String(kw).match(/-(\d+)\s+INJURY MODIFIER/i);
+        if (match) {
+          const val = parseInt(match[1], 10);
+          const isShield = (it.type || '').toLowerCase().includes('shield') || 
+                           (it.category || '').toLowerCase().includes('shield') || 
+                           (it.name || '').toLowerCase().includes('shield') || 
+                           (it.name || '').toLowerCase().includes('kalkan');
+          parts.push({
+            label: isShield ? 'Escudo' : 'Armadura',
+            value: val,
+            name: it.name
+          });
+        }
+      });
+    }
+  });
+
+  const totalNumber = parts.reduce((acc, p) => acc + p.value, 0);
+  const totalArmour = totalNumber > 0 ? `-${totalNumber}` : '0';
+  const summary = parts.length > 0 
+    ? parts.map(p => `-${p.value} ${p.name}`).join(' + ')
+    : 'Sin armadura';
+
+  return {
+    totalArmour,
+    totalNumber,
+    parts,
+    summary
+  };
+}
+
+/**
+ * Extrae todas las inmunidades defensivas activas de una miniatura (a fuego, gas, metralla, miedo, impervious, etc.).
+ */
+export function getModelDefensiveImmunities(model: any, unit: any, wb: any, extraEquip?: any[]): string[] {
+  const immunities = new Set<string>();
+  
+  // Unit keywords
+  const uKws = (unit?.keywords || []);
+  uKws.forEach((k: string) => {
+    if (/^(NEGATE\s+(?:FIRE|GAS|SHRAPNEL|FEAR)|IMPERVIOUS|STANDFAST|TOUGH)$/i.test(k.trim())) {
+      immunities.add(k.trim().toUpperCase());
+    }
+  });
+
+  // Battlekit & equipment
+  const items = [
+    ...((model?.battlekit || []).map((id: string) => findBattlekitItem(wb?.factionId, id, wb)).filter(Boolean)),
+    ...(extraEquip || [])
+  ];
+
+  items.forEach((it: any) => {
+    const d = extractArmourDefenses(it);
+    d.defensiveTraits.forEach(t => immunities.add(t));
+    if (it.name?.toLowerCase().includes('gas mask') || it.name?.toLowerCase().includes('gas filter')) {
+      immunities.add('NEGATE GAS');
+    }
+    if (it.name?.toLowerCase().includes('combat helmet') || it.name?.toLowerCase().includes('iron capirote') || it.name?.toLowerCase().includes('compound eyes')) {
+      immunities.add('NEGATE SHRAPNEL');
+    }
+    if (it.name?.toLowerCase().includes('iron capirote')) {
+      immunities.add('NEGATE FEAR');
+    }
+    if (it.name?.toLowerCase().includes('infernal brand')) {
+      immunities.add('NEGATE FIRE');
+    }
+  });
+
+  return Array.from(immunities);
 }

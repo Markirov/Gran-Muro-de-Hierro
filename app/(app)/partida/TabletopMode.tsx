@@ -11,7 +11,11 @@ import {
   extractWeaponCombatModifiers, 
   getModelSpecialAmmunition, 
   isAmmunitionApplicableToWeapon, 
-  getTacticalRuleNote 
+  getTacticalRuleNote,
+  extractArmourDefenses,
+  getBulkyInfo,
+  getModelArmourBreakdown,
+  getModelDefensiveImmunities
 } from '../../lib/weapon_helpers';
 
 export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
@@ -165,8 +169,11 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
   
   const stats = effectiveStats(model, unit, wb);
   
-  // Calculate total armor dynamically
+  // Calculate total armor dynamically and breakdowns
   const totalArmour = calculateTotalArmour(model, unit, wb);
+  const armourBreakdown = getModelArmourBreakdown(model, unit, wb);
+  const bulkyInfo = getBulkyInfo(model, unit, wb);
+  const defensiveImmunities = getModelDefensiveImmunities(model, unit, wb, equipment);
   
   // Alba / Celtic Armour: sus armaduras no sufren penalización de movimiento por Down
   const isAlba = wb.variantId === 'alba';
@@ -389,7 +396,7 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
         )}
 
         {/* STATS ROW */}
-        <div className="grid grid-cols-4 gap-2 mb-8">
+        <div className="grid grid-cols-4 gap-2 mb-4">
           {['movement', 'ranged', 'melee', 'armour'].map(k => (
             <div key={k} className="bg-[#1a0f0a] border border-[#3a2110] rounded p-2 md:p-3 text-center flex flex-col items-center justify-center relative overflow-hidden shadow-inner">
               {k === 'movement' && status === 'down' && !ignoresDownMovementPenalty && <div className="absolute inset-0 bg-orange-900/20"></div>}
@@ -405,9 +412,46 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
               {k === 'movement' && status === 'down' && ignoresDownMovementPenalty && (
                 <span className="text-[8px] text-emerald-400/90 font-mono tracking-tight relative z-10">Sin penaliz. Down</span>
               )}
+              {k === 'armour' && totalArmour !== '0' && (
+                <span 
+                  className="text-[8px] text-[#b8863c]/90 font-mono tracking-tight relative z-10 cursor-help"
+                  title={armourBreakdown.summary ? `Desglose: ${armourBreakdown.summary}` : 'Modificador restado a la tirada de herida del atacante'}
+                >
+                  {totalArmour} Herida
+                </span>
+              )}
             </div>
           ))}
         </div>
+
+        {/* BULKY TRAIT BANNER */}
+        {bulkyInfo.isBulky && (
+          <div className="flex items-center justify-between gap-1 text-[11px] text-amber-300 mb-3 px-2.5 py-1.5 rounded bg-[#160d08] border border-amber-900/50">
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold">⚖ BULKY:</span>
+              <span className="text-amber-200/90">{bulkyInfo.note}</span>
+            </div>
+            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-amber-950/60 border border-amber-700/50 shrink-0">
+              Peana {bulkyInfo.baseSize}
+            </span>
+          </div>
+        )}
+
+        {/* DEFENSIVE TRAITS / IMMUNITIES */}
+        {defensiveImmunities.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] mb-6 px-2.5 py-1.5 rounded bg-[#120a06] border border-[#3a2110]">
+            <span className="text-[#7a6a58] uppercase font-bold tracking-wider mr-1">Defensas:</span>
+            {defensiveImmunities.map((imm, idx) => (
+              <span 
+                key={idx} 
+                className="bg-[#2a1610] text-[#e2d4b7] px-1.5 py-0.5 rounded border border-[#5c3a21] font-mono text-[9px] flex items-center gap-1 cursor-help"
+                title={getTacticalRuleNote(imm) || imm}
+              >
+                <span>🛡️</span> {imm}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* MARKERS */}
         <div className="mb-8">
@@ -560,12 +604,28 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                   (eq.rules && eq.rules.some((r: any) => String(r.name).toLowerCase().includes('single use') || String(r.name).toLowerCase().includes('one use')));
                 const isSpent = spent.includes(eq.name);
                 
+                const armDef = extractArmourDefenses(eq);
+                
                 return (
                   <div key={i} className={`border border-[#3a2110] rounded bg-[#0a0503] p-3 shadow-sm ${isSpent ? 'opacity-50' : ''}`}>
                     <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-baseline gap-2">
+                      <div className="flex items-baseline gap-2 flex-wrap">
                         <span className="font-serif font-bold text-[#e2d4b7] text-lg uppercase">{eq.name}</span>
                         <span className="text-[#b8863c] text-[10px] md:text-xs">{eq.type || 'Equipment'}</span>
+                        {armDef.injuryModifier && (
+                          <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50">
+                            ARM {armDef.injuryModifier}
+                          </span>
+                        )}
+                        {armDef.defensiveTraits.map((tr: string, tri: number) => (
+                          <span 
+                            key={tri} 
+                            className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-[#22120b] text-[#e2d4b7] border border-[#4a2a16] cursor-help"
+                            title={getTacticalRuleNote(tr) || undefined}
+                          >
+                            🛡️ {tr}
+                          </span>
+                        ))}
                       </div>
                       {isOneShot && (
                         <button 

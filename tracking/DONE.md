@@ -1,3 +1,27 @@
+- [x] **Enriquecimiento canónico y utilidades de Armaduras, Escudos y Rasgos Defensivos en Roster y Modo Mesa** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Armaduras"):
+  1. **Ampliación de utilidades de defensa en `app/lib/weapon_helpers.ts` y `.js`:**
+     - `extractArmourDefenses`: Extracción y normalización de modificadores de herida (`-1`, `-2`, `-3 INJURY MODIFIER`), detección precisa de escudos (Trench Shield, Heavy Ballistic Shield, Fire Shield, Holy Icon Shield, Kalkan) y rasgos defensivos (`NEGATE FIRE`, `NEGATE GAS`, `NEGATE SHRAPNEL`, `NEGATE FEAR`, `IMPERVIOUS`, `STANDFAST`, `COVER`, `BULKY`, `FLAME REPELLENT`).
+     - `getBulkyInfo`: Evaluación integral de la regla BULKY para Machine Armour, Tank Palanquin y unidades pesadas (peana mínima 40mm/50mm, bonificador de Carga D3" en vez de D6", prohibición de Trench Shield) con soporte completo para la excepción de New Antioch Alba (`Celtic Machine Armour`: Carga D6" y sin penalización de movimiento por Down).
+     - `getModelArmourBreakdown`: Desglose exacto de la procedencia del blindaje total del combatiente (armadura innata de perfil base + armadura corporal adquirida + escudo equipado).
+     - `getModelDefensiveImmunities`: Mapeo exhaustivo de todas las inmunidades defensivas activas de una miniatura procedentes de keywords de unidad, armaduras corporales, escudos, cascos (`Combat Helmet`, `Iron Capirote`, `Compound Eyes`), máscaras de gas y equipo.
+     - `getTacticalRuleNote`: Ampliado con notas canónicas y tácticas para `NEGATE FIRE`, `NEGATE GAS`, `NEGATE SHRAPNEL`, `NEGATE FEAR`, `IMPERVIOUS`, `BULKY`, `STANDFAST`, `COVER` y `FLAME REPELLENT`.
+  2. **Mejoras en Roster (`app/(app)/bandas/roster/ModelDetails.tsx`):**
+     - Cabecera del Slot 3 (Armadura & Escudos) con desglose en tiempo real: e.g. `Total ARM: -3 (-2 Machine Armour + -1 Heavy Ballistic Shield)` y tooltip detallado.
+     - Banner de advertencia y reglas `BULKY` en el perfil del combatiente indicando peana mínima (40mm / 50mm) y bonificador de Carga.
+     - Tarjetas de armadura corporal y escudo enriquecidas con chips de modificador de blindaje (`ARM -X`), badges de rasgos defensivos (`NEGATE FIRE`, `NEGATE GAS`, `IMPERVIOUS`, etc.) y descripciones en hover.
+     - Selectores de Armadura y Escudos en el Bazar con previsualización táctica de modificador de herida (`ARM -1`, `ARM -2`, `ARM -3`) y rasgos defensivos antes de adquirir la pieza.
+  3. **Mejoras en Modo Mesa (`app/(app)/partida/TabletopMode.tsx`):**
+     - Ficha de atributo `Arm`: indicador directo del modificador de herida que resta al atacante (`-X Herida`) con desglose en tooltip.
+     - Banner visible de `BULKY` destacando la reducción de carga (`Carga +D3" · Peana mín. 40mm/50mm`) o la excepción de Alba.
+     - Cintillo de "Defensas" destacando de forma instantánea todas las inmunidades activas del combatiente (`🛡️ NEGATE FIRE`, `🛡️ NEGATE GAS`, `🛡️ NEGATE SHRAPNEL`, etc.), facilitando la toma de decisiones defensivas sin consultar tablas externas.
+     - Tarjetas de equipo enriquecidas con chips `ARM -X` y badges defensivos en armaduras, escudos y cascos.
+  4. **Verificación y suite automatizada:**
+     - Nueva suite de tests `tests/test_armour_features.js` (37 ✓ sin fallos).
+     - `test_react_tabletop_keywords.js` (12 ✓ sin fallos).
+     - `test_weapon_features.js` (23 ✓ sin fallos).
+     - `verify.sh`: 188 suites · 3878 verificaciones · 0 fallos.
+     - `npm run lint` (0 warnings) y `npm run build` con Turbopack y TypeScript 100% exitosos.
+
 - [x] **Enriquecimiento táctico y canónico de Armas en Roster y Modo Mesa** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Vamos a empezar con las armas"):
   1. **Módulo de utilidades de armamento (`app/lib/weapon_helpers.ts` / `.js`):**
      - Normalización y saneamiento de alcance `formatRange` (eliminación de dobles comillas erróneas `24""` -> `24"`).
