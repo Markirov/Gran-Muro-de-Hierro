@@ -32,6 +32,13 @@ export default function BandasPage() {
 
   useEffect(() => {
     refreshBandsList();
+    const handleSync = () => refreshBandsList();
+    window.addEventListener('warband-forge-synced', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('warband-forge-synced', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
   }, []);
 
   const getBandFactionOrVariant = (band: any) => {

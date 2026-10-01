@@ -22,6 +22,13 @@ export default function CampanaPage() {
 
   useEffect(() => {
     loadData();
+    const handleSync = () => loadData();
+    window.addEventListener('warband-forge-synced', handleSync);
+    window.addEventListener('storage', handleSync);
+    return () => {
+      window.removeEventListener('warband-forge-synced', handleSync);
+      window.removeEventListener('storage', handleSync);
+    };
   }, []);
 
   const createCampaign = () => {

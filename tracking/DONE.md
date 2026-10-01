@@ -1,3 +1,25 @@
+- [x] **Sincronización bidireccional y persistencia de bandas y campañas en Firestore (Next.js)** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Opción 2: Sincronización en la nube"):
+  1. **Motor de Sincronización LWW con Tombstones (`app/lib/sync_engine.ts` y `.js`):**
+     - Resolución de conflictos Last-Write-Wins (LWW) comparando marcas temporales `updatedAt` / `cloudUpdatedAt` tanto a nivel de bandas como de campañas.
+     - Detección y gestión de marcas de borrado (tombstones) mediante `DELETED_MARKS_KEY = 'warband-forge-deleted'` y persistencia en Firestore bajo `deleted: { warbands: {}, campaigns: {} }`, garantizando que una entidad borrada en un dispositivo no reviva al abrir otro dispositivo donde estuviera en caché local.
+     - Detección de reactivación/recreación posterior a la fecha de borrado para no bloquear futuras bandas con mismo ID.
+     - Sanitización estricta (`sanitizeForFirestore`) para prevenir excepciones por valores `undefined` en llamadas al SDK de Firestore.
+     - Reconstrucción atómica y automática de índices locales (`warband-forge-index` y `warband-forge-v1:campaign-index`).
+  2. **Servicios de Firebase y Almacenamiento React (`app/lib/firebase.ts` y `app/lib/storage.ts`):**
+     - `syncUserCloudAndLocal(uid)`: Orquesta la lectura local, descarga de nube, cruce bidireccional, guardado en localStorage, subida integral a Firestore y emisión del evento del navegador `'warband-forge-synced'`.
+     - `saveWarbandLocallyAndCloud` y `saveCampaignLocallyAndCloud`: Sanean datos, guardan en localStorage, actualizan índices y suben silenciosamente a Firestore si hay usuario autenticado.
+     - `deleteWarbandLocallyAndCloud` y `deleteCampaignLocallyAndCloud`: Eliminan del almacenamiento local, registran marca de borrado y aplican `deleteField()` en Firestore junto con la marca en `deleted`.
+  3. **Componente Global de Autenticación y Sync (`app/components/AuthSyncButton.tsx`):**
+     - Integrado en la cabecera transversal de la app (`app/(app)/layout.tsx`) para estar siempre disponible en `/bandas`, `/campana`, `/lab`, `/partida` y `/bandas/roster`, así como en la página principal (`app/page.tsx`).
+     - Muestra avatar/nombre del usuario, estado de sincronización (`🔄 Sincronizando...`, `☁ Sync` / `Sincronizado a las HH:MM`, `⚠️ Reintentar`) y botón de desconexión.
+     - Conexión con un solo clic vía Google (`loginWithGoogle`) que dispara inmediatamente la sincronización bidireccional en segundo plano.
+  4. **Reactividad en Vistas (`BandasPage` y `CampanaPage`):**
+     - Listeners activos para `'warband-forge-synced'` y `'storage'` que refrescan al instante el listado de bandas y campañas sin necesidad de recargar la página.
+  5. **Verificación y suite automatizada:**
+     - Nueva suite de tests `tests/test_next_firebase_sync.js` (32 ✓ sin fallos).
+     - `verify.sh`: 190 suites · 3942 verificaciones · 0 fallos.
+     - `npm run lint` (0 warnings) y `npm run build` con Turbopack y TypeScript 100% exitosos.
+
 - [x] **Enriquecimiento canónico y utilidades de Equipo, Reliquias y Herramientas Tácticas en Roster y Modo Mesa** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Equipo"):
   1. **Motor de extracción de equipo en `app/lib/weapon_helpers.ts` y `.js` (`extractEquipmentDetails`):**
      - Detección sistemática de acciones tácticas concedidas: `Treat ACTION` (Medi-kit: Risky Success Roll 1" para curar sangre o levantar aliados Down), `Spotter ACTION` (Binoculars: anula Cover a disparos aliados), `Entrench ACTION` (Shovel: colocar trinchera de cobertura y uso en CaC con STRONG), `Rallying Horn ACTION` (Musical Instrument: +1 DICE a Morale Checks a 8"), `Place Altar ACTION` (Golden Calf Altar: distorsión de terreno a 3") y `Combat Deployment ACTION` (Anq Guard: despliegue de barricada impasable).

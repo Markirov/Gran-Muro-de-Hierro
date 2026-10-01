@@ -1,42 +1,63 @@
-import { auth, saveWarbandToCloud, saveCampaignToCloud, db } from './firebase';
-import { doc, setDoc, deleteField } from 'firebase/firestore';
+import {
+  auth,
+  saveWarbandToCloud,
+  deleteWarbandFromCloud,
+  saveCampaignToCloud,
+  deleteCampaignFromCloud,
+  syncUserCloudAndLocal,
+  loginWithGoogle,
+  logout
+} from './firebase';
+import {
+  sanitizeForFirestore,
+  recordDeletedMarkInStorage,
+  loadDeletedMarksFromStorage,
+  DELETED_MARKS_KEY
+} from './sync_engine';
 
-function sanitizeData(obj: any): any {
-  return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
-}
+export { syncUserCloudAndLocal, loginWithGoogle, logout };
 
 export async function saveWarbandLocallyAndCloud(warbandId: string, warbandData: any) {
-  // Update updatedAt
+  // 1. Actualizar updatedAt y sanear
   warbandData.updatedAt = new Date().toISOString();
-  const cleanData = sanitizeData(warbandData);
+  const cleanData = sanitizeForFirestore(warbandData);
   
-  // 1. Guardar en LocalStorage
-  localStorage.setItem(`warband-forge-v1:${warbandId}`, JSON.stringify(cleanData));
-  
-  // 2. Actualizar el Index Local
-  try {
-    const rawIdx = localStorage.getItem('warband-forge-index');
-    let idx: any[] = rawIdx ? JSON.parse(rawIdx) : [];
-    const existing = idx.find(i => i.id === warbandId);
-    const entry = {
-      id: warbandId,
-      name: cleanData.name,
-      cost: cleanData.budgetTotal ?? cleanData.cost ?? 0,
-      factionId: cleanData.factionId,
-      models: Array.isArray(cleanData.models) ? cleanData.models.length : 0,
-      updatedAt: cleanData.updatedAt
-    };
-    if (existing) {
-      Object.assign(existing, entry);
-    } else {
-      idx.push(entry);
+  // 2. Guardar en LocalStorage
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(`warband-forge-v1:${warbandId}`, JSON.stringify(cleanData));
+    
+    // Si tenía marca de borrado, la limpiamos al haberse editado/guardado de nuevo
+    const marks = loadDeletedMarksFromStorage();
+    if (marks.warbands[warbandId]) {
+      delete marks.warbands[warbandId];
+      localStorage.setItem(DELETED_MARKS_KEY, JSON.stringify(marks));
     }
-    localStorage.setItem('warband-forge-index', JSON.stringify(idx));
-  } catch (e) {
-    console.error("Index save error", e);
+
+    // 3. Actualizar el índice local
+    try {
+      const rawIdx = localStorage.getItem('warband-forge-index');
+      let idx: any[] = rawIdx ? JSON.parse(rawIdx) : [];
+      const existing = idx.find(i => i.id === warbandId);
+      const entry = {
+        id: warbandId,
+        name: cleanData.name || 'Sin nombre',
+        cost: cleanData.budgetTotal ?? cleanData.cost ?? 0,
+        factionId: cleanData.factionId,
+        models: Array.isArray(cleanData.models) ? cleanData.models.length : 0,
+        updatedAt: cleanData.updatedAt
+      };
+      if (existing) {
+        Object.assign(existing, entry);
+      } else {
+        idx.push(entry);
+      }
+      localStorage.setItem('warband-forge-index', JSON.stringify(idx));
+    } catch (e) {
+      console.error("Index save error", e);
+    }
   }
 
-  // 3. Guardar en Firebase (si está logueado)
+  // 4. Guardar en Firebase (si está autenticado)
   const user = auth.currentUser;
   if (user) {
     await saveWarbandToCloud(user.uid, warbandId, cleanData);
@@ -44,70 +65,89 @@ export async function saveWarbandLocallyAndCloud(warbandId: string, warbandData:
 }
 
 export async function deleteWarbandLocallyAndCloud(warbandId: string) {
-  // 1. Borrar de LocalStorage
-  localStorage.removeItem(`warband-forge-v1:${warbandId}`);
-  
-  // 2. Actualizar el Index Local
-  try {
-    const rawIdx = localStorage.getItem('warband-forge-index');
-    let idx = rawIdx ? JSON.parse(rawIdx) : [];
-    idx = idx.filter((i: any) => i.id !== warbandId);
-    localStorage.setItem('warband-forge-index', JSON.stringify(idx));
-  } catch (e) {
-    console.error("Index save error", e);
+  // 1. Registrar marca de borrado (tombstone) para sincronización entre dispositivos
+  recordDeletedMarkInStorage('warbands', warbandId);
+
+  // 2. Borrar de LocalStorage
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(`warband-forge-v1:${warbandId}`);
+    
+    // 3. Actualizar el índice local
+    try {
+      const rawIdx = localStorage.getItem('warband-forge-index');
+      let idx = rawIdx ? JSON.parse(rawIdx) : [];
+      idx = idx.filter((i: any) => i.id !== warbandId);
+      localStorage.setItem('warband-forge-index', JSON.stringify(idx));
+    } catch (e) {
+      console.error("Index save error", e);
+    }
   }
 
-  // 3. Borrar de Firebase (si está logueado)
+  // 4. Borrar de Firebase (si está autenticado)
   const user = auth.currentUser;
   if (user) {
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, {
-        warbands: {
-          [warbandId]: deleteField()
-        }
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error deleting warband from cloud:", error);
-    }
+    await deleteWarbandFromCloud(user.uid, warbandId);
   }
 }
 
 export async function saveCampaignLocallyAndCloud(campaignId: string, campaignData: any) {
   campaignData.updatedAt = new Date().toISOString();
-  localStorage.setItem(`warband-forge-v1:c_${campaignId}`, JSON.stringify(campaignData));
-  try {
-    const rawIdx = localStorage.getItem('warband-forge-v1:campaign-index');
-    let idx: any[] = rawIdx ? JSON.parse(rawIdx) : [];
-    const existing = idx.find(i => i.id === campaignId);
-    if (existing) {
-      Object.assign(existing, { name: campaignData.name, warbands: campaignData.warbandIds?.length || 0, battles: campaignData.battles?.length || 0, updatedAt: campaignData.updatedAt });
-    } else {
-      idx.push({ id: campaignId, name: campaignData.name, warbands: campaignData.warbandIds?.length || 0, battles: campaignData.battles?.length || 0, updatedAt: campaignData.updatedAt });
+  const cleanData = sanitizeForFirestore(campaignData);
+
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(`warband-forge-v1:c_${campaignId}`, JSON.stringify(cleanData));
+
+    const marks = loadDeletedMarksFromStorage();
+    if (marks.campaigns[campaignId]) {
+      delete marks.campaigns[campaignId];
+      localStorage.setItem(DELETED_MARKS_KEY, JSON.stringify(marks));
     }
-    localStorage.setItem('warband-forge-v1:campaign-index', JSON.stringify(idx));
-  } catch (e) { console.error(e); }
+
+    try {
+      const rawIdx = localStorage.getItem('warband-forge-v1:campaign-index');
+      let idx: any[] = rawIdx ? JSON.parse(rawIdx) : [];
+      const existing = idx.find(i => i.id === campaignId);
+      const entry = {
+        id: campaignId,
+        name: cleanData.name || 'Sin nombre',
+        warbands: cleanData.warbandIds?.length || 0,
+        battles: cleanData.battles?.length || 0,
+        updatedAt: cleanData.updatedAt
+      };
+      if (existing) {
+        Object.assign(existing, entry);
+      } else {
+        idx.push(entry);
+      }
+      localStorage.setItem('warband-forge-v1:campaign-index', JSON.stringify(idx));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const user = auth.currentUser;
   if (user) {
-    await saveCampaignToCloud(user.uid, campaignId, campaignData);
+    await saveCampaignToCloud(user.uid, campaignId, cleanData);
   }
 }
 
 export async function deleteCampaignLocallyAndCloud(campaignId: string) {
-  localStorage.removeItem(`warband-forge-v1:c_${campaignId}`);
-  try {
-    const rawIdx = localStorage.getItem('warband-forge-v1:campaign-index');
-    let idx = rawIdx ? JSON.parse(rawIdx) : [];
-    idx = idx.filter((i: any) => i.id !== campaignId);
-    localStorage.setItem('warband-forge-v1:campaign-index', JSON.stringify(idx));
-  } catch (e) { console.error(e); }
+  recordDeletedMarkInStorage('campaigns', campaignId);
+
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem(`warband-forge-v1:c_${campaignId}`);
+    try {
+      const rawIdx = localStorage.getItem('warband-forge-v1:campaign-index');
+      let idx = rawIdx ? JSON.parse(rawIdx) : [];
+      idx = idx.filter((i: any) => i.id !== campaignId);
+      localStorage.setItem('warband-forge-v1:campaign-index', JSON.stringify(idx));
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
   const user = auth.currentUser;
   if (user) {
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { campaigns: { [campaignId]: deleteField() } }, { merge: true });
-    } catch (error) {
-      console.error(error);
-    }
+    await deleteCampaignFromCloud(user.uid, campaignId);
   }
 }
