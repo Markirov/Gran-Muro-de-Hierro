@@ -1167,7 +1167,7 @@ export const DATA = {
         { id:'gun-battery-iw', name:'Gun Battery (Grand Cannon)', tier:'troops', limit:'0-2', cost:60, currency:'👑',
           variantOnly:'iron-wall-def',
           stats:{ movement:'0"/Stationary', ranged:'+0 DICE', melee:'-1 DICE', armour:'0', base:'50mm' },
-          keywords:['SULTANATE','ARTIFICIAL','IMMOBILE'],
+          keywords:['SULTANATE','ARTIFICIAL'],
           battlekit:['grand-cannon-iw'],
           equipmentLocked:true,
           abilities:['Stationary Gun Battery'],

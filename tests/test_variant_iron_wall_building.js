@@ -67,7 +67,7 @@ ok(state(BASE, 'brazen-bull', 'grand-cannon-iw') === 'hidden', 'Sin variante: no
 
 const gb = X.getUnit(IS, 'gun-battery-iw');
 ok(gb && gb.cost === 60 && gb.variantOnly === 'iron-wall-def', 'Gun Battery: 60 👑, solo Iron Wall');
-ok(gb && gb.keywords.includes('IMMOBILE') && gb.keywords.includes('ARTIFICIAL'), 'Gun Battery: IMMOBILE y ARTIFICIAL');
+ok(gb && gb.keywords.includes('SULTANATE') && gb.keywords.includes('ARTIFICIAL'), 'Gun Battery: SULTANATE y ARTIFICIAL');
 
 // Límite combinado 0-2 Grand Cannons entre Brazen Bulls y Gun Batteries
 const wbb1 = { factionId: IS, variantId: 'iron-wall-def', models: [{ uid: 'b1', unitId: 'brazen-bull', battlekit: ['grand-cannon-iw'] }] };
