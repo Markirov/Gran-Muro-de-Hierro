@@ -1,3 +1,22 @@
+- [x] **Pipeline Generador y Sincronizador Automatizado Tc_Tc_*.md → app/data/*.ts** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Opción 1: Pipeline Generador Automatizado"):
+  1. **Plan de Implementación Aprobado:**
+     - Creado y ejecutado `tracking/plans/PLAN_2026-10-01_generador_md_a_ts.md` estructurado en 4 fases (Parsers, Comparador/Sincronizador, Integración en Pipeline y Verificación).
+  2. **Motor de Parsers de Compendios Maestros (`scripts/sync_from_tc_master.py`):**
+     - Parsers dedicados para los 6 compendios `Tc_Tc_*.md` (`parse_weapons`, `parse_armours`, `parse_equipment`, `parse_units`), extrayendo 140 armas, 32 armaduras/escudos, 95 objetos de equipo/munición y 77 perfiles de miniaturas.
+     - Extracción precisa de costes monetarios (👑 Ducados y ☼ Gloria), monedas, modificadores y rangos.
+  3. **Generador y Traductor de Alias (`scripts/generate_id_aliases.py`):**
+     - Construcción automática de `app/data/id_aliases.ts` e `id_aliases.js` con 442 mapeos directos y 439 inversos.
+     - Funciones exportadas de resolución `toStableId(appId)`, `toAppId(stableId)` y `areIdsEquivalent(idA, idB)`.
+  4. **Modos de Operación (`--check` y `--write`):**
+     - Modo `--check`: compara exhaustivamente 333 items y miniaturas entre compendios y `01_trench_crusade_game_data.ts`. Certificado: **333 coincidencias, 0 diferencias (cero derivas)**.
+     - Modo `--write`: actualiza costes/monedas en `app/data/01_trench_crusade_game_data.ts`, regenera alias y compila a Vanilla JS con `build-legacy-data.js`.
+  5. **Integración con Validador Canónico (`scripts/verify_tc_alignment.py`):**
+     - Cableado de `sync_from_tc_master.py --check` dentro de `scripts/verify_tc_alignment.py` (12 comprobaciones en verde, validando compendios, costes de mejoras, arquetipos de Lab, perfiles estructurados, alias y paridad de datos).
+  6. **Calidad y Verificación:**
+     - 192 suites de test ejecutadas con 3973 verficaciones y 0 fallos.
+     - TypeScript y ESLint al 100% limpios (`npm run lint` 0 warnings, `npx tsc --noEmit` 0 errors).
+     - Build de producción con Next.js Turbopack (`npm run build`) validado.
+
 - [x] **Alineación de datos y motor con compendios maestros Tc_Tc_*.md** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos y auditoría `Informe-Warband-Forge-revision-datos.md`):
   1. **Auditoría y Resolución de Discrepancias P0/P1:**
      - **Costes de mejoras de facción corregidos a valores canónicos:** en `app/lib/battlekit_deltas.ts` y `.js`, Sniper Rifle (+35 👑), Heavy Flamethrower (+55 👑), Anti-Tank Hammer (+35 👑), Reinforced Armour (+40 👑) y Trench Mole (+10 👑) alineados con `Tc_Tc_Armas.md`, `Tc_Tc_Armaduras_Y_Escudos.md` y `Tc_Tc_Equipo_Y_Municion.md`.

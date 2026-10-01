@@ -33,8 +33,10 @@ for aid, aname in item_matches:
                 matches.append((tid, fname))
     if matches:
         best = None
-        for suf in ['-na', '-sult', '-is', '-hl', '-bg', '-tp', '-court', '-fid', '-iw', '-wis']:
-            target_suf = '-sult' if suf == '-is' else suf
+        for suf in ['-na', '-sult', '-is', '-hl', '-bg', '-tp', '-court', '-co', '-fid', '-iw', '-wis']:
+            if suf == '-is': target_suf = '-sult'
+            elif suf == '-co': target_suf = '-court'
+            else: target_suf = suf
             if aid.endswith(suf):
                 for tid, fn in matches:
                     if tid.endswith(target_suf):
@@ -48,11 +50,12 @@ for aid, aname in item_matches:
 app_to_stable['assassin-dagger-is'] = 'assassin-s-dagger-sult'
 app_to_stable['beelz-axe-bg'] = 'beelzebub-s-axe-bg'
 app_to_stable['punt-gun-anchor'] = 'punt-gun-anchorite-tp'
-app_to_stable['heavy-flame-anchor'] = 'heavy-flamethrower-anchorite-tp'
-app_to_stable['anti-mat-rifle-anchor'] = 'anti-materiel-rifle-anchorite-tp'
-app_to_stable['gas-censer-anchor'] = 'gas-censer-anchorite-tp'
-app_to_stable['trench-mortar-anchor'] = 'trench-mortar-anchorite-tp'
-app_to_stable['autocannon-anchor'] = 'autocannon-anchorite-tp'
+app_to_stable['heavy-flame-anchor'] = 'heavy-flamethrower-tp'
+app_to_stable['anti-mat-rifle-anchor'] = 'anti-materiel-rifle-tp'
+app_to_stable['gas-censer-anchor'] = 'gas-censer-tp'
+app_to_stable['trench-mortar-anchor'] = 'trench-mortar-tp'
+app_to_stable['autocannon-anchor'] = 'autocannon-tp'
+app_to_stable['hellblade-co'] = 'hellblade-court'
 
 stable_to_app = {}
 for aid, sid in app_to_stable.items():

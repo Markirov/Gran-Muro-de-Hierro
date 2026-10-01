@@ -6,19 +6,21 @@
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
-- **Alineación total con compendios maestros `Tc_Tc_*.md` (SSOT):**
+- **Pipeline Generador y Sincronizador Automatizado `Tc_Tc_*.md` (SSOT) → `app/data/*.ts` activo:**
+  - `scripts/sync_from_tc_master.py` con modo `--check` (CI/gate) y `--write` (sincronización automática de costes y atributos a `01_trench_crusade_game_data.ts` y compilación Vanilla JS).
+  - Paridad certificada: **333 items y miniaturas contrastados, 0 derivas**.
+  - Diccionario de equivalencias bidireccionales `id_aliases.ts` e `id_aliases.js` (442 directos / 439 inversos) y script canónico `verify_tc_alignment.py` (12 comprobaciones en verde).
   - Compendios maestros auditados con `validador.py`: 6 archivos, 756 IDs estables, 0 errores en las 7 categorías de validación.
   - Corrección de desvíos en `FACTION_UPGRADES` (`battlekit_deltas.ts` y `.js`): Sniper Rifle (35 👑), Heavy Flamethrower (55 👑), Anti-Tank Hammer (35 👑), Reinforced Armour (40 👑), Trench Mole (10 👑).
   - Bug de sugerencias de la Corte resuelto (`court-serpent` y alias legacy soportados).
   - Arquetipos de relleno en el Lab (`loadout_lab.ts`): Fly Thralls (28 👑) y Yoke Fiend (30 👑) alineados a datos canónicos.
   - Autocannon con `alternateProfiles` estructurado para Full Auto (48", +1 INJURY DICE, AUTOMATIC 5, HEAVY, RELOAD, RISKY).
   - Documentada la Gun Battery (`gun-battery-iw`) en `Tc_Tc_Miniaturas.md`.
-  - Diccionario de equivalencias bidireccionales `id_aliases.ts` e `id_aliases.js` (>440 mapeos) y script canónico `verify_tc_alignment.py`.
 - Variantes y Sub-facciones canónicas 1.0.2 activas (Fireteams interactivos, Envious Eyes, hechizos gratuitos, límites dinámicos, Abyssinia "Chewa & ELITE only").
 - Sincronización en la nube bidireccional (Cloud Firestore) activa: motor `sync_engine.ts` y `.js` con resolución LWW y marcas de borrado (tombstones `warband-forge-deleted`).
 - Roster interactivo con 4 Contenedores de Capacidad y tabs temáticos ("Armería"/"Bazar").
 - Modo Mesa interactivo con regla TOUGH activa/gastable y desgloses tácticos completos.
-- Suite de pruebas completa: **192 suites · 3976 verificaciones · 0 fallos** (`verify.sh`).
+- Suite de pruebas completa: **192 suites · 3973 verificaciones · 0 fallos** (`verify.sh`).
 - Build limpio: `npm run lint` (0 warnings), `npx tsc --noEmit` (0 errors), `npm run build` exitoso con Turbopack.
 
 ## Decisiones vigentes (y por qué)

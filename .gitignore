@@ -54,3 +54,9 @@ out/
 *.tsbuildinfo
 npm-debug.log*
 .agents/.update-backup-*
+
+# Archivos comprimidos y cache
+*.7z
+*.zip
+__pycache__/
+**/__pycache__/

@@ -118,6 +118,19 @@ def run_checks():
             checks_passed += 1
             print("  ✓ id_aliases.ts exporta funciones de resolución bidireccional")
 
+    # 6. Verificación exhaustiva de paridad de datos Tc_Tc -> app/data (sync_from_tc_master)
+    print("\n6. Verificando paridad exacta de datos con sync_from_tc_master.py --check...")
+    try:
+        from sync_from_tc_master import run_sync
+        sync_code = run_sync(check_only=True)
+        if sync_code != 0:
+            errors.append("sync_from_tc_master.py --check detectó derivas de datos entre compendios y app/data")
+        else:
+            checks_passed += 1
+            print("  ✓ sync_from_tc_master.py confirmó 0 derivas en armas, armaduras, equipo y miniaturas")
+    except Exception as e:
+        errors.append(f"Error ejecutando sync_from_tc_master: {e}")
+
     print("\n=======================================================")
     if errors:
         print(f"RESULTADO: {len(errors)} ERRORES:")
