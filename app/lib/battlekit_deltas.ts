@@ -1786,16 +1786,16 @@ export function suggestFactionUpgrades_lab(wb, coverage) {
   const FACTION_UPGRADES = {
     'new-antioch': {
       antiArmour: [
-        { name: 'Anti-Tank Hammer', cost: '+25 👑', kw: 'IGNORE ARMOUR + CRITICAL melee', role: 'Shocktrooper' },
+        { name: 'Anti-Tank Hammer', cost: '+35 👑', kw: 'IGNORE ARMOUR + CRITICAL melee', role: 'Shocktrooper' },
         { name: 'Frag Grenades', cost: '+10 👑', kw: 'BLAST + SHRAPNEL', role: 'Lieutenant o Yeoman' },
       ],
       antiHorde: [
-        { name: 'Heavy Flamethrower', cost: '+50 👑', kw: 'FLAMETHROWER + IGNORE ARMOUR + HEAVY', role: 'Shocktrooper o MHI' },
+        { name: 'Heavy Flamethrower', cost: '+55 👑', kw: 'FLAMETHROWER + IGNORE ARMOUR + HEAVY', role: 'Shocktrooper o MHI' },
         { name: 'Frag Grenades', cost: '+10 👑', kw: 'BLAST', role: 'cualquier infantería' },
       ],
       antiElite: [
-        { name: 'Sniper Rifle', cost: '+40 👑', kw: 'CRITICAL + RISKY (Aim ACTION compensa)', role: 'Sniper Priest' },
-        { name: 'Anti-Tank Hammer', cost: '+25 👑', kw: 'IGNORE ARMOUR melee', role: 'Shocktrooper' },
+        { name: 'Sniper Rifle', cost: '+35 👑', kw: 'CRITICAL + RISKY (Aim ACTION compensa)', role: 'Sniper Priest' },
+        { name: 'Anti-Tank Hammer', cost: '+35 👑', kw: 'IGNORE ARMOUR melee', role: 'Shocktrooper' },
       ],
       antiFear: [
         { name: 'Trench Cleric', cost: '60 👑', kw: 'NEGATE FEAR aura (Onward Christian Soldiers!) + Laying on of Hands', role: 'mandatorio en Papal States variant' },
@@ -1803,10 +1803,10 @@ export function suggestFactionUpgrades_lab(wb, coverage) {
       ],
       resilience: [
         { name: 'Mechanized Heavy Infantry (MHI)', cost: '85-95 👑', kw: 'TOUGH + Reinforced/Machine Armour (-2/-3 INJURY MOD)', role: 'tank' },
-        { name: 'Reinforced Armour', cost: '+15 👑', kw: '-1 INJURY MODIFIER', role: 'cualquier infantería' },
+        { name: 'Reinforced Armour', cost: '+40 👑', kw: '-1 INJURY MODIFIER', role: 'cualquier infantería' },
       ],
       mobility: [
-        { name: 'Trench Mole', cost: '+20 👑', kw: 'INFILTRATOR (deploy a 8" del rival)', role: 'cualquier infantería' },
+        { name: 'Trench Mole', cost: '+10 👑', kw: 'INFILTRATOR (deploy a 8" del rival)', role: 'cualquier infantería' },
       ],
     },
     'trench-pilgrims': {
@@ -1849,7 +1849,7 @@ export function suggestFactionUpgrades_lab(wb, coverage) {
         { name: 'Yüzbaşı', cost: '70 👑', kw: 'NEGATE FEAR (Iron Sultanate trait)', role: 'líder' },
       ],
       resilience: [
-        { name: 'Reinforced Armour', cost: '+15 👑', kw: '-1 INJURY MODIFIER', role: 'cualquier modelo' },
+        { name: 'Reinforced Armour', cost: '+40 👑', kw: '-1 INJURY MODIFIER', role: 'cualquier modelo' },
         { name: 'Janissary', cost: '55 👑', kw: 'STRONG + NEGATE HEAVY', role: 'tank ranged' },
       ],
       mobility: [
@@ -1859,7 +1859,7 @@ export function suggestFactionUpgrades_lab(wb, coverage) {
     'heretic-legions': {
       antiArmour: [
         { name: 'Brazen Bull (Flamethrower)', cost: '~80 👑', kw: 'FLAMETHROWER + IGNORE ARMOUR + HEAVY', role: 'shock cannon' },
-        { name: 'Anti-Tank Hammer', cost: '+25 👑', kw: 'IGNORE ARMOUR melee', role: 'Anointed Heavy Infantry' },
+        { name: 'Anti-Tank Hammer', cost: '+35 👑', kw: 'IGNORE ARMOUR melee', role: 'Anointed Heavy Infantry' },
       ],
       antiHorde: [
         { name: 'Brazen Bull', cost: '~80 👑', kw: 'FLAMETHROWER (cono ignora cover)', role: 'AoE' },
@@ -1903,7 +1903,7 @@ export function suggestFactionUpgrades_lab(wb, coverage) {
         { name: 'Heralds of Beelzebub', cost: '~70 👑', kw: 'FLYING', role: 'aerial' },
       ],
     },
-    'court-of-the-seven-headed-serpent': {
+    'court-serpent': {
       antiArmour: [
         { name: 'Burning Inferno spell (Sorcerer)', cost: 'Goetic Power', kw: 'BLAST + IGNORE ARMOUR ranged', role: 'mago' },
         { name: 'Beelzebub\'s Axe', cost: 'Glory Item', kw: 'CRITICAL + IGNORE ARMOUR melee', role: 'apex weapon' },
@@ -1937,7 +1937,8 @@ export function suggestFactionUpgrades_lab(wb, coverage) {
     mobility:   'Movilidad',
   };
 
-  const factionUpgrades = FACTION_UPGRADES[wb.factionId] || null;
+  const facId = wb.factionId === 'court-of-the-seven-headed-serpent' ? 'court-serpent' : wb.factionId;
+  const factionUpgrades = FACTION_UPGRADES[facId] || FACTION_UPGRADES[wb.factionId] || null;
   const insights = [];
 
   // Generate suggestions for low-coverage dimensions

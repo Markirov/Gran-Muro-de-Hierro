@@ -719,6 +719,9 @@ export const DATA = {
             type:'1-Handed', range:'36\"', weaponKeywords:['+1 INJURY DICE','CRITICAL','HEAVY','IGNORE ARMOUR'] },
           { id:'autocannon-anchor',  name:'Autocannon',         cost:55, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'48"', weaponKeywords:['+1 INJURY DICE','AUTOMATIC 3','HEAVY'],
+            alternateProfiles: [
+              { name:'Full Auto', type:'1-Handed', range:'48"', weaponKeywords:['+1 INJURY DICE','AUTOMATIC 5','HEAVY','RELOAD','RISKY'] }
+            ],
             note:'2-Handed en su perfil, pero las armas a distancia del Anchorite cuentan como 1-Handed cuando las usa el Anchorite Shrine (sustituyen la Catherine Wheel). Full Auto: en cada Shoot ACTION eliges el perfil Bursts (arriba) o Full Auto: +1 INJURY DICE, AUTOMATIC 5, HEAVY, RELOAD, RISKY.' },
           { id:'gas-censer-anchor',  name:'Gas Censer',         cost:50, currency:'👑', variantOnly:'st-methodius', restriction:'Anchorite Shrine only',
             type:'1-Handed', range:'6"', weaponKeywords:['GAS','IGNORE ARMOUR','RELOAD','Cloud of Gas'] },

@@ -6,20 +6,23 @@
 
 ## Estado actual
 - App Next.js 16 (App Router + Turbopack) desplegada en Firebase Hosting (`https://murodehierrodelsultanato.web.app`).
-- Variantes y Sub-facciones canónicas 1.0.2 implementadas y verificadas:
-  - **Fireteams interactivos:** Asignación en `ModelDetails.tsx` (New Antioch: Fireteams 1-2; Prussia: 1-3; Fida'i: Killing Squad; Red Brigade: Dog Fireteam), badges en `RosterList.tsx` y activación conjunta con navegación de miembros en `TabletopMode.tsx` (`effectiveKeywords` integra `FIRETEAM`).
-  - **Envious Eyes (Sin of Envy):** Acceso en el Bazar a armerías de New Antioch, Trench Pilgrims, Iron Sultanate, Heretic Legions y Black Grail con badges identificativos `[Envious Eyes: Facción]`.
-  - **Hechizos gratuitos:** *Sorcerer* con `Blessing of the Serpent Moon ACTION` y *Hell Knights* con `Blood Magic` en habilidades fijas de `01_trench_crusade_game_data.ts` y `02_ability_library.ts`.
-  - **Límites dinámicos de banda:** Artillery Witch Battery (0-1 base, 0-2 si valor $\ge 1.000$ 👑; tope de 1 en Naval Raiders); Cradle Thralls exentos de Maximum Field Strength (`exemptFromFieldStrength: true`).
-  - **Gun Battery estacionaria:** `gun-battery-iw` (Grand Cannon emplazado, 60 👑, Troops, IMMOBILE, ARTIFICIAL) con límite cruzado 0-2 Grand Cannons entre Brazen Bulls y Gun Batteries.
-  - **Abyssinia ("Chewa & ELITE only"):** Unión canónica para Shotel y Anfarro (equipables por cualquier ELITE sin Chewa, y por Shock Troopers con Chewa).
-- Sincronización en la nube bidireccional (Cloud Firestore) activa: motor `sync_engine.ts` y `.js` con resolución LWW y marcas de borrado (tombstones `warband-forge-deleted`) para evitar resurrección entre múltiples dispositivos (`test_next_firebase_sync.js` 32 ✓).
-- Roster interactivo con 4 Contenedores de Capacidad (Melee, Ranged, Armour/Shield, Gear/Grenades) y tabs temáticos ("Armería"/"Bazar").
-- Modo Mesa interactivo con regla TOUGH activa/gastable, desgloses tácticos de armas, armaduras, defensas activas y herramientas.
-- Suite de pruebas completa: 191 suites · 3971 verificaciones · 0 fallos (`verify.sh`).
+- **Alineación total con compendios maestros `Tc_Tc_*.md` (SSOT):**
+  - Compendios maestros auditados con `validador.py`: 6 archivos, 756 IDs estables, 0 errores en las 7 categorías de validación.
+  - Corrección de desvíos en `FACTION_UPGRADES` (`battlekit_deltas.ts` y `.js`): Sniper Rifle (35 👑), Heavy Flamethrower (55 👑), Anti-Tank Hammer (35 👑), Reinforced Armour (40 👑), Trench Mole (10 👑).
+  - Bug de sugerencias de la Corte resuelto (`court-serpent` y alias legacy soportados).
+  - Arquetipos de relleno en el Lab (`loadout_lab.ts`): Fly Thralls (28 👑) y Yoke Fiend (30 👑) alineados a datos canónicos.
+  - Autocannon con `alternateProfiles` estructurado para Full Auto (48", +1 INJURY DICE, AUTOMATIC 5, HEAVY, RELOAD, RISKY).
+  - Documentada la Gun Battery (`gun-battery-iw`) en `Tc_Tc_Miniaturas.md`.
+  - Diccionario de equivalencias bidireccionales `id_aliases.ts` e `id_aliases.js` (>440 mapeos) y script canónico `verify_tc_alignment.py`.
+- Variantes y Sub-facciones canónicas 1.0.2 activas (Fireteams interactivos, Envious Eyes, hechizos gratuitos, límites dinámicos, Abyssinia "Chewa & ELITE only").
+- Sincronización en la nube bidireccional (Cloud Firestore) activa: motor `sync_engine.ts` y `.js` con resolución LWW y marcas de borrado (tombstones `warband-forge-deleted`).
+- Roster interactivo con 4 Contenedores de Capacidad y tabs temáticos ("Armería"/"Bazar").
+- Modo Mesa interactivo con regla TOUGH activa/gastable y desgloses tácticos completos.
+- Suite de pruebas completa: **192 suites · 3976 verificaciones · 0 fallos** (`verify.sh`).
 - Build limpio: `npm run lint` (0 warnings), `npx tsc --noEmit` (0 errors), `npm run build` exitoso con Turbopack.
 
 ## Decisiones vigentes (y por qué)
+- **Compendios `Tc_Tc_*.md` como SSOT:** Los compendios en `herramientas/pdfs-reglamento/` mandan sobre cualquier dato en código; `app/data/id_aliases.ts` garantiza la equivalencia transparente entre IDs estables y la app.
 - **Zero remote push:** GitHub está congelado; solo commits locales y despliegue a Firebase Hosting (`firebase deploy --only hosting`).
 - **Modo Armería vs Bazar:** Armería es exclusivamente lectura de lo equipado; Bazar es el entorno completo de compra y gestión.
 - **Scroll estricto en Roster:** El layout `/bandas/roster` no debe usar `min-h-screen` ni padding exterior que supere `100vh`. La tarjeta `ModelDetails` maneja el scroll exclusivamente en su cuerpo de armería (`flex-1 overflow-y-auto`).

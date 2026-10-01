@@ -4,6 +4,7 @@
 # Sale != 0 si algo falla. Uso: bash verify.sh
 set -uo pipefail
 cd "$(dirname "$0")"
+[ -d "/c/Program Files/nodejs" ] && export PATH="/c/Program Files/nodejs:$PATH"
 
 echo "== verify.sh =="
 

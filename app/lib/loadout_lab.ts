@@ -84,6 +84,7 @@ export function buildModelVariant(unit, items, factionId) {
     'iron-sultanate': 'IRON SULTANATE',
     'heretic-legions': 'HERETIC LEGIONS',
     'black-grail': 'BLACK GRAIL',
+    'court-serpent': 'COURT',
     'court-of-the-seven-headed-serpent': 'COURT',
   };
   if (factionId && factionKwMap[factionId]) {
@@ -982,8 +983,8 @@ export const FILL_MODEL_PROFILES = {
   'trenchPilgrims':   { name: 'Pilgrim',        cost: 30,  meleeDice: 0,  rangedDice: -1, armour: 0,  weapons: [{ name: 'Trench Club', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }] },
   'ironSultanate':    { name: 'Azeb',           cost: 32,  meleeDice: -1, rangedDice: 0,  armour: 0,  weapons: [{ name: 'Jezzail', isRanged: true, range: 18, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }] },
   'hereticLegions':   { name: 'Heretic Trooper', cost: 30, meleeDice: 0,  rangedDice: 0,  armour: 0,  weapons: [{ name: 'Bolt-Action Rifle', isRanged: true, range: 24, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }] },
-  'blackGrail':       { name: 'Thrall',         cost: 15,  meleeDice: -1, rangedDice: -2, armour: 0,  weapons: [{ name: 'Trench Club', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }] },
-  'courtSerpent':     { name: 'Yoke Fiend',     cost: 25,  meleeDice: 0,  rangedDice: -2, armour: 0,  weapons: [{ name: 'Yoke Claws', isRanged: false, range: 0, diceMod: 0, injuryDice: 1, injuryMod: 0, keywords: new Set(['CLEAVE']) }] },
+  'blackGrail':       { name: 'Fly Thralls',    cost: 28,  meleeDice: -1, rangedDice: -2, armour: 0,  weapons: [{ name: 'Trench Club', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }] },
+  'courtSerpent':     { name: 'Yoke Fiend',     cost: 30,  meleeDice: 0,  rangedDice: -2, armour: 0,  weapons: [{ name: 'Yoke Claws', isRanged: false, range: 0, diceMod: 0, injuryDice: 1, injuryMod: 0, keywords: new Set(['CLEAVE']) }] },
 };
 
 /**
@@ -1064,13 +1065,13 @@ export const ENEMY_FACTORIES = {
     { name: 'Lord of Tumours', cost: 130, meleeDice: 2, rangedDice: 0, armour: -1, weapons: [{ name: "Beelzebub's Axe", isRanged: false, range: 0, diceMod: 0, injuryDice: 2, injuryMod: 0, keywords: new Set(['HEAVY','INFECTION MARKERS']) }], keywords: new Set(['LEADER','ELITE','FEAR','STRONG','TOUGH','NEGATE GAS','NEGATE HEAVY']), tough: true, fear: true, bloodMarkers: 0, isDown: false, isOut: false },
     { name: 'Plague Knight',  cost: 60, meleeDice: 1, rangedDice: 0, armour: -1, weapons: [{ name: 'Plague Blade', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set(['INFECTION MARKERS']) }], keywords: new Set(['ELITE','FEAR','STRONG','NEGATE GAS','NEGATE HEAVY']), fear: true, bloodMarkers: 0, isDown: false, isOut: false },
     { name: 'Plague Knight',  cost: 60, meleeDice: 1, rangedDice: 0, armour: -1, weapons: [{ name: 'Plague Blade', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set(['INFECTION MARKERS']) }], keywords: new Set(['ELITE','FEAR','STRONG','NEGATE GAS','NEGATE HEAVY']), fear: true, bloodMarkers: 0, isDown: false, isOut: false },
-    ...Array.from({length: 12}, () => ({ name: 'Thrall', cost: 15, meleeDice: -1, rangedDice: -2, armour: 0, weapons: [{ name: 'Trench Club', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }], keywords: new Set(['FEAR']), fear: true, bloodMarkers: 0, isDown: false, isOut: false })),
+    ...Array.from({length: 12}, () => ({ name: 'Fly Thralls', cost: 28, meleeDice: -1, rangedDice: -2, armour: 0, weapons: [{ name: 'Trench Club', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set() }], keywords: new Set(['FEAR']), fear: true, bloodMarkers: 0, isDown: false, isOut: false })),
   ],
   courtSerpent: () => [
     { name: 'Praetor',        cost: 115, meleeDice: 2, rangedDice: 0, armour: -1, weapons: [{ name: 'Hellblade', isRanged: false, range: 0, diceMod: 0, injuryDice: 1, injuryMod: 0, keywords: new Set(['FIRE']) }], keywords: new Set(['LEADER','ELITE','FEAR','FLYING','STRONG','TOUGH','NEGATE HEAVY']), tough: true, fear: true, bloodMarkers: 0, isDown: false, isOut: false },
     { name: 'Hell Knight',    cost: 100, meleeDice: 2, rangedDice: 0, armour: -2, weapons: [{ name: 'Malebranche Sword', isRanged: false, range: 0, diceMod: 0, injuryDice: 0, injuryMod: 0, keywords: new Set(['DEADLY','HEAVY']) }], keywords: new Set(['ELITE','STRONG','NEGATE HEAVY']), bloodMarkers: 0, isDown: false, isOut: false },
     { name: 'Sorcerer',       cost: 90, meleeDice: 0, rangedDice: 1, armour: 0, weapons: [{ name: 'Hellblade', isRanged: false, range: 0, diceMod: 0, injuryDice: 1, injuryMod: 0, keywords: new Set(['FIRE']) }], keywords: new Set(['ELITE','FEAR','FLYING']), fear: true, bloodMarkers: 0, isDown: false, isOut: false },
-    ...Array.from({length: 10}, () => ({ name: 'Yoke Fiend', cost: 25, meleeDice: 0, rangedDice: -2, armour: 0, weapons: [{ name: 'Yoke Claws', isRanged: false, range: 0, diceMod: 0, injuryDice: 1, injuryMod: 0, keywords: new Set(['CLEAVE']) }], keywords: new Set(), bloodMarkers: 0, isDown: false, isOut: false })),
+    ...Array.from({length: 10}, () => ({ name: 'Yoke Fiend', cost: 30, meleeDice: 0, rangedDice: -2, armour: 0, weapons: [{ name: 'Yoke Claws', isRanged: false, range: 0, diceMod: 0, injuryDice: 1, injuryMod: 0, keywords: new Set(['CLEAVE']) }], keywords: new Set(), bloodMarkers: 0, isDown: false, isOut: false })),
   ],
 };
 

@@ -1,3 +1,20 @@
+- [x] **Alineación de datos y motor con compendios maestros Tc_Tc_*.md** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos y auditoría `Informe-Warband-Forge-revision-datos.md`):
+  1. **Auditoría y Resolución de Discrepancias P0/P1:**
+     - **Costes de mejoras de facción corregidos a valores canónicos:** en `app/lib/battlekit_deltas.ts` y `.js`, Sniper Rifle (+35 👑), Heavy Flamethrower (+55 👑), Anti-Tank Hammer (+35 👑), Reinforced Armour (+40 👑) y Trench Mole (+10 👑) alineados con `Tc_Tc_Armas.md`, `Tc_Tc_Armaduras_Y_Escudos.md` y `Tc_Tc_Equipo_Y_Municion.md`.
+     - **Bug de sugerencias de la Corte solucionado:** añadida la clave `'court-serpent'` y normalización de alias `'court-of-the-seven-headed-serpent'` en `FACTION_UPGRADES` (`battlekit_deltas.ts` y `.js`).
+     - **Arquetipos de relleno del Lab alineados:** `FILL_MODEL_PROFILES` y `ENEMY_FACTORIES` (`app/lib/loadout_lab.ts` y `.js`) actualizados con nombres y costes canónicos (Fly Thralls a 28 👑 y Yoke Fiend a 30 👑 según `Tc_Tc_Miniaturas.md`).
+     - **Perfil estructurado para Autocannon (Full Auto):** añadido `alternateProfiles` estructurado a `autocannon-anchor` en `01_trench_crusade_game_data.ts` y `.js` (Full Auto: 48", +1 INJURY DICE, AUTOMATIC 5, HEAVY, RELOAD, RISKY) para permitir simulación estadística en el Lab.
+     - **Gun Battery (Grand Cannon) documentada:** añadido el perfil canónico de `gun-battery-iw` a `Tc_Tc_Miniaturas.md` (60 👑, Troops, IMMOBILE, ARTIFICIAL, peana 50mm) manteniendo 100% de paridad con los compendios maestros.
+  2. **Capa de Traducción y Mapeo de IDs Estables (`app/data/id_aliases.ts` e `id_aliases.js`):**
+     - Mapeo bidireccional entre los 756 IDs estables normalizados en `Tc_Tc_*.md` (`assassin-s-dagger-sult`, `automatic-pistol-na`, etc.) y los IDs de Warband Forge (`assassin-dagger-is`, `auto-pistol-na`, etc.) con más de 440 asociaciones automáticas y funciones de resolución `toStableId`, `toAppId` y `areIdsEquivalent`.
+     - Script generador `scripts/generate_id_aliases.py` para mantener sincronizados los alias en futuros cambios de compendios.
+  3. **Script Validador Canónico (`scripts/verify_tc_alignment.py`):**
+     - Ejecuta el validador del compendio (`validador.py`, 756 IDs, 0 errores en las 7 categorías) y comprueba paridad de costes, claves de facción y arquetipos del motor.
+  4. **Verificación y Calidad:**
+     - Suite dedicada `tests/test_tc_md_alignment.js` (10 ✓).
+     - Full test suite: **192 suites · 3976 verificaciones · 0 fallos** en `verify.sh`.
+     - `npx tsc --noEmit` limpio (0 errores), `npm run lint` (0 warnings), `npm run build` con Turbopack exitoso.
+
 - [x] **Variantes y Sub-facciones — Reglas y Particularidades Canónicas** (2026-10-01, Lead Developer (Antigravity), `/goal Variantes y Sub-facciones`):
   1. **Fireteams Canónicos Interactivos en Roster y Modo Mesa:**
      - Asignación configurable de Fireteams por miniatura en `ModelDetails.tsx`: opciones canónicas preconfiguradas según facción/variante (New Antioch: Fireteam 1 y 2; Stosstruppen of Prussia: Fireteam 1, 2 y 3; Fida'i of Alamut: Killing Squad; Red Brigade: Dog Fireteam) y soporte universal de Fireteam con visualización inmediata de los compañeros de escuadra.
