@@ -77,7 +77,9 @@ ok(state(AB, M('combat-engineers'), 'satchel-na', heavy3) !== 'disabled', 'Satch
 const chewaST = M('shock-troopers', [], ['chewa']);
 ok(state(AB, chewaST, 'shotel-abys') === 'available', 'Shotel: modelo con Chewa');
 ok(state(AB, M('shock-troopers'), 'shotel-abys') === 'hidden', 'Shotel: sin Chewa no');
-ok(state(AB, M('lieutenant', [], ['chewa']), 'anfarro-abys') === 'available' && state(AB, M('lieutenant'), 'anfarro-abys') === 'hidden', 'Anfarro: requiere Chewa');
+ok(state(AB, M('lieutenant'), 'anfarro-abys') === 'available', 'Anfarro: Lieutenant (ELITE) sin Chewa puede');
+ok(state(AB, M('yeomen'), 'anfarro-abys') === 'hidden', 'Anfarro: Yeomen (no ELITE, no Chewa) no puede');
+ok(state(AB, chewaST, 'anfarro-abys') === 'available', 'Anfarro: Shock Trooper con Chewa puede');
 const an = X.findBattlekitItem(NA, 'anfarro-abys');
 ok(an && an.cost === 10 && /Headgear/.test(an.restriction) && /Limit: 6/.test(an.restriction) && an.weaponKeywords.includes('NEGATE FEAR'), 'Anfarro: 10, Headgear, Limit 6, NEGATE FEAR');
 const hwt = X.findBattlekitItem(NA, 'holy-water-abys');

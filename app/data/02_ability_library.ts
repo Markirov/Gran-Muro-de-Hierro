@@ -253,6 +253,10 @@ export const ABILITY_LIBRARY = {
     type: 'action',
     summary: 'Hace un Melee Attack contra un enemigo Down. Este ataque no usa arma cuerpo a cuerpo y tiene IGNORE ARMOUR.',
   },
+  'Stationary Gun Battery': {
+    type: 'passive',
+    summary: 'Batería de artillería emplazada. Es un modelo ARTIFICIAL e IMMOBILE equipado con un Sultanate Grand Cannon. Cuenta para el límite de 0-2 Grand Cannons de la banda.',
+  },
   'Strong in Faith': {
     type: 'passive',
     summary: 'Una banda Éire Rangers puede tener 0-2 Trench Clerics, que cambian Onward Christian Soldiers por: Arise and be Healed! ACTION (Risky; con éxito, el Cleric o un amigo a 3" se levanta gratis y retira hasta D3 BLOOD y/o INFECTION MARKERS) y Away Serpents! ACTION (elige 1 enemigo a 12"; Risky, con -1 DICE si su base es de 40mm o más; con éxito queda Down).',
@@ -622,6 +626,14 @@ export const ABILITY_LIBRARY = {
   'Goetic Powers': {
     type: 'passive',
     summary: 'Los modelos ELITE de una banda de la Court of the Seven-Headed Serpent pueden tener Goetic Powers (el número figura en su Warband Entry). Se dividen en Goetic Abilities y Goetic Spells; ver la Goetic Powers List.',
+  },
+  'Blessing of the Serpent Moon ACTION': {
+    type: 'action',
+    summary: 'Goetic Spell gratuito (Sorcerer). Risky Success Roll: con éxito, elige un modelo amigo a 12" en Line of Sight. Gana +1 DICE a todas sus tiradas de ataque hasta el final de su siguiente activación.',
+  },
+  'Blood Magic': {
+    type: 'passive',
+    summary: 'Magia de sangre goética (Hell Knights). Los Hell Knights conocen 2 hechizos de Blood Magic de la lista de Goetic Powers sin coste adicional en Ducados.',
   },
   'Law of Hell': {
     type: 'passive',

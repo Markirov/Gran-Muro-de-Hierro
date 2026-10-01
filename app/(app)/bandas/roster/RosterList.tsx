@@ -107,6 +107,11 @@ export function RosterList({
                     <span className="text-[10px] text-[#7a6a58] uppercase tracking-widest bg-black/40 px-2 py-0.5 rounded border border-[#3a2110]">
                       {(model.unitId || model.name || 'Unidad').replace(/-/g, ' ')}
                     </span>
+                    {model.fireteam && (
+                      <span className="text-[9px] text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/60 font-semibold tracking-wide flex items-center gap-1">
+                        🔥 {model.fireteam}
+                      </span>
+                    )}
                   </div>
                   
                   <div className="flex items-center gap-3 mt-1 text-xs text-[#9e9178]">

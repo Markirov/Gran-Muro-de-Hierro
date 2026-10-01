@@ -1,3 +1,31 @@
+- [x] **Variantes y Sub-facciones — Reglas y Particularidades Canónicas** (2026-10-01, Lead Developer (Antigravity), `/goal Variantes y Sub-facciones`):
+  1. **Fireteams Canónicos Interactivos en Roster y Modo Mesa:**
+     - Asignación configurable de Fireteams por miniatura en `ModelDetails.tsx`: opciones canónicas preconfiguradas según facción/variante (New Antioch: Fireteam 1 y 2; Stosstruppen of Prussia: Fireteam 1, 2 y 3; Fida'i of Alamut: Killing Squad; Red Brigade: Dog Fireteam) y soporte universal de Fireteam con visualización inmediata de los compañeros de escuadra.
+     - Indicadores visuales en el Roster (`RosterList.tsx` con chip `🔥 [Nombre Fireteam]`).
+     - Activación conjunta en Modo Mesa (`TabletopMode.tsx`): botón `🔥 Activar Fireteam (N)` que conmuta al unísono el estado de activación de todos los miembros vivos de la escuadra, navegación rápida entre los compañeros de escuadra e indicador de activación con tachado.
+     - Integración con el motor de reglas (`effectiveKeywords` añade automáticamente la keyword `FIRETEAM` si la miniatura está en una escuadra).
+  2. **Envious Eyes (Pecado de la Envidia / Court of the Seven-Headed Serpent):**
+     - Añadido `foreignArmoury` a la variante `sin-envy` abarcando New Antioch, Trench Pilgrims, Iron Sultanate, Heretic Legions y Black Grail.
+     - `getSelectorOptions` en `ModelDetails.tsx` y `armouryItemsForWarband` enriquecidos para listar las armas y objetos de armerías externas con badge identificativo `[Envious Eyes: Facción]` en el Bazar.
+  3. **Hechizos Gratuitos en Reclutamiento:**
+     - *Sorcerer* (Court of the Seven-Headed Serpent): recibe automáticamente en sus habilidades la acción canónica `Blessing of the Serpent Moon ACTION` (Goetic Spell a 12" en LoS para +1 DICE).
+     - *Hell Knights* (Court of the Seven-Headed Serpent): recibe `Blood Magic` en sus habilidades fijas para conocer sus dos hechizos de magia de sangre gratis al reclutamiento.
+     - Ambas entradas redactadas y añadidas a `app/data/02_ability_library.ts` y sincronizadas en `public/js/02_ability_library.js`.
+  4. **Límites Especiales y Dinámicos de Banda:**
+     - *Artillery Witch Battery*: validación dinámica de 0-1 base y 0-2 si el valor total de la banda con su Battlekit alcanza o supera los 1.000 👑 (`limit_validation.ts` y `.js`), respetando el tope estricto de 0-1 en Naval Raiders.
+     - *Cradle Thralls* (The Great Hunger): añadido `exemptFromFieldStrength: true`, y `countFieldStrength(wb)` / `isExemptFromFieldStrength` excluyen estas miniaturas del cómputo de límite de efectivos de la banda.
+  5. **Batería de Artillería Estacionaria del Grand Cannon (Defenders of the Iron Wall):**
+     - Añadida la unidad `gun-battery-iw` (Gun Battery con Grand Cannon, 60 👑, Troops, limit 0-2, IMMOBILE, ARTIFICIAL, peana 50mm, perfil estacionario).
+     - Validación canónica cruzada: tope de 0-2 Sultanate Grand Cannons en toda la banda sumando Brazen Bulls y Gun Batteries independientes.
+  6. **Abyssinia: Regla de Unión "Chewa & ELITE only":**
+     - Actualizada la restricción de *Shotel* y *Anfarro* a `Chewa & ELITE only` y retirada de la dependencia única de `requiresUpgrade: 'chewa'`.
+     - `battlekit_legality_engine.ts` y `.js` tratan la regla como unión canónica: cualquier ELITE puede equiparlos sin Chewa, y un Shock Trooper puede equiparlos si adquiere la mejora Chewa (+5 👑).
+  7. **Verificación y Suites:**
+     - Nueva suite dedicada `tests/test_subfactions_and_variants_features.js` (14 ✓).
+     - Actualizadas y verificadas `tests/test_variant_abyssinia_building.js` (30 ✓) y `tests/test_variant_iron_wall_building.js` (24 ✓).
+     - `npm run lint` (0 warnings), `npx tsc --noEmit` (0 errors), `npm run build` exitoso con Turbopack.
+     - `verify.sh`: 191 suites · 3971 verificaciones · 0 fallos.
+
 - [x] **Sincronización bidireccional y persistencia de bandas y campañas en Firestore (Next.js)** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Opción 2: Sincronización en la nube"):
   1. **Motor de Sincronización LWW con Tombstones (`app/lib/sync_engine.ts` y `.js`):**
      - Resolución de conflictos Last-Write-Wins (LWW) comparando marcas temporales `updatedAt` / `cloudUpdatedAt` tanto a nivel de bandas como de campañas.

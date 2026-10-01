@@ -75,6 +75,25 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
     });
   };
 
+  const fireteamMembers = model.fireteam 
+    ? models.filter((m: any) => m.fireteam === model.fireteam)
+    : [];
+
+  const toggleFireteamActivation = () => {
+    const newActivated = !isActivated;
+    const newStates = { ...session.modelStates };
+    fireteamMembers.forEach((m: any) => {
+      const s = newStates[m.uid] || {};
+      if (s.status !== 'out') {
+        newStates[m.uid] = { ...s, activated: newActivated };
+      }
+    });
+    onUpdate({
+      ...session,
+      modelStates: newStates
+    });
+  };
+
   const advanceTableTurn = () => {
     // Check for unactivated models that are not OUT
     const unactivated = models.some((m: any) => {
@@ -331,12 +350,44 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
         {/* MODEL IDENTIFICATION */}
         <div className="flex justify-between items-end mb-4 border-b border-[#3a2110]/50 pb-2">
           <div>
-            <div className="font-serif text-3xl md:text-4xl text-[#e2d4b7]">{displayName}</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="font-serif text-3xl md:text-4xl text-[#e2d4b7]">{displayName}</div>
+              {model.fireteam && (
+                <span className="text-[10px] text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-700/60 font-semibold tracking-wider uppercase">
+                  🔥 {model.fireteam}
+                </span>
+              )}
+            </div>
             {displayName !== effName && (
               <div className="text-[#b8863c] text-sm mt-1 uppercase tracking-widest font-bold">{effName}</div>
             )}
+            {fireteamMembers.length > 1 && (
+              <div className="flex items-center gap-1.5 mt-1.5 text-xs text-[#9e9178] flex-wrap">
+                <span className="text-[9px] uppercase text-[#7a6a58] font-bold">Escuadra:</span>
+                {fireteamMembers.map((m: any) => {
+                  const idx = models.findIndex((x: any) => x.uid === m.uid);
+                  const mState = session.modelStates[m.uid] || {};
+                  const isMAct = !!mState.activated;
+                  const isCur = m.uid === model.uid;
+                  return (
+                    <button
+                      key={m.uid}
+                      type="button"
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${
+                        isCur 
+                          ? 'border-amber-500 text-amber-300 bg-amber-950/60' 
+                          : 'border-[#3a2110] text-[#9e9178] hover:border-[#b8863c] bg-[#1a0f0a]'
+                      } ${isMAct ? 'line-through opacity-70' : ''}`}
+                    >
+                      {m.name || effectiveUnitName(m, getUnit(wb.factionId, m.unitId))} {isMAct ? '✓' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <div className="text-right">
+          <div className="text-right flex flex-col items-end">
             <button 
               onClick={() => {
                 if (status === 'out') return;
@@ -347,6 +398,16 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
             >
               {status === 'out' ? 'Baja' : isActivated ? 'Activado' : 'No Activado'}
             </button>
+            {fireteamMembers.length > 1 && (
+              <button
+                type="button"
+                onClick={toggleFireteamActivation}
+                className="mt-1 text-[9px] uppercase tracking-wider text-amber-300 hover:text-amber-100 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-800/50 px-2 py-0.5 rounded transition-all cursor-pointer"
+                title="Activar o desactivar conjuntamente a todos los miembros vivos de este Fireteam"
+              >
+                🔥 Activar Fireteam ({fireteamMembers.length})
+              </button>
+            )}
           </div>
         </div>
 

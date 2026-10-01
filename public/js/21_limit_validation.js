@@ -12,7 +12,7 @@ function parseLimit(limitStr) {
 }
 
 function unitCountInWarband(wb, unitId) {
-  return wb.models.filter(m => m.unitId === unitId).length;
+  return (wb.models || []).filter(m => m.unitId === unitId).length;
 }
 
 // Canon (Warbands 1.0.2): cada Mercenario indica qué facciones pueden contratarlo.
@@ -76,12 +76,51 @@ function canAddUnit(wb, unit) {
   if (mercNotHireable(wb, unit)) return false;
   if (eliteCapReached(wb, unit)) return false;
   if (perUnitLimitReached(wb, unit)) return false;
+
+  // Grand Cannon Gun Battery (Iron Wall): max 2 in warband across Brazen Bulls + Gun Batteries
+  if (unit.id === 'gun-battery-iw') {
+    const gcCount = (wb.models || []).reduce((t, m) => {
+      if (m.unitId === 'gun-battery-iw') return t + 1;
+      if ((m.battlekit || []).includes('grand-cannon-iw')) return t + 1;
+      return t;
+    }, 0);
+    if (gcCount >= 2) return false;
+  }
+
+  // Artillery Witch Battery (Heretic Legion): 0-1 base, 0-2 if total warband value >= 1000
+  if (unit.id === 'art-witch') {
+    const ov = variantUnitOverride(wb, unit.id);
+    if (!ov || !ov.limit) {
+      const totalVal = (wb.models || []).reduce((t, m) => t + modelCost(m, wb.factionId, wb).ducados, 0);
+      const count = unitCountInWarband(wb, unit.id);
+      if (count >= 1 && totalVal < 1000) return false;
+    }
+  }
+
   // Use the variant-overridden limit if defined (e.g. Anchorite Shrine 0-2 in St. Methodius)
   const override = variantUnitOverride(wb, unit.id);
-  const limStr = (override && override.limit) || unit.limit;
+  let limStr = (override && override.limit) || unit.limit;
+  if (unit.id === 'art-witch' && (!override || !override.limit)) {
+    const totalVal = (wb.models || []).reduce((t, m) => t + modelCost(m, wb.factionId, wb).ducados, 0);
+    limStr = totalVal >= 1000 ? '0-2' : '0-1';
+  }
   const lim = parseLimit(limStr);
   if (!lim) return true;
   return unitCountInWarband(wb, unit.id) < lim.max;
+}
+
+function isExemptFromFieldStrength(model, unit) {
+  if (unit && unit.exemptFromFieldStrength) return true;
+  if (model && model.unitId === 'cradle-thralls-gh') return true;
+  return false;
+}
+
+function countFieldStrength(wb) {
+  if (!wb || !Array.isArray(wb.models)) return 0;
+  return wb.models.filter(m => {
+    const u = getUnit(wb.factionId, m.unitId);
+    return !isExemptFromFieldStrength(m, u);
+  }).length;
 }
 
 /* Fase 10 PIVOT v2 — wrapper informativo. Bandas Companion permiten
@@ -93,7 +132,11 @@ function canAddUnitWithWarning(wb, unit) {
   if (!wb || !unit) return { canAdd: false };
   const forbiddenBy = unitForbiddenByVariant(wb, unit.id);
   const override = variantUnitOverride(wb, unit.id);
-  const limStr = (override && override.limit) || unit.limit;
+  let limStr = (override && override.limit) || unit.limit;
+  if (unit.id === 'art-witch' && (!override || !override.limit)) {
+    const totalVal = (wb.models || []).reduce((t, m) => t + modelCost(m, wb.factionId, wb).ducados, 0);
+    limStr = totalVal >= 1000 ? '0-2' : '0-1';
+  }
   const lim = parseLimit(limStr);
   const count = unitCountInWarband(wb, unit.id);
   const exceedsLimit = lim && count >= lim.max;
@@ -135,12 +178,29 @@ function canAddUnitWithWarning(wb, unit) {
     return { canAdd: false,
       warning: 'Solo 1 ' + (unit.name || unit.id) + ' por ' + (other ? other.name : unit.limitPerUnit) + '.' };
   }
+  if (unit.id === 'gun-battery-iw') {
+    const gcCount = (wb.models || []).reduce((t, m) => {
+      if (m.unitId === 'gun-battery-iw') return t + 1;
+      if ((m.battlekit || []).includes('grand-cannon-iw')) return t + 1;
+      return t;
+    }, 0);
+    if (gcCount >= 2) {
+      return { canAdd: false,
+        warning: 'Límite alcanzado: máximo 2 Grand Cannons por banda (sumando baterías y Brazen Bulls).' };
+    }
+  }
+  if (unit.id === 'art-witch' && (!override || !override.limit)) {
+    const totalVal = (wb.models || []).reduce((t, m) => t + modelCost(m, wb.factionId, wb).ducados, 0);
+    if (count >= 1 && totalVal < 1000) {
+      return { canAdd: false,
+        warning: 'Una segunda Artillery Witch requiere que la banda valga al menos 1.000 👑.' };
+    }
+  }
   if (exceedsLimit) return { canAdd: false,
     warning: 'Límite alcanzado (' + count + '/' + lim.max + ').' };
   return { canAdd: true };
 }
 
-
 function countEliteInWarband(wb) {
-  return wb.models.filter(m => m.isElite).length;
+  return (wb.models || []).filter(m => m.isElite).length;
 }

@@ -246,6 +246,10 @@ function effectiveKeywords(model, unit, wb) {
   if (model.baseProgression && model.baseProgression.promotedToElite && !base.includes('ELITE')) {
     base.push('ELITE');
   }
+  // Model assigned to a Fireteam gains the FIRETEAM keyword
+  if (model && model.fireteam && !base.includes('FIRETEAM')) {
+    base.push('FIRETEAM');
+  }
   // Upgrades that take a keyword away for good (Body of Gold: no TOUGH)
   const lost = activeUpgrades(model, unit, w).flatMap(u => u.removesKeywords || []);
   if (lost.length) return base.filter(k => !lost.includes(k));

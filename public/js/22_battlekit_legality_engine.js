@@ -51,6 +51,7 @@ function parseRestriction(str) {
   const out = {
     tags: new Set(),     // 'Bayonet Lug' | 'Shield Combo' | 'Consumable' | 'Unique' | 'Headgear'
     eliteOnly: false,
+    chewaAllowed: false,
     allowedUnitIds: null, // null = no restriction; otherwise array of unit IDs that can take it
     requiresEquipped: null, // e.g. 'Machine Armour'
     limit: null,         // total in warband
@@ -88,13 +89,16 @@ function parseRestriction(str) {
     const onlyMatch = p.match(/^(.+?)\s+only$/i);
     if (onlyMatch) {
       const subject = onlyMatch[1].trim();
-      // Split on "&" for OR-conditions: "ELITE & Janissaries"
+      // Split on "&" for OR-conditions: "ELITE & Janissaries", "Chewa & ELITE"
       const orParts = subject.split('&').map(x => x.trim());
       const allowedIds = [];
       let acceptsElite = false;
+      let acceptsChewa = false;
       for (const op of orParts) {
         if (/^ELITE$/i.test(op)) {
           acceptsElite = true;
+        } else if (/^chewa$/i.test(op)) {
+          acceptsChewa = true;
         } else {
           // Try to map to a unit ID
           const cleaned = op.replace(/^Mech\.\s*Heavy\s*Inf\.?$/i, 'Mech. Heavy Inf.');
@@ -103,6 +107,7 @@ function parseRestriction(str) {
         }
       }
       if (acceptsElite) out.eliteOnly = true;
+      if (acceptsChewa) out.chewaAllowed = true;
       if (allowedIds.length) out.allowedUnitIds = (out.allowedUnitIds || []).concat(allowedIds);
       continue;
     }
@@ -544,12 +549,13 @@ function classifyBattlekitItem(item, model, unit, wb) {
     }
   }
 
-  // Tier / unit gating from item restriction string ("ELITE only", "Combat Medic only", etc.)
-  if (r.eliteOnly || r.allowedUnitIds) {
+  // Tier / unit gating from item restriction string ("ELITE only", "Combat Medic only", "Chewa & ELITE only", etc.)
+  if (r.eliteOnly || r.allowedUnitIds || r.chewaAllowed) {
     // Promoted Troops count as ELITE for armoury access (canon page 104:
     // "they are considered to be an Elite model from then on")
     const promoted = !!(model.baseProgression && model.baseProgression.promotedToElite);
     const matchesTier = r.eliteOnly && (unit.tier === 'elite' || promoted);
+    const hasChewa = r.chewaAllowed && (model.upgrades || []).includes('chewa');
     // Expand __wretched__ sentinel to whichever wretched ID exists in current faction
     let allowed = r.allowedUnitIds;
     if (allowed && allowed.includes('__wretched__')) {
@@ -564,7 +570,7 @@ function classifyBattlekitItem(item, model, unit, wb) {
       (unit.usesEntryOf && allowed.includes(unit.usesEntryOf)));
     // Upgrades that let a model take another unit's items (Gargantuan Size:
     // one weapon that only a Brazen Bull can usually take)
-    if (!matchesTier && !matchesUnit && allowed) {
+    if (!matchesTier && !matchesUnit && !hasChewa && allowed) {
       const actsAs = activeUpgrades(model, unit, wb).find(u =>
         (u.actsAsUnitIds || []).some(id => allowed.includes(id)));
       if (actsAs) {
@@ -582,10 +588,12 @@ function classifyBattlekitItem(item, model, unit, wb) {
         matchesUnit = true;
       }
     }
-    if (!matchesTier && !matchesUnit) {
-      const reason = r.eliteOnly && r.allowedUnitIds
-        ? 'ELITE u otra unidad específica'
-        : (r.eliteOnly ? 'Sólo ELITE' : 'Sólo unidades específicas');
+    if (!matchesTier && !matchesUnit && !hasChewa) {
+      const reason = r.chewaAllowed && r.eliteOnly
+        ? 'Chewa & ELITE only'
+        : (r.eliteOnly && r.allowedUnitIds
+          ? 'ELITE u otra unidad específica'
+          : (r.eliteOnly ? 'Sólo ELITE' : 'Sólo unidades específicas'));
       return { state: 'hidden', reason };
     }
   }
@@ -647,7 +655,10 @@ function classifyBattlekitItem(item, model, unit, wb) {
 
   // Per-warband limit reached
   if (r.limit !== null) {
-    const used = countItemUsageInWarband(wb, item.id);
+    let used = countItemUsageInWarband(wb, item.id);
+    if (item.id === 'grand-cannon-iw') {
+      used += (wb.models || []).filter(m => m.unitId === 'gun-battery-iw').length;
+    }
     if (used >= r.limit) {
       return { state: 'disabled', reason: `Límite de banda: ${used}/${r.limit}` };
     }

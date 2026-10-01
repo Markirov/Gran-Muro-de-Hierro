@@ -15,8 +15,10 @@ import {
   getModelRangedCapacity,
   getModelArmourAndShield,
   getModelGearAndGrenades,
-  unitCostAltAllowed
+  unitCostAltAllowed,
+  getActiveVariant
 } from '../../../lib/cost_calculation';
+import { DATA } from '../../../data/01_trench_crusade_game_data';
 import { classifyBattlekitItem } from '../../../lib/battlekit_legality_engine';
 import { KEYWORD_LIBRARY } from '../../../data/04_keyword_library';
 import { ABILITY_LIBRARY } from '../../../data/02_ability_library';
@@ -53,6 +55,25 @@ function getArmouryTabNames(factionId: string) {
     default:
       return { equipped: 'Armería', shop: 'Bazar', iconEquipped: '🛡️', iconShop: '🪙' };
   }
+}
+
+function getAvailableFireteams(wb: any, effKeywords: string[] = []) {
+  const v = getActiveVariant(wb);
+  const options: string[] = [];
+  if (wb?.factionId === 'new-antioch') {
+    if (v && v.id === 'prussia') {
+      options.push('Fireteam 1', 'Fireteam 2', 'Fireteam 3');
+    } else {
+      options.push('Fireteam 1', 'Fireteam 2');
+    }
+  } else if (v && v.id === 'fidai-alamut') {
+    options.push('Killing Squad');
+  } else if (v && v.id === 'red-brigade') {
+    options.push('Dog Fireteam');
+  } else {
+    options.push('Fireteam 1', 'Fireteam 2');
+  }
+  return options;
 }
 
 interface Props {
@@ -257,6 +278,22 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
         }
       }
 
+      // Check foreign armouries from active variant (e.g. Envious Eyes, House of Wisdom, Corrupt Merchants)
+      const v = getActiveVariant(wb);
+      if (v && Array.isArray(v.foreignArmoury)) {
+        for (const fa of v.foreignArmoury) {
+          const ff = DATA.factions[fa.factionId];
+          if (!ff || !ff.armoury) continue;
+          const foreignList = ff.armoury[category] || [];
+          for (const it of foreignList) {
+            if (it.variantOnly) continue;
+            if (!rawList.some(r => r.id === it.id)) {
+              rawList.push(Object.assign({}, it, { _foreignFaction: fa.factionId, _foreignLabel: fa.label }));
+            }
+          }
+        }
+      }
+
       return rawList.map(item => ({
         item,
         cls: classifyBattlekitItem(item, model, unit, wb)
@@ -353,6 +390,54 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
               </div>
             </div>
           )}
+
+          {/* ASIGNACIÓN DE FIRETEAM (REGLAS CANÓNICAS 1.0.2) */}
+          <div className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-500 font-bold text-sm">🔥</span>
+                <span className="text-xs uppercase tracking-widest text-[#b8863c] font-bold">Fireteam / Equipo de Fuego</span>
+              </div>
+              {model.fireteam && (
+                <button 
+                  onClick={() => onUpdateModel({ ...model, fireteam: null })}
+                  className="text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider cursor-pointer"
+                >
+                  ✕ Desasignar
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {getAvailableFireteams(wb, effKeywords).map(ft => {
+                const isSelected = model.fireteam === ft;
+                const members = (wb.models || []).filter((m: any) => m.fireteam === ft);
+                return (
+                  <button
+                    key={ft}
+                    type="button"
+                    onClick={() => onUpdateModel({ ...model, fireteam: isSelected ? null : ft })}
+                    className={`px-3 py-1.5 rounded text-xs font-serif font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                      isSelected 
+                        ? 'bg-amber-950/80 border-amber-500 text-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+                        : 'bg-[#0a0503] border-[#3a2110] text-[#9e9178] hover:border-[#b8863c] hover:text-[#e2d4b7]'
+                    }`}
+                  >
+                    <span>🔥 {ft}</span>
+                    <span className="text-[10px] opacity-75 font-mono">({members.length} {members.length === 1 ? 'miembro' : 'miembros'})</span>
+                  </button>
+                );
+              })}
+            </div>
+            {model.fireteam && (
+              <div className="mt-2 text-[11px] text-[#9e9178]">
+                <span className="text-[#7a6a58] uppercase font-bold text-[9px] mr-1">Compañeros en {model.fireteam}:</span>
+                {(wb.models || [])
+                  .filter((m: any) => m.fireteam === model.fireteam && m.uid !== model.uid)
+                  .map((m: any) => m.name || effectiveUnitName(m, getUnit(wb.factionId, m.unitId)))
+                  .join(', ') || <span className="italic text-[#7a6a58]">Ninguno aún (asigna a otra miniatura a este Fireteam)</span>}
+              </div>
+            )}
+          </div>
 
           {/* ======================================================== */}
           {/* CONTENEDORES DE CAPACIDAD DE ARMAMENTO (UX DO CRUZADO) */}
@@ -588,6 +673,11 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       <div className="flex flex-col">
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                           <span className="font-bold">{item.name}</span>
+                                          {item._foreignFaction && (
+                                            <span className="text-[8px] bg-purple-950/70 text-purple-300 border border-purple-800/60 px-1 py-0.5 rounded font-mono">
+                                              {item._foreignLabel || 'Armería Externa'}: {DATA.factions[item._foreignFaction]?.name || item._foreignFaction}
+                                            </span>
+                                          )}
                                           <span className="text-[9px] text-[#b8863c] uppercase font-mono px-1 py-0.2 bg-[#2a1610] rounded border border-[#5c3a21]">
                                             {itemHand.label}{itemRange !== '-' ? ` · ${itemRange}` : ''}
                                           </span>
@@ -789,6 +879,11 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       <div className="flex flex-col">
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                           <span className="font-bold">{item.name}</span>
+                                          {item._foreignFaction && (
+                                            <span className="text-[8px] bg-purple-950/70 text-purple-300 border border-purple-800/60 px-1 py-0.5 rounded font-mono">
+                                              {item._foreignLabel || 'Armería Externa'}: {DATA.factions[item._foreignFaction]?.name || item._foreignFaction}
+                                            </span>
+                                          )}
                                           <span className="text-[9px] text-[#b8863c] uppercase font-mono px-1 py-0.2 bg-[#2a1610] rounded border border-[#5c3a21]">
                                             {itemHand.label}{itemRange !== '-' ? ` · ${itemRange}` : ''}
                                           </span>
@@ -1032,8 +1127,13 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       }`}
                                     >
                                       <div className="flex flex-col gap-0.5">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                           <span className="font-bold">{item.name}</span>
+                                          {item._foreignFaction && (
+                                            <span className="text-[8px] bg-purple-950/70 text-purple-300 border border-purple-800/60 px-1 py-0.5 rounded font-mono">
+                                              {item._foreignLabel || 'Armería Externa'}: {DATA.factions[item._foreignFaction]?.name || item._foreignFaction}
+                                            </span>
+                                          )}
                                           {itemDef.injuryModifier && (
                                             <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/40">
                                               ARM {itemDef.injuryModifier}
@@ -1140,8 +1240,13 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                           }`}
                                         >
                                           <div className="flex flex-col gap-0.5">
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
                                               <span className="font-bold">{item.name}</span>
+                                              {item._foreignFaction && (
+                                                <span className="text-[8px] bg-purple-950/70 text-purple-300 border border-purple-800/60 px-1 py-0.5 rounded font-mono">
+                                                  {item._foreignLabel || 'Armería Externa'}: {DATA.factions[item._foreignFaction]?.name || item._foreignFaction}
+                                                </span>
+                                              )}
                                               <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/40">
                                                 ARM -1
                                               </span>
@@ -1241,7 +1346,14 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
                                     }`}
                                   >
-                                    <span>{item.name}</span>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span>{item.name}</span>
+                                      {item._foreignFaction && (
+                                        <span className="text-[8px] bg-purple-950/70 text-purple-300 border border-purple-800/60 px-1 py-0.5 rounded font-mono">
+                                          {item._foreignLabel || 'Armería Externa'}: {DATA.factions[item._foreignFaction]?.name || item._foreignFaction}
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
                                   </button>
                                 ))}
@@ -1348,6 +1460,11 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                                       <div className="flex flex-col gap-0.5">
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                           <span className="font-bold">{item.name}</span>
+                                          {item._foreignFaction && (
+                                            <span className="text-[8px] bg-purple-950/70 text-purple-300 border border-purple-800/60 px-1 py-0.5 rounded font-mono">
+                                              {item._foreignLabel || 'Armería Externa'}: {DATA.factions[item._foreignFaction]?.name || item._foreignFaction}
+                                            </span>
+                                          )}
                                           <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-[#22120b] text-[#b8863c] font-mono border border-[#4a2a16]">
                                             {eqDet.categoryTag}
                                           </span>

@@ -21,7 +21,7 @@ const js = jsFiles.map(f => fs.readFileSync(path.join(JS_DIR, f), 'utf8')).join(
 const bootIdx = js.search(/\nfunction boot\(\)/);
 const dom = new JSDOM(html.replace('</body>', '<script>' + js + '</script></body>').replace(/<script[\s\S]*?<\/script>/g, ''), { runScripts: 'outside-only', url: 'http://localhost/' });
 dom.window.alert = () => {};
-dom.window.eval(js.slice(0, bootIdx) + '\n;window.__X = { DATA, classifyBattlekitItem, findBattlekitItem, getUnit, allAvailableUpgrades, armouryItemsForWarband: typeof armouryItemsForWarband === "function" ? armouryItemsForWarband : null };');
+dom.window.eval(js.slice(0, bootIdx) + '\n;window.__X = { DATA, classifyBattlekitItem, findBattlekitItem, getUnit, allAvailableUpgrades, armouryItemsForWarband: typeof armouryItemsForWarband === "function" ? armouryItemsForWarband : null, canAddUnit: typeof canAddUnit === "function" ? canAddUnit : null };');
 const X = dom.window.__X;
 
 let pass = 0, fail = 0;
@@ -64,6 +64,26 @@ ok(state(IW, 'brazen-bull', 'grand-cannon-iw') === 'available', 'Brazen Bull pue
 ok(state(IW, 'brazen-bull', 'grand-cannon-iw', ['grand-cannon-iw']) === 'disabled', 'Máximo 1 Grand Cannon por Brazen Bull');
 ok(state(IW, 'sappers', 'grand-cannon-iw') === 'hidden', 'Otros modelos no llevan Grand Cannon');
 ok(state(BASE, 'brazen-bull', 'grand-cannon-iw') === 'hidden', 'Sin variante: no hay Grand Cannon');
+
+const gb = X.getUnit(IS, 'gun-battery-iw');
+ok(gb && gb.cost === 60 && gb.variantOnly === 'iron-wall-def', 'Gun Battery: 60 👑, solo Iron Wall');
+ok(gb && gb.keywords.includes('IMMOBILE') && gb.keywords.includes('ARTIFICIAL'), 'Gun Battery: IMMOBILE y ARTIFICIAL');
+
+// Límite combinado 0-2 Grand Cannons entre Brazen Bulls y Gun Batteries
+const wbb1 = { factionId: IS, variantId: 'iron-wall-def', models: [{ uid: 'b1', unitId: 'brazen-bull', battlekit: ['grand-cannon-iw'] }] };
+ok(X.canAddUnit(wbb1, gb), 'Con 1 Grand Cannon en Brazen Bull, se puede añadir 1 Gun Battery');
+const wbb2 = { factionId: IS, variantId: 'iron-wall-def', models: [
+  { uid: 'b1', unitId: 'brazen-bull', battlekit: ['grand-cannon-iw'] },
+  { uid: 'gb1', unitId: 'gun-battery-iw', battlekit: ['grand-cannon-iw'] }
+] };
+ok(!X.canAddUnit(wbb2, gb), 'Con 2 Grand Cannons en total, se bloquea añadir una 2.ª Gun Battery');
+ok(state(wbb1, 'brazen-bull', 'grand-cannon-iw') === 'available', 'Con 1 Grand Cannon, un 2.º Brazen Bull puede equipar Grand Cannon');
+const wbb2_state = { factionId: IS, variantId: 'iron-wall-def', models: [
+  { uid: 'gb1', unitId: 'gun-battery-iw', battlekit: ['grand-cannon-iw'] },
+  { uid: 'gb2', unitId: 'gun-battery-iw', battlekit: ['grand-cannon-iw'] },
+  { uid: 'bb2', unitId: 'brazen-bull', battlekit: [] }
+] };
+ok(X.classifyBattlekitItem(X.findBattlekitItem(IS, 'grand-cannon-iw', wbb2_state), wbb2_state.models[2], X.getUnit(IS, 'brazen-bull'), wbb2_state).state === 'disabled', 'Con 2 Gun Batteries, Brazen Bull tiene Grand Cannon deshabilitado');
 
 console.log('\n' + pass + ' passed · ' + fail + ' failed');
 process.exit(fail === 0 ? 0 : 1);
