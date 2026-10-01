@@ -15,7 +15,8 @@ import {
   extractArmourDefenses,
   getBulkyInfo,
   getModelArmourBreakdown,
-  getModelDefensiveImmunities
+  getModelDefensiveImmunities,
+  extractEquipmentDetails
 } from '../../lib/weapon_helpers';
 
 export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
@@ -605,13 +606,16 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                 const isSpent = spent.includes(eq.name);
                 
                 const armDef = extractArmourDefenses(eq);
+                const eqDet = extractEquipmentDetails(eq);
                 
                 return (
                   <div key={i} className={`border border-[#3a2110] rounded bg-[#0a0503] p-3 shadow-sm ${isSpent ? 'opacity-50' : ''}`}>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-baseline gap-2 flex-wrap">
                         <span className="font-serif font-bold text-[#e2d4b7] text-lg uppercase">{eq.name}</span>
-                        <span className="text-[#b8863c] text-[10px] md:text-xs">{eq.type || 'Equipment'}</span>
+                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#22120b] text-[#b8863c] font-mono border border-[#4a2a16]">
+                          {eqDet.categoryTag}
+                        </span>
                         {armDef.injuryModifier && (
                           <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50">
                             ARM {armDef.injuryModifier}
@@ -636,6 +640,22 @@ export function TabletopMode({ session, wb, onUpdate, onClose }: any) {
                         </button>
                       )}
                     </div>
+                    {eqDet.actionGranted && (
+                      <div className="mb-2 p-2 rounded bg-[#160d08] border border-amber-900/50 flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 text-xs text-amber-300 font-bold">
+                          <span>⚡</span>
+                          <span>{eqDet.actionGranted}:</span>
+                        </div>
+                        <p className="text-[11px] text-[#e2d4b7] leading-snug">
+                          {eqDet.actionDescription}
+                        </p>
+                      </div>
+                    )}
+                    {!eqDet.actionGranted && eqDet.summary && (!eq.rules || eq.rules.length === 0) && (
+                      <div className="text-xs text-[#9e9178] mb-2 leading-relaxed">
+                        {eqDet.summary}
+                      </div>
+                    )}
                     <ul className="text-xs md:text-sm text-[#9e9178] leading-relaxed space-y-2">
                       {eq.weaponKeywords && eq.weaponKeywords.map((kw: string, kwi: number) => {
                         const inactive = keywordInactive(kw);

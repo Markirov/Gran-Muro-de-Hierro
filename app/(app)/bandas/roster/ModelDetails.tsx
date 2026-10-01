@@ -32,7 +32,8 @@ import {
   getTacticalRuleNote,
   extractArmourDefenses,
   getBulkyInfo,
-  getModelArmourBreakdown
+  getModelArmourBreakdown,
+  extractEquipmentDetails
 } from '../../../lib/weapon_helpers';
 
 function getArmouryTabNames(factionId: string) {
@@ -1266,27 +1267,58 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                             </div>
                             {gearGrenades.gear.length > 0 ? (
                               <div className="space-y-1.5">
-                                {gearGrenades.gear.map((it: any, i: number) => (
-                                  <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2 flex justify-between items-center text-xs">
-                                    <div>
-                                      <span className="font-bold text-[#e2d4b7]">{it.name}</span>
-                                      {it.isBuiltIn && (
-                                        <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21] ml-2">
-                                          Innato
+                                {gearGrenades.gear.map((it: any, i: number) => {
+                                  const eqDet = extractEquipmentDetails(it);
+                                  return (
+                                    <div key={i} className="bg-[#1a0f0a] border border-[#3a2110] rounded-lg p-2.5 flex justify-between items-start text-xs">
+                                      <div className="flex-1 pr-2">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-bold text-[#e2d4b7]">{it.name}</span>
+                                          <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#22120b] text-[#b8863c] font-mono border border-[#4a2a16]">
+                                            {eqDet.categoryTag}
+                                          </span>
+                                          {eqDet.actionGranted && (
+                                            <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/50" title={eqDet.actionDescription || undefined}>
+                                              ⚡ {eqDet.actionGranted}
+                                            </span>
+                                          )}
+                                          {it.isBuiltIn && (
+                                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded bg-[#2a1610] text-[#b8863c] font-mono border border-[#5c3a21]">
+                                              Innato
+                                            </span>
+                                          )}
+                                          {it.restriction && <span className="text-[9px] text-[#7a6a58]">({it.restriction})</span>}
+                                        </div>
+                                        {eqDet.actionDescription ? (
+                                          <div className="text-[10px] text-[#9e9178] mt-1 leading-snug">
+                                            <span className="text-amber-400/90 font-mono">Efecto:</span> {eqDet.actionDescription}
+                                          </div>
+                                        ) : eqDet.summary ? (
+                                          <div className="text-[10px] text-[#9e9178] mt-1 leading-snug">
+                                            {eqDet.summary}
+                                          </div>
+                                        ) : null}
+                                        {eqDet.traits.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {eqDet.traits.map((tr: string, tri: number) => (
+                                              <span key={tri} className="text-[9px] font-mono px-1 py-0.2 rounded bg-black/40 text-[#7a6a58] border border-[#3a2110]">
+                                                • {tr}
+                                              </span>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span className="font-mono text-[#b8863c]">
+                                          {it.isBuiltIn ? (it.displayCost || 'Base') : `${it.cost} ${it.currency}`}
                                         </span>
-                                      )}
-                                      {it.restriction && <span className="text-[9px] text-[#b8863c] ml-2">({it.restriction})</span>}
+                                        {isShop && !it.isBuiltIn && (
+                                          <button onClick={() => handleRemoveItem(it.id)} className="w-5 h-5 rounded hover:bg-red-950 text-[#7a6a58] hover:text-red-400 flex items-center justify-center transition-all">✕</button>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-mono text-[#b8863c]">
-                                        {it.isBuiltIn ? (it.displayCost || 'Base') : `${it.cost} ${it.currency}`}
-                                      </span>
-                                      {isShop && !it.isBuiltIn && (
-                                        <button onClick={() => handleRemoveItem(it.id)} className="text-[#7a6a58] hover:text-red-400 px-1">✕</button>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             ) : (
                               (!isShop || selectorOpen !== 'equipment') && (
@@ -1297,27 +1329,43 @@ export function ModelDetails({ wb, model, onUpdateModel, onRemoveModel }: Props)
                             )}
 
                             {isShop && selectorOpen === 'equipment' && (
-                              <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar mt-2">
+                              <div className="bg-[#0e0705] border border-[#5c3a21] rounded-lg p-2.5 space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar mt-2">
                                 <div className="flex justify-between items-center text-[10px] uppercase text-[#7a6a58] pb-1 border-b border-[#3a2110]">
                                   <span>Elegir Objeto de Equipo</span>
                                   <button onClick={() => setSelectorOpen(null)} className="text-red-400">✕</button>
                                 </div>
-                                {getSelectorOptions('equipment').map(({ item, cls }: any) => (
-                                  <button
-                                    key={item.id}
-                                    disabled={cls.state !== 'available'}
-                                    onClick={() => handleEquipItem(item.id)}
-                                    className={`w-full text-left p-1.5 rounded flex justify-between items-center text-xs ${
-                                      cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
-                                    }`}
-                                  >
-                                    <div className="flex flex-col">
-                                      <span>{item.name}</span>
-                                      {cls.state === 'disabled' && <span className="text-[9px] text-red-400">{cls.reason}</span>}
-                                    </div>
-                                    <span className="font-mono text-[#b8863c]">{item.cost} {item.currency}</span>
-                                  </button>
-                                ))}
+                                {getSelectorOptions('equipment').map(({ item, cls }: any) => {
+                                  const eqDet = extractEquipmentDetails(item);
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      disabled={cls.state !== 'available'}
+                                      onClick={() => handleEquipItem(item.id)}
+                                      className={`w-full text-left p-2 rounded flex justify-between items-center text-xs transition-all ${
+                                        cls.state === 'available' ? 'bg-[#1a0f0a] hover:bg-[#2a1610] text-[#e2d4b7] border border-[#3a2110]' : 'opacity-40 text-[#7a6a58] border border-transparent'
+                                      }`}
+                                    >
+                                      <div className="flex flex-col gap-0.5">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-bold">{item.name}</span>
+                                          <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-[#22120b] text-[#b8863c] font-mono border border-[#4a2a16]">
+                                            {eqDet.categoryTag}
+                                          </span>
+                                          {eqDet.actionGranted && (
+                                            <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-amber-950/60 text-amber-300 border border-amber-800/40">
+                                              ⚡ {eqDet.actionGranted}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1 text-[9px] text-[#9e9178]">
+                                          {eqDet.summary && <span className="line-clamp-1">{eqDet.summary}</span>}
+                                          {cls.state === 'disabled' && <span className="text-red-400 font-semibold">⚠ {cls.reason}</span>}
+                                        </div>
+                                      </div>
+                                      <span className="font-mono text-[#b8863c] shrink-0 ml-2">{item.cost} {item.currency}</span>
+                                    </button>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>

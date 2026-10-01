@@ -1,3 +1,21 @@
+- [x] **Enriquecimiento canónico y utilidades de Equipo, Reliquias y Herramientas Tácticas en Roster y Modo Mesa** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Equipo"):
+  1. **Motor de extracción de equipo en `app/lib/weapon_helpers.ts` y `.js` (`extractEquipmentDetails`):**
+     - Detección sistemática de acciones tácticas concedidas: `Treat ACTION` (Medi-kit: Risky Success Roll 1" para curar sangre o levantar aliados Down), `Spotter ACTION` (Binoculars: anula Cover a disparos aliados), `Entrench ACTION` (Shovel: colocar trinchera de cobertura y uso en CaC con STRONG), `Rallying Horn ACTION` (Musical Instrument: +1 DICE a Morale Checks a 8"), `Place Altar ACTION` (Golden Calf Altar: distorsión de terreno a 3") y `Combat Deployment ACTION` (Anq Guard: despliegue de barricada impasable).
+     - Categorización táctica visible: `Médico`, `Óptica`, `Trinchera`, `Moral`, `Movilidad`, `Protección`, `Reliquia`, `Estandarte`, `Desplegable`, `Consumible`, `Explosivo`, `Táctico`.
+     - Extracción de rasgos y reglas especiales: `Mountaineer Kit` (ignorar penalizaciones por escalar), `Blood Cloak` (SKIRMISHER), `Anfarro` (+1 DICE Melee), `Supreme Pontiff's Crucifix` (Inspiring Relic), `Red Banner` (inmunidad a retirada), `Hashashin Leaf` (STRONG), `Elixir of Al-Khidr` (TOUGH), `Holy Smoke` (NEGATE FEAR y -1 INJURY DICE), `Sacrificial Lamb`, etc.
+  2. **Mejoras en Roster (`app/(app)/bandas/roster/ModelDetails.tsx`):**
+     - Tarjetas de equipo enriquecidas con badges de categoría táctica (`[MÉDICO]`, `[ÓPTICA]`, `[TRINCHERA]`, `[RELIQUIA]`, `[ESTANDARTE]`).
+     - Insignia destacada para acciones tácticas (`⚡ Treat ACTION`, `⚡ Spotter ACTION`, `⚡ Entrench ACTION`, etc.) con explicación de efecto en la propia tarjeta.
+     - Selector del Bazar con vista previa de categoría, acción concedida y resumen de reglas antes de comprar.
+  3. **Mejoras en Modo Mesa (`app/(app)/partida/TabletopMode.tsx`):**
+     - Tarjeta táctica embebida para objetos que conceden acciones (`⚡ ACCIÓN: [Nombre]` con alcance, tirada requerida y efecto inmediato), permitiendo jugar sin dudar ni consultar manuales.
+     - Badges de categoría táctica y resumen descriptivo en herramientas y reliquias pasivas.
+  4. **Verificación y suite automatizada:**
+     - Nueva suite de tests `tests/test_equipment_features.js` (28 ✓ sin fallos).
+     - `test_armour_features.js` (37 ✓), `test_weapon_features.js` (23 ✓), `test_react_tabletop_keywords.js` (12 ✓).
+     - `verify.sh`: 189 suites · 3906 verificaciones · 0 fallos.
+     - `npm run lint` (0 warnings) y `npm run build` con Turbopack y TypeScript 100% exitosos.
+
 - [x] **Enriquecimiento canónico y utilidades de Armaduras, Escudos y Rasgos Defensivos en Roster y Modo Mesa** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Armaduras"):
   1. **Ampliación de utilidades de defensa en `app/lib/weapon_helpers.ts` y `.js`:**
      - `extractArmourDefenses`: Extracción y normalización de modificadores de herida (`-1`, `-2`, `-3 INJURY MODIFIER`), detección precisa de escudos (Trench Shield, Heavy Ballistic Shield, Fire Shield, Holy Icon Shield, Kalkan) y rasgos defensivos (`NEGATE FIRE`, `NEGATE GAS`, `NEGATE SHRAPNEL`, `NEGATE FEAR`, `IMPERVIOUS`, `STANDFAST`, `COVER`, `BULKY`, `FLAME REPELLENT`).

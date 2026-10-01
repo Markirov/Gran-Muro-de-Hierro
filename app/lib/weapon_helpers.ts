@@ -518,3 +518,182 @@ export function getModelDefensiveImmunities(model: any, unit: any, wb: any, extr
 
   return Array.from(immunities);
 }
+
+export interface EquipmentDetails {
+  actionGranted: string | null;
+  actionDescription: string | null;
+  categoryTag: string;
+  traits: string[];
+  summary: string;
+}
+
+/**
+ * Extrae acciones concedidas, efectos pasivos y categoría táctica de un objeto de equipo.
+ */
+export function extractEquipmentDetails(item: any): EquipmentDetails {
+  if (!item) {
+    return {
+      actionGranted: null,
+      actionDescription: null,
+      categoryTag: 'Equipo',
+      traits: [],
+      summary: ''
+    };
+  }
+
+  const nameUpper = (item.name || '').toUpperCase();
+  const kws: string[] = item.weaponKeywords || [];
+  const traits: string[] = [];
+  let actionGranted: string | null = null;
+  let actionDescription: string | null = null;
+  let categoryTag = 'Equipo';
+  let summary = '';
+
+  for (const kw of kws) {
+    if (/CONSUMABLE/i.test(kw)) traits.push('CONSUMABLE');
+    if (/DEPLOYABLE/i.test(kw)) traits.push('DEPLOYABLE');
+    if (/HELD/i.test(kw)) traits.push('HELD');
+    if (/LEADER/i.test(kw)) traits.push('LEADER');
+    if (/HEADGEAR/i.test(kw)) traits.push('HEADGEAR');
+    if (/BLESSED/i.test(kw)) traits.push(kw.toUpperCase());
+    if (/FEAR/i.test(kw)) traits.push('FEAR');
+    if (/SKIRMISHER/i.test(kw)) traits.push('SKIRMISHER');
+  }
+
+  // Detección por tipo de objeto
+  if (nameUpper.includes('MEDI-KIT') || nameUpper.includes('MEDIKIT')) {
+    categoryTag = 'Médico';
+    actionGranted = 'Treat ACTION';
+    actionDescription = 'Risky Success Roll a 1". Con éxito, retira 1 Blood Marker de sí mismo o un aliado a 1", o levanta a un aliado Down a 1".';
+    summary = 'Permite realizar Treat ACTION para retirar marcadores de sangre o levantar aliados Down.';
+  } else if (nameUpper.includes('BINOCULARS') || nameUpper.includes('PRISMÁTICOS')) {
+    categoryTag = 'Óptica';
+    actionGranted = 'Spotter ACTION';
+    actionDescription = 'Elige un enemigo visible en Line of Sight. Los ataques a distancia aliados contra ese objetivo ignoran Cover hasta el final de la ronda.';
+    summary = 'Concede Spotter ACTION para anular cobertura enemiga a los disparos aliados.';
+  } else if (nameUpper.includes('SHOVEL') || nameUpper.includes('PALA')) {
+    categoryTag = 'Trinchera';
+    actionGranted = 'Entrench ACTION';
+    actionDescription = 'Coloca un marcador de Trinchera en contacto con la peana (da Cover). Con la keyword STRONG puede usarse además como arma cuerpo a cuerpo de 1 mano.';
+    summary = 'Concede Entrench ACTION para cavar trincheras y dar cobertura. Utilizable en CaC con STRONG.';
+  } else if (nameUpper.includes('MUSICAL INSTRUMENT') || nameUpper.includes('INSTRUMENTO') || nameUpper.includes('BAGPIPES') || nameUpper.includes('CARNYX')) {
+    categoryTag = 'Moral';
+    actionGranted = 'Rallying Horn ACTION';
+    actionDescription = '+1 DICE a los Morale Checks de los aliados a 8". En Alba puede ser Bagpipes gratis (concede NEGATE FEAR a 8"). En Heretic Legions puede ser Carnyx (concede FEAR gratis).';
+    summary = 'Concede Rallying Horn ACTION (+1 DICE a chequeos de moral aliados a 8").';
+  } else if (nameUpper.includes('MOUNTAINEER KIT')) {
+    categoryTag = 'Movilidad';
+    summary = 'El portador ignora las penalizaciones de movimiento por escalar (Climb) y cruzar terreno vertical difícil.';
+  } else if (nameUpper.includes('GAS MASK') || nameUpper.includes('GAS FILTER')) {
+    categoryTag = 'Protección';
+    traits.push('NEGATE GAS');
+    summary = 'Inmune a los efectos del Gas y las armas con keyword GAS.';
+  } else if (nameUpper.includes('COMBAT HELMET') || nameUpper.includes('COMPOUND EYES')) {
+    categoryTag = 'Protección';
+    traits.push('NEGATE SHRAPNEL');
+    traits.push('HEADGEAR');
+    summary = 'Casco de combate: otorga NEGATE SHRAPNEL frente a impactos o armas con metralla.';
+  } else if (nameUpper.includes('IRON CAPIROTE')) {
+    categoryTag = 'Protección';
+    traits.push('NEGATE FEAR');
+    traits.push('NEGATE SHRAPNEL');
+    traits.push('HEADGEAR');
+    summary = 'Otorga NEGATE FEAR y NEGATE SHRAPNEL.';
+  } else if (nameUpper.includes('ANFARRO')) {
+    categoryTag = 'Reliquia';
+    traits.push('HEADGEAR');
+    summary = 'Token of Honour: +1 DICE a la característica Melee del portador.';
+  } else if (nameUpper.includes('SUPREME PONTIFF') || nameUpper.includes('CRUCIFIX')) {
+    categoryTag = 'Reliquia';
+    summary = 'Inspiring Relic: el portador no termina su activación tras fallar una Risky Success Roll.';
+  } else if (nameUpper.includes('BLOOD CLOAK')) {
+    categoryTag = 'Táctico';
+    traits.push('SKIRMISHER');
+    summary = 'El portador gana la keyword SKIRMISHER.';
+  } else if (nameUpper.includes('RED BANNER') || nameUpper.includes('TROOP FLAG') || nameUpper.includes('REGIMENTAL KAŞIK')) {
+    categoryTag = 'Estandarte';
+    traits.push('LEADER');
+    if (nameUpper.includes('RED BANNER')) {
+      summary = 'Mientras su portador esté vivo, la banda nunca huye (Shaken en vez de retirada).';
+    } else {
+      summary = 'Estandarte reglamentario de la banda.';
+    }
+  } else if (nameUpper.includes('STANDARD OF MAMMON')) {
+    categoryTag = 'Estandarte';
+    summary = 'Kneel Before Me: un enemigo Down a 1" no puede levantarse. Enemigos que terminen una carga a 1" hacen Success Roll o quedan Down.';
+  } else if (nameUpper.includes('BANNER OF DESERT WIND')) {
+    categoryTag = 'Estandarte';
+    summary = 'Sandstorm: enemigos que empiezan su activación a 24" o menos restan 1 a su Movement.';
+  } else if (nameUpper.includes('GOLDEN CALF ALTAR')) {
+    categoryTag = 'Desplegable';
+    actionGranted = 'Place Altar ACTION';
+    actionDescription = 'Despliega el altar a 1"; terreno a 3" del portador o del altar cuenta como difícil incluso para FLYING.';
+    summary = 'Altar impasable que distorsiona el terreno circundante.';
+  } else if (nameUpper.includes('ANQ GUARD')) {
+    categoryTag = 'Desplegable';
+    actionGranted = 'Combat Deployment ACTION';
+    actionDescription = 'Risky Success Roll con +2 DICE: si tiene éxito despliega una barricada de cobertura impasable a 1".';
+    summary = 'Pieza de cobertura impasable desplegable en combate.';
+  } else if (nameUpper.includes('EXPLOSIVE CHARGES')) {
+    categoryTag = 'Explosivo';
+    traits.push('CONSUMABLE');
+    summary = 'Hidden Explosives: detona un terreno seleccionado causando ataque con SHRAPNEL.';
+  } else if (nameUpper.includes('SACRIFICIAL LAMB')) {
+    categoryTag = 'Consumible';
+    traits.push('CONSUMABLE');
+    summary = 'Warded by Blood: al desplegar al portador, se ignora el primer Blood Marker recibido.';
+  } else if (nameUpper.includes('HASHASHIN LEAF')) {
+    categoryTag = 'Consumible';
+    traits.push('CONSUMABLE');
+    traits.push('STRONG');
+    summary = 'Enhanced Strength: al desplegar, el portador gana STRONG durante toda la partida.';
+  } else if (nameUpper.includes('ELIXIR OF AL-KHIDR')) {
+    categoryTag = 'Consumible';
+    traits.push('CONSUMABLE');
+    traits.push('TOUGH');
+    summary = 'Fountain of Life: al desplegar, el portador gana TOUGH durante toda la partida.';
+  } else if (nameUpper.includes('HOLY SMOKE')) {
+    categoryTag = 'Consumible';
+    traits.push('CONSUMABLE');
+    summary = 'Chemical Incense: al desplegar, concede NEGATE FEAR y -1 INJURY DICE a los ataques recibidos.';
+  } else if (nameUpper.includes('HOLY WATER OF LALIBELA')) {
+    categoryTag = 'Consumible';
+    traits.push('CONSUMABLE');
+    summary = 'Healing Waters: +1 DICE a la Success Roll de una ACTION para retirar Blood o Infection Markers.';
+  } else if (nameUpper.includes('TABOT')) {
+    categoryTag = 'Reliquia';
+    summary = 'Virtuous Rewards: gana 1 Blessing Marker al retirar Blood o Infection Markers de aliados.';
+  } else if (nameUpper.includes('URN OF THE BITTER ASHES')) {
+    categoryTag = 'Reliquia';
+    summary = 'Sinister Whispers: -1 DICE a los ataques a distancia contra el portador o aliados a 3" o menos.';
+  } else if (nameUpper.includes('BROKEN CROWN')) {
+    categoryTag = 'Reliquia';
+    summary = 'Locus of Despair: al activarse, pone 1 Infection Marker a cada enemigo a 1" o menos.';
+  } else if (nameUpper.includes('CUP OF FILTH')) {
+    categoryTag = 'Reliquia';
+    summary = 'Drink from the Cup: otorga +1 DICE a la Risky Success Roll de Dash al modelo o hasta 4 Ravenous.';
+  } else if (nameUpper.includes('HELLBOUND SOUL CONTRACT')) {
+    categoryTag = 'Pacto';
+    summary = 'Contrato infernal con los poderes del Abismo.';
+  } else if (nameUpper.includes('FIELD SHRINE')) {
+    categoryTag = 'Desplegable';
+    traits.push('DEPLOYABLE');
+    summary = 'Santuario de campaña desplegable.';
+  }
+
+  // Deducciones generales si no hubo match específico
+  if (!summary && item.description) {
+    summary = item.description;
+  }
+  if (!summary && item.rules && Array.isArray(item.rules)) {
+    summary = item.rules.map((r: any) => `${r.name}: ${r.desc}`).join(' · ');
+  }
+
+  return {
+    actionGranted,
+    actionDescription,
+    categoryTag,
+    traits: Array.from(new Set(traits)),
+    summary
+  };
+}
