@@ -19,6 +19,7 @@
      - Nueva suite de tests `tests/test_next_firebase_sync.js` (32 ✓ sin fallos).
      - `verify.sh`: 190 suites · 3942 verificaciones · 0 fallos.
      - `npm run lint` (0 warnings) y `npm run build` con Turbopack y TypeScript 100% exitosos.
+     - Desplegado a producción en Firebase Hosting (`https://murodehierrodelsultanato.web.app`) con reglas de Firestore activas.
 
 - [x] **Enriquecimiento canónico y utilidades de Equipo, Reliquias y Herramientas Tácticas en Roster y Modo Mesa** (2026-10-01, Lead Developer (Antigravity), Petición de Marcos "Equipo"):
   1. **Motor de extracción de equipo en `app/lib/weapon_helpers.ts` y `.js` (`extractEquipmentDetails`):**
